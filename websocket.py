@@ -1,0 +1,332 @@
+import asyncio
+import websockets
+import json
+import datetime
+import random
+import time
+
+# Define a global variable to store the data
+labels_stored_data = {
+    "device": "your_text_here",
+    "equipment": [
+        "Not installed",
+        "equipment_0",
+        "equipment_1",
+        "equipment_2",
+        "equipment_3"
+    ],
+    "position": [
+        "Not installed",
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "neutral_3",
+        "ambient"
+    ],
+    "location": [
+        "Not installed",
+        "cable_in",
+        "cable_out",
+        "switchgear_in",
+        "switchgear_out",
+        "busbar_0",
+        "busbar_1"
+    ]
+}
+
+sensors_stored_data = {
+    'data': [
+        {
+            'id': 10995384722910,
+            'config': {
+                'location': 1,
+                'position': 1,
+                'equipment': 1,
+            }
+        },
+    ]
+}
+
+system_stored_data = {
+    'serial': random.randint(1000000000, 9999999999),
+    'dir_modbus': random.randint(1000000000, 9999999999),
+    'baudrate': 9600,
+    'bit_paridad': 'par',
+}
+
+qualityString = ['Out of service', 'Bad', 'Regular', 'Good', 'Excellent']
+
+async def sensorData(websocket):
+    # try:
+    print('Starting sensor Data')
+    while True:
+        await asyncio.sleep(5)
+        print('Sending sensor data')
+        # Prepare the JSON response with the new sensor data
+        response_data = {
+            'cmd': 'new_sensor_data',
+            'arg': 'get',
+            'data': [],
+            'status': 'ok',
+        }
+        for i in sensors_stored_data['data']:
+            response_data['data'].append({
+                'id': i['id'],
+                'avg_temp': round(random.uniform(20, 30), 2),
+                'temp': round(random.uniform(20, 30), 2),
+                'std_dev': round(random.uniform(0, 5), 2),
+                'n_readings': random.randint(0, 15),
+                'quality': qualityString[random.randint(0, 4)],
+                'rssid': random.randint(0, 100),
+                'time_stamp': int(time.time())
+            })
+        if random.randint(1, 10) < 2:
+            element = {
+                'id': random.randint(10000000000000, 99999999999999),
+                'avg_temp': round(random.uniform(20, 30), 2),
+                'temp': round(random.uniform(20, 30), 2),
+                'std_dev': round(random.uniform(0, 5), 2),
+                'n_readings': random.randint(0, 15),
+                'quality': qualityString[random.randint(0, 4)],
+                'rssid': random.randint(0, 100),
+                'time_stamp': int(time.time())
+            }
+            sensors_stored_data.get('data').append({
+                'id': element['id'],
+                'config': {
+                    'location': 0,
+                    'position': 0,
+                    'equipment': 0,
+                }
+            })
+            response_data['data'].append(element)
+        
+        # Convert the response to JSON and send it back to the client
+        response = json.dumps(response_data)
+        await websocket.send(response)
+    # except:
+    #     print ("Task ended")
+
+
+async def handle_websocket(websocket, path):
+    sensorDataTask = None
+    try:
+        # Handle messages received from the client
+        async for message in websocket:
+            print('Received message:', message)
+
+            # Convert the received message to a string
+            message_string = message
+
+            # Parse the received JSON data
+            try:
+                received_data = json.loads(message_string)
+                # print('Parse message:', received_data)
+            except json.JSONDecodeError as error:
+                print('Failed to parse JSON:', error)
+                continue
+            # System Config
+            if "cmd" in received_data and received_data["cmd"] == "hs_config":
+                if "arg" in received_data and received_data["arg"] == "get":
+                    # Prepare the JSON response with the stored data
+                    response_data = {
+                        'cmd': 'hs_config',
+                        'arg': 'get',
+                        'data': system_stored_data,
+                        'status': 'ok',
+                    }
+                    # Convert the response to JSON and send it back to the client
+                    response = json.dumps(response_data)
+                    await websocket.send(response)
+
+                elif "arg" in received_data and received_data["arg"] == "set":
+                    # Check if the "data" field is present in the received message
+                    if "data" in received_data:
+                        # Update the labels_stored_data with the new value from "data"
+                        system_stored_data.update(received_data["data"])
+
+                        # Send a success response back to the client
+                        response_data = {
+                            'cmd': 'label',
+                            'arg': 'set',
+                            'data': system_stored_data,
+                            'status': 'ok',
+                        }
+
+                        response = json.dumps(response_data)
+                        await asyncio.sleep(2)
+                        await websocket.send(response)
+                    else:
+                        # If "data" field is missing in the received message, send an error response
+                        response_data = {
+                            'status': 'error',
+                            'message': 'Invalid command: "data" field is missing',
+                        }
+                        response = json.dumps(response_data)
+                        await websocket.send(response)
+                else:
+                    # If the received "arg" is neither "get" nor "set", send an error response
+                    response_data = {
+                        'status': 'error',
+                        'message': 'Invalid argument',
+                    }
+                    response = json.dumps(response_data)
+                    await websocket.send(response)
+            # Labels
+            elif "cmd" in received_data and received_data["cmd"] == "label":
+                if "arg" in received_data and received_data["arg"] == "get":
+                    # Prepare the JSON response with the stored data
+                    response_data = {
+                        'cmd': 'label',
+                        'arg': 'get',
+                        'data': labels_stored_data,
+                        'status': 'ok',
+                    }
+                    # Convert the response to JSON and send it back to the client
+                    response = json.dumps(response_data)
+                    await websocket.send(response)
+
+                elif "arg" in received_data and received_data["arg"] == "set":
+                    # Check if the "data" field is present in the received message
+                    if "data" in received_data:
+                        # Update the labels_stored_data with the new value from "data"
+                        labels_stored_data.update(received_data["data"])
+
+                        # Segun lo hablado con Facu no hay respuesta para este comando
+                        # # Send a success response back to the client
+                        # response_data = {
+                        #     'cmd': 'label',
+                        #     'arg': 'set',
+                        #     'data': labels_stored_data,
+                        #     'status': 'ok',
+                        # }
+
+                        # response = json.dumps(response_data)
+                        # await websocket.send(response)
+                    else:
+                        # If "data" field is missing in the received message, send an error response
+                        response_data = {
+                            'status': 'error',
+                            'message': 'Invalid command: "data" field is missing',
+                        }
+                        response = json.dumps(response_data)
+                        await websocket.send(response)
+                else:
+                    # If the received "arg" is neither "get" nor "set", send an error response
+                    response_data = {
+                        'status': 'error',
+                        'message': 'Invalid argument',
+                    }
+                    response = json.dumps(response_data)
+                    await websocket.send(response)
+            # Sensor Config
+            elif "cmd" in received_data and received_data["cmd"] == "sensor_config":
+                if "arg" in received_data and received_data["arg"] == "get_all":
+                    # Prepare the JSON response with the sensor configurations
+                    response_data = {
+                        'cmd': 'sensor_config',
+                        'arg': 'get_all',
+                        'data': sensors_stored_data.get('data'),
+                        'status': 'ok',
+                    }
+
+                    # Convert the response to JSON and send it back to the client
+                    response = json.dumps(response_data)
+                    await websocket.send(response)
+
+                elif "arg" in received_data and received_data["arg"] == "set":
+                    # Check if the "data" field is present in the received message
+                    if "data" in received_data:
+                        # Update the sensors_stored_data with the new value from "data"
+                        sensors_stored_data.update({'data':received_data["data"]})
+
+                        # Segun lo hablado con Facu no hay respuesta para este comando
+                        # # Send a success response back to the client
+                        # response_data = {
+                        #     'cmd': 'sensor_config',
+                        #     'arg': 'set',
+                        #     'data': sensors_stored_data.get('data'),
+                        #     'status': 'ok',
+                        # }
+
+                        # response = json.dumps(response_data)
+                        # await websocket.send(response)
+                    else:
+                        # If "data" field is missing in the received message, send an error response
+                        response_data = {
+                            'status': 'error',
+                            'message': 'Invalid command: "data" field is missing',
+                        }
+                        response = json.dumps(response_data)
+                        await websocket.send(response)
+                else:
+                    # If the received "arg" is not "get_all", send an error response
+                    response_data = {
+                        'status': 'error',
+                        'message': 'Invalid argument for sensor_configl',
+                    }
+                    response = json.dumps(response_data)
+                    await websocket.send(response)
+            # Sensor Discovery
+            elif "cmd" in received_data and received_data["cmd"] == "discovery":
+                if "arg" in received_data and received_data["arg"] == "start":
+                    if sensorDataTask is None:
+                        sensorDataTask = asyncio.create_task(sensorData(websocket))
+                    else:
+                        print('Task already running')
+                elif "arg" in received_data and received_data["arg"] == "stop":
+                    if sensorDataTask is not None:
+                        sensorDataTask.cancel()
+                        sensorDataTask = None
+                    else:
+                        print('Task already stopped')
+                else:
+                    # If the received "arg" is not "get", send an error response
+                    response_data = {
+                        'status': 'error',
+                        'message': 'Invalid argument for discovery',
+                    }
+                    response = json.dumps(response_data)
+                    await websocket.send(response)
+            # Normal Mode
+            elif "cmd" in received_data and received_data["cmd"] == "normal_mode":
+                if "arg" in received_data and received_data["arg"] == "start":
+                    if sensorDataTask is None:
+                        sensorDataTask = asyncio.create_task(sensorData(websocket))
+                    else:
+                        print('Task already running')
+                elif "arg" in received_data and received_data["arg"] == "stop":
+                    if sensorDataTask is not None:
+                        sensorDataTask.cancel()
+                        sensorDataTask = None
+                    else:
+                        print('Task already stopped')
+                else:
+                    # If the received "arg" is not "get", send an error response
+                    response_data = {
+                        'status': 'error',
+                        'message': 'Invalid argument for discovery',
+                    }
+                    response = json.dumps(response_data)
+                    await websocket.send(response)
+            else:
+                # If the received command is not {"cmd": "label"}, {"cmd": "sensor_config"}, or {"cmd": "new_sensor_data"}, send an error response
+                response_data = {
+                    'status': 'error',
+                    'message': 'Invalid command',
+                }
+                response = json.dumps(response_data)
+                await websocket.send(response)
+
+    except websockets.exceptions.ConnectionClosedOK:
+        if discoveryTask is not None:
+            print('Discovery task cancelled')
+            discoveryTask.cancel()
+        print('WebSocket connection closed.')
+
+async def main():
+    async with websockets.serve(handle_websocket, "localhost", 8000):
+        await asyncio.Future()  # run forever
+
+if __name__ == "__main__":
+    asyncio.run(main())

@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Transitions */
+/* fade transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.8s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* list */
+.list-enter-active, .list-leave-active {
+  transition: all .2s;
+}
+.list-enter, .list-leave-to {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+/* Tabs: slide-down */
+.slide-down-fade-enter-from {
+  opacity: 0;
+  transform: translateX(-30px)
+}
+.slide-down-fade-enter-active {
+  transition: all 1s ease
+}
