@@ -1,5 +1,12 @@
 import { LabelType, ModbusParity, SensorQuality } from "./enums";
 
+// Request
+export interface IRequest {
+  cmd: string;
+  arg: string;
+  data: any;
+}
+
 // Labels
 export interface ILabelData {
   equipment: string[];

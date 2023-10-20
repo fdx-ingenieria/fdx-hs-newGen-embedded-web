@@ -1,4 +1,4 @@
-import { SocketStatus, SocketCommands, ILabelData, ISensor, LabelType, ISystem, ISensorData } from '@/commons'
+import { SocketStatus, SocketCommands, ILabelData, ISensor, LabelType, ISystem, ISensorData, IRequest } from '@/commons'
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
 
@@ -11,6 +11,8 @@ export const useGlobalStore = defineStore('global', () => {
   const availableSensors: Ref<ISensor[]> = ref([])
   const sensorsData: Ref<ISensorData[]> = ref([])
   const systeamData: Ref<ISystem> = ref({} as ISystem)
+  const requestQueue: Array<IRequest> = [];
+  let isProcessing: boolean = false;
 
   const wait = async(ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -23,7 +25,7 @@ export const useGlobalStore = defineStore('global', () => {
   const getSensorsData = computed(() => sensorsData.value)
 
   // Actions
-  function connect(url = 'ws://localhost:8000/') {
+  function connect(url: string) {
     const socket = new WebSocket(url)
     status.value = SocketStatus.CONNECTING
 
@@ -74,7 +76,31 @@ export const useGlobalStore = defineStore('global', () => {
     }
   }
 
-  async function send(message: any, attempt = 1) {
+  function processRequests() {
+    if (!isProcessing && requestQueue.length) {
+      isProcessing = true;
+      const nextRequest = requestQueue.shift();
+      if (!nextRequest) return
+
+      return send(nextRequest)
+        .then(() => console.log('Request processed:', nextRequest))
+        .catch(() => console.error('Unable to process the request:', nextRequest))
+        .finally(async () => {
+          await wait(500);
+          isProcessing = false;
+          processRequests();
+        });
+    }
+  }
+
+  async function addToRequestQueue(request: IRequest) {
+    requestQueue.push(request);
+    if (!isProcessing) {
+      processRequests();
+    }
+  }
+
+  async function send(message: IRequest, attempt = 1) {
     if (status.value !== SocketStatus.OPEN) {
       if (attempt === maxRetries) {
         throw new Error("Socket is not connected");
@@ -88,12 +114,12 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   async function loadLabels() {
-    return send({ cmd: SocketCommands.LABEL, arg: "get" })
+    return addToRequestQueue({ cmd: SocketCommands.LABEL, arg: "get", data: '' })
   }
 
   async function updateLabels(data: ILabelData) {
     // split data and send
-    return send({ cmd: 'label', arg: 'set', data }).then(() => loadLabels())
+    return addToRequestQueue({ cmd: 'label', arg: 'set', data }).then(() => loadLabels())
   }
 
   function getLabelName(type: LabelType, index: number) {
@@ -101,12 +127,12 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   async function loadSensors() {
-    return send({ cmd: SocketCommands.SENSOR_CONFIG, arg: "get_all" })
+    return addToRequestQueue({ cmd: SocketCommands.SENSOR_CONFIG, arg: "get_all", data: '' })
   }
 
   async function updateSensors(data: ISensor[]) {
     // split data and send
-    return send({ cmd: SocketCommands.SENSOR_CONFIG, arg: "set", data }).then(() => loadSensors())
+    return addToRequestQueue({ cmd: SocketCommands.SENSOR_CONFIG, arg: "set", data }).then(() => loadSensors())
   }
 
   function addNewSensor(newSensor: ISensor): void {
@@ -129,20 +155,20 @@ export const useGlobalStore = defineStore('global', () => {
 
   async function startDiscoveryMode() {
     discoveryModeOn.value = true
-    return send({ cmd: SocketCommands.DISCOVERY, arg: "start" })
+    return addToRequestQueue({ cmd: SocketCommands.DISCOVERY, arg: "start", data: '' })
   }
 
   async function stopDiscoveryMode() {
     discoveryModeOn.value = false
-    return send({ cmd: SocketCommands.DISCOVERY, arg: "stop" })
+    return addToRequestQueue({ cmd: SocketCommands.DISCOVERY, arg: "stop", data: '' })
   }
 
   async function loadSystemData() {
-    return send({ cmd: SocketCommands.HS_CONFIG, arg: "get" })
+    return addToRequestQueue({ cmd: SocketCommands.HS_CONFIG, arg: "get", data: '' })
   }
 
   async function updateSystemData(data: ISystem) {
-    return send({ cmd: SocketCommands.HS_CONFIG, arg: "set", data }).then(() => loadSystemData())
+    return addToRequestQueue({ cmd: SocketCommands.HS_CONFIG, arg: "set", data }).then(() => loadSystemData())
   }
 
   return {
