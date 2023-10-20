@@ -5,7 +5,7 @@
   import RightSideBar from '@/components/navigation/RightSideBar.vue';
   import { useGlobalStore } from '@/stores/global'
   import { storeToRefs } from 'pinia';
-  import { onMounted, watch, Ref, ref } from 'vue'
+  import { onMounted, watch, Ref, ref, onUnmounted } from 'vue'
 
   const globalStore = useGlobalStore()
   const { getAvailableSensors, getAvailableLabels, getSensorsData } = storeToRefs(globalStore)
@@ -99,6 +99,10 @@
       globalStore.loadSensors()
     ])
   })
+
+  onUnmounted(() => {
+    if (globalStore.getDiscoveryModeOn) globalStore.stopDiscoveryMode()
+  })
 </script>
 
 <template>
@@ -115,21 +119,21 @@
         <div>
           <label for="type" class="block mb-2 text-sm font-semibold text-gray-900">Equipment</label>
           <select id="type" v-model="editableSensor.config.equipment" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-            <option v-for="(item, index) in getAvailableLabels.equipment" :value="index">{{ item }}</option>
+            <option v-for="(item, index) in getAvailableLabels.equipment" :value="index" :class="{'hidden': !item}">{{ item }}</option>
           </select>
           <p v-show="!editableSensor.config.equipment" class="mt-2 text-sm text-red-600 dark:text-red-500"><span class="font-semibold">Oops!</span> This is required!</p>
         </div>
         <div>
           <label for="type" class="block mb-2 text-sm font-semibold text-gray-900">Location</label>
           <select id="type" v-model="editableSensor.config.location" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-            <option v-for="(item, index) in getAvailableLabels.location" :value="index">{{ item }}</option>
+            <option v-for="(item, index) in getAvailableLabels.location" :value="index" :class="{'hidden': !item}">{{ item }}</option>
           </select>
           <p v-show="!editableSensor.config.location" class="mt-2 text-sm text-red-600 dark:text-red-500"><span class="font-semibold">Oops!</span> This is required!</p>
         </div>
         <div>
           <label for="type" class="block mb-2 text-sm font-semibold text-gray-900">Position</label>
           <select id="type" v-model="editableSensor.config.position" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-            <option v-for="(item, index) in getAvailableLabels.position" :value="index">{{ item }}</option>
+            <option v-for="(item, index) in getAvailableLabels.position" :value="index" :class="{'hidden': !item}">{{ item }}</option>
           </select>
           <p v-show="!editableSensor.config.position" class="mt-2 text-sm text-red-600 dark:text-red-500"><span class="font-semibold">Oops!</span> This is required!</p>
         </div>

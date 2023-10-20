@@ -1,7 +1,6 @@
 <script setup lang="ts">
   import { LabelType } from '@/commons';
   import { PropType } from 'vue';
-  import { EditIcon } from '@/components/icons';
 
   defineProps({
     availableLabels: {
@@ -15,9 +14,12 @@
   })
 
   const emit = defineEmits<{
-    edit: [type: LabelType, index: number]
+    edit: [type: LabelType, index: number, value: string]
   }>()
 
+  const change = (e: any, labelType: LabelType, index: number) => {
+    emit('edit', labelType, index, e.target.value)
+  }
 
 </script>
 
@@ -27,29 +29,17 @@
       <tr>
         <th scope="col" class="px-4 py-3 max-w-min">Index</th>
         <th scope="col" class="px-4 py-3">Name</th>
-        <th scope="col" class="px-4 py-3">
-          <span class="sr-only">Actions</span>
-        </th>
       </tr>
     </thead>
     <tbody>
       <tr class="border-b cursor-pointer hover:bg-gray-100"
-        @click="index ? emit('edit', labelType, index) : null"
         @click.stop
         v-for="(item,index) in availableLabels" :key="index">
         <th scope="row" class="text-center">{{ index }}</th>
-        <th scope="row" class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{{ item }}</th>
-        <td class="px-4 py-3 flex items-center justify-end">
-          <template v-if="index">
-            <button type="button"
-              @click="emit('edit', labelType, index)"
-              @click.stop
-              class="text-white border border-blue-500 bg-blue-500 font-medium rounded-lg text-sm p-0.5 text-center inline-flex items-center mr-2">
-              <EditIcon class="w-4" />
-              <span class="sr-only">Edit</span>
-            </button>
-          </template>
-        </td>
+        <th scope="row" class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
+          <input v-if="index" @input="(e) => change(e, labelType, index)" :value="item" type="text" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Your label name">
+          <span v-else>{{ item }}</span>
+        </th>
       </tr>
     </tbody>
   </table>
