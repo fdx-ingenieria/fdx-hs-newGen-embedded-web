@@ -34,7 +34,7 @@
     </thead>
     <tbody>
       <tr class="border-b cursor-pointer hover:bg-gray-100"
-        @click="emit('edit', labelType, index)"
+        @click="index ? emit('edit', labelType, index) : null"
         @click.stop
         v-for="(item,index) in availableLabels" :key="index">
         <th scope="row" class="text-center">{{ index }}</th>
