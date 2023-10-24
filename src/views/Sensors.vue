@@ -1,11 +1,11 @@
 <script setup lang="ts">
   import { ISensor, ISensorData } from '@/commons';
-  import { RefreshIcon, SendIcon, ListIcon, PlayIcon, StopIcon } from '@/components/icons';
+  import { RefreshIcon, SendIcon, ListIcon, PlayIcon, StopIcon, AlertIcon } from '@/components/icons';
   import SensorTable from '@/components/sensors/SensorTable.vue';
   import RightSideBar from '@/components/navigation/RightSideBar.vue';
   import { useGlobalStore } from '@/stores/global'
   import { storeToRefs } from 'pinia';
-  import { onMounted, watch, Ref, ref, onUnmounted } from 'vue'
+  import { onMounted, watch, Ref, ref, onUnmounted, computed } from 'vue'
 
   const globalStore = useGlobalStore()
   const { getAvailableSensors, getAvailableLabels, getSensorsData } = storeToRefs(globalStore)
@@ -49,7 +49,12 @@
         unconfiguredSensors.value.push(item)
       }
     })
+    unconfiguredSensors.value.sort((a: ISensor, b: ISensor) => (a.rssid || 0) - (b.rssid || 0))
   })
+
+  const isLimitReached = computed(() => {
+    return getAvailableSensors.value.length >= 50;
+  });
 
   const editSensor = (id: number) => {
     let sensor = getAvailableSensors.value.find((item: ISensor) => item.id === id)
@@ -65,10 +70,11 @@
 
   const isComplete = () => {
     const { equipment, position, location } = editableSensor.value.config
-    return !!equipment && !!position && !!location
+    return !!equipment && !!position && !!location && isLimitReached
   }
 
   const saveSensor = () => {
+    if (!isComplete()) return
     const { id, config, quality, rssid, time_stamp } = editableSensor.value
     const newSensorData = getAvailableSensors.value.map((item: ISensor) => {
       if (item.id === id) {
@@ -117,25 +123,31 @@
           <input type="text" :value="editableSensor.id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" disabled>
         </div>
         <div>
-          <label for="type" class="block mb-2 text-sm font-semibold text-gray-900">Equipment</label>
-          <select id="type" v-model="editableSensor.config.equipment" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+          <label class="block mb-2 text-sm font-semibold text-gray-900">Equipment</label>
+          <select v-model="editableSensor.config.equipment" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
             <option v-for="(item, index) in getAvailableLabels.equipment" :value="index" :class="{'hidden': !item}">{{ item }}</option>
           </select>
           <p v-show="!editableSensor.config.equipment" class="mt-2 text-sm text-red-600 dark:text-red-500"><span class="font-semibold">Oops!</span> This is required!</p>
         </div>
         <div>
-          <label for="type" class="block mb-2 text-sm font-semibold text-gray-900">Location</label>
-          <select id="type" v-model="editableSensor.config.location" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+          <label class="block mb-2 text-sm font-semibold text-gray-900">Location</label>
+          <select v-model="editableSensor.config.location" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
             <option v-for="(item, index) in getAvailableLabels.location" :value="index" :class="{'hidden': !item}">{{ item }}</option>
           </select>
           <p v-show="!editableSensor.config.location" class="mt-2 text-sm text-red-600 dark:text-red-500"><span class="font-semibold">Oops!</span> This is required!</p>
         </div>
         <div>
-          <label for="type" class="block mb-2 text-sm font-semibold text-gray-900">Position</label>
-          <select id="type" v-model="editableSensor.config.position" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+          <label class="block mb-2 text-sm font-semibold text-gray-900">Position</label>
+          <select v-model="editableSensor.config.position" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
             <option v-for="(item, index) in getAvailableLabels.position" :value="index" :class="{'hidden': !item}">{{ item }}</option>
           </select>
           <p v-show="!editableSensor.config.position" class="mt-2 text-sm text-red-600 dark:text-red-500"><span class="font-semibold">Oops!</span> This is required!</p>
+        </div>
+      </div>
+      <div v-if="isLimitReached" class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 mt-2" role="alert">
+        <AlertIcon class="w-5 h-5 mr-3" />
+        <div class="ml-3 text-sm font-medium">
+          Hey, you've reached the limit of 50 sensors.
         </div>
       </div>
       <div class="flex items-center space-x-4">
@@ -181,7 +193,7 @@
           <ListIcon class="h-6 hidden md:inline-flex mt-1 mr-2" />
           <h3 class="text-xl font-semibold">Configured sensors</h3>
         </div>
-        <SensorTable :availableSensors="configuredSensors" @edit="editSensor" @reset="resetSensor" />
+        <SensorTable :availableSensors="configuredSensors" @edit="editSensor" @reset="resetSensor" :max="50" />
       </div>
     </div>
   </section>

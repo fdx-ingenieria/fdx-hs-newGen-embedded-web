@@ -17,6 +17,10 @@
     unconfigured : {
       type: Boolean,
       default: false
+    },
+    max: {
+      type: Number,
+      default: 0
     }
   })
 
@@ -113,6 +117,10 @@
         <span class="font-semibold text-gray-900">{{ availableSensors.length }}</span>
         of
         <span class="font-semibold text-gray-900">{{ availableSensors.length }}</span>
+        <template v-if="max" class="self-end">
+          | max
+          <span class="font-semibold text-gray-900">{{ max }}</span>
+        </template>
       </span>
     </nav>
   </div>
