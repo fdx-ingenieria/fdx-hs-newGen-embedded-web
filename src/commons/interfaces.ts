@@ -1,4 +1,4 @@
-import { LabelType, ModbusParity, SensorQuality } from "./enums";
+import { LabelType, ModbusBitParity, SensorQuality } from "./enums";
 
 // Request
 export interface IRequest {
@@ -51,7 +51,7 @@ export interface ISystem {
   serial: number;
   dir_modbus: number;
   baudrate: number;
-  bit_paridad: ModbusParity; 
+  bit_parity: ModbusBitParity; 
 }
 // Menu & Sidebars
 export interface IMenuItem {

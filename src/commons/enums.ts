@@ -32,8 +32,16 @@ export enum LabelType {
   POSITION = 'position',
 }
 
-export enum ModbusParity {
-  NONE = 'sin paridad',
-  ODD = 'impar',
-  EVEN = 'par',
+export enum ModbusBitParity {
+  NONE = 'none',
+  ODD = 'odd',
+  EVEN = 'even',
+}
+
+export enum Baudrate {
+  B9600 = '9600',
+  B19200 = '19200',
+  B38400 = '38400',
+  B57600 = '57600',
+  B115200 = '115200',
 }

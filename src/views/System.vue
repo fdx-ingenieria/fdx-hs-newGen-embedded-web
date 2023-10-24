@@ -1,6 +1,6 @@
 <script setup lang="ts">
-  import { ISystem, ModbusParity } from '@/commons';
-  import { LoadingIcon, SendIcon } from '@/components/icons';
+  import { ISystem, ModbusBitParity, Baudrate } from '@/commons';
+  import { AlertIcon, LoadingIcon, SendIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global'
   import { storeToRefs } from 'pinia';
   import { Ref, onMounted, ref, watch } from 'vue'
@@ -20,12 +20,16 @@
     globalStore.updateSystemData(editable.value)
   }
 
+  const validDirModbus = (value: number): boolean => {
+    return value > 0 && value < 248
+  }
+
   const isComplete = (): boolean => {
-    const { serial, dir_modbus, baudrate, bit_paridad } = editable.value
+    const { serial, dir_modbus, baudrate, bit_parity } = editable.value
     return !!serial
-      && !!dir_modbus
+      && validDirModbus(dir_modbus)
       && !!baudrate
-      && !!bit_paridad
+      && !!bit_parity
   }
 
   onMounted(async () => {
@@ -39,22 +43,31 @@
       <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden py-4 px-4 md:px-6">
         <div class="grid gap-4 mb-4">
           <div>
-            <label for="name" class="block mb-2 text-sm font-semibold text-gray-900">Serial</label>
-            <input type="text" id="name" v-model="editable.serial" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Serial value">
+            <label class="block mb-2 text-sm font-semibold text-gray-900">Serial</label>
+            <input type="text" v-value="editable.serial" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 disabled:opacity-50" placeholder="Serial value" disabled>
           </div>
           <div>
-            <label for="name" class="block mb-2 text-sm font-semibold text-gray-900">Modbus direction</label>
-            <input type="text" id="name" v-model="editable.dir_modbus" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Modbus direction value">
+            <label class="block mb-2 text-sm font-semibold text-gray-900">Modbus direction</label>
+            <input type="number" min="1" max="247" v-model="editable.dir_modbus" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Modbus direction value">
+            <p v-show="!validDirModbus(editable.dir_modbus)" class="mt-2 text-sm text-red-600 dark:text-red-500"><span class="font-semibold">Oops!</span> This value should be between 1 and 247.</p>
           </div>
           <div>
-            <label for="name" class="block mb-2 text-sm font-semibold text-gray-900">Baudrate</label>
-            <input type="text" id="name" v-model="editable.baudrate" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Baudrate value">
-          </div>
-          <div>
-            <label for="type" class="block mb-2 text-sm font-semibold text-gray-900">Type</label>
-            <select id="type" v-model="editable.bit_paridad" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-              <option v-for="item in ModbusParity" :value="item">{{ item }}</option>
+            <label class="block mb-2 text-sm font-semibold text-gray-900">Baudrate</label>
+            <select v-model="editable.baudrate" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+              <option v-for="item in Baudrate" :value="item">{{ item }}</option>
             </select>
+          </div>
+          <div>
+            <label class="block mb-2 text-sm font-semibold text-gray-900">Bit parity</label>
+            <select v-model="editable.bit_parity" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+              <option v-for="item in ModbusBitParity" :value="item">{{ item }}</option>
+            </select>
+            <div class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 mt-2" role="alert">
+              <AlertIcon class="w-5 h-5 mr-3" />
+              <div class="ml-3 text-sm font-medium">
+                TBD: Here will be a description of the Modbus parity type.
+              </div>
+            </div>
           </div>
         </div>
         <div class="flex justify-end items-center space-x-4">
