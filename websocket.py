@@ -49,9 +49,9 @@ sensors_stored_data = {
 
 system_stored_data = {
     'serial': random.randint(1000000000, 9999999999),
-    'dir_modbus': random.randint(1000000000, 9999999999),
+    'dir_modbus': random.randint(1, 247),
     'baudrate': 9600,
-    'bit_paridad': 'par',
+    'bit_parity': 'even',
 }
 
 qualityString = ['Out of service', 'Bad', 'Regular', 'Good', 'Excellent']
