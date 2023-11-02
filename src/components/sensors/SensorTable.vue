@@ -47,9 +47,9 @@
 
   const preatyDate = (timestamp: number | undefined) => {
     if (!timestamp) return 'Unknown'
+
     const date = new Date(timestamp * 1000);
     return format(date, 'HH:mm:ss');
-      // return formatDistanceToNow(date, { addSuffix: true });
   }
 
 </script>
@@ -76,7 +76,7 @@
           <td v-if="!unconfigured" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.POSITION, item.config.position) }}</td>
           <td v-if="!unconfigured" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.LOCATION, item.config.location) }}</td>
           <td class="px-4 py-3 text-center">
-            <span class="text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full dark:bg-blue-900 dark:text-blue-300"
+            <span class="text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full"
               :class="getQualityClass(item.quality)">
               {{ item.quality }}
             </span>
