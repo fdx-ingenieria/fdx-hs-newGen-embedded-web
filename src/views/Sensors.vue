@@ -127,21 +127,21 @@
           <select v-model="editableSensor.config.equipment" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
             <option v-for="(item, index) in getAvailableLabels.equipment" :value="index" :class="{'hidden': !item}">{{ item }}</option>
           </select>
-          <p v-show="!editableSensor.config.equipment" class="mt-2 text-sm text-red-600 dark:text-red-500"><span class="font-semibold">Oops!</span> This is required!</p>
+          <p v-show="!editableSensor.config.equipment" class="mt-2 text-sm text-red-600"><span class="font-semibold">Oops!</span> This is required!</p>
         </div>
         <div>
           <label class="block mb-2 text-sm font-semibold text-gray-900">Location</label>
           <select v-model="editableSensor.config.location" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
             <option v-for="(item, index) in getAvailableLabels.location" :value="index" :class="{'hidden': !item}">{{ item }}</option>
           </select>
-          <p v-show="!editableSensor.config.location" class="mt-2 text-sm text-red-600 dark:text-red-500"><span class="font-semibold">Oops!</span> This is required!</p>
+          <p v-show="!editableSensor.config.location" class="mt-2 text-sm text-red-600"><span class="font-semibold">Oops!</span> This is required!</p>
         </div>
         <div>
           <label class="block mb-2 text-sm font-semibold text-gray-900">Position</label>
           <select v-model="editableSensor.config.position" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
             <option v-for="(item, index) in getAvailableLabels.position" :value="index" :class="{'hidden': !item}">{{ item }}</option>
           </select>
-          <p v-show="!editableSensor.config.position" class="mt-2 text-sm text-red-600 dark:text-red-500"><span class="font-semibold">Oops!</span> This is required!</p>
+          <p v-show="!editableSensor.config.position" class="mt-2 text-sm text-red-600"><span class="font-semibold">Oops!</span> This is required!</p>
         </div>
       </div>
       <div v-if="isLimitReached" class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 mt-2" role="alert">

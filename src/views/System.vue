@@ -49,7 +49,7 @@
           <div>
             <label class="block mb-2 text-sm font-semibold text-gray-900">Modbus direction</label>
             <input type="number" min="1" max="247" v-model="editable.dir_modbus" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Modbus direction value">
-            <p v-show="!validDirModbus(editable.dir_modbus)" class="mt-2 text-sm text-red-600 dark:text-red-500"><span class="font-semibold">Oops!</span> This value should be between 1 and 247.</p>
+            <p v-show="!validDirModbus(editable.dir_modbus)" class="mt-2 text-sm text-red-600"><span class="font-semibold">Oops!</span> This value should be between 1 and 247.</p>
           </div>
           <div>
             <label class="block mb-2 text-sm font-semibold text-gray-900">Baudrate</label>
