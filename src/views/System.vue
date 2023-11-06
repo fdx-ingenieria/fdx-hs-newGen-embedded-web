@@ -44,7 +44,7 @@
         <div class="grid gap-4 mb-4">
           <div>
             <label class="block mb-2 text-sm font-semibold text-gray-900">Serial</label>
-            <input type="text" v-value="editable.serial" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 disabled:opacity-50" placeholder="Serial value" disabled>
+            <input type="text" :value="editable.serial" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 disabled:opacity-50" placeholder="Serial value" disabled>
           </div>
           <div>
             <label class="block mb-2 text-sm font-semibold text-gray-900">Modbus direction</label>

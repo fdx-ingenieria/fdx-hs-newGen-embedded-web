@@ -54,6 +54,54 @@ system_stored_data = {
     'bit_parity': 'even',
 }
 
+alarm_stored_data = {
+    'data': [
+        {
+            'id': 1,
+            'name': 'alarm_1',
+            'set_point': random.randint(0, 140),
+            'alarm_type': random.randint(0, 3),
+            'relay_flag' : random.randint(0, 2),
+            'fields': [
+                {
+                    'location': 1,
+                    'equipment': 2
+                }
+            ]
+        },
+        {
+            'id': 2,
+            'name': 'alarm_2',
+            'set_point': random.randint(0, 140),
+            'alarm_type': random.randint(0, 3),
+            'relay_flag' : random.randint(0, 2),
+            'fields': [
+                {
+                    'location': 1,
+                    'equipment': 2
+                },
+                {
+                    'location': 4,
+                    'equipment': 5
+                }
+            ]
+        },
+        {
+            'id': 3,
+            'name': 'alarm_3',
+            'set_point': 0,
+            'alarm_type': 0,
+            'relay_flag' : 0,
+            'fields': []
+        },
+    ]
+}
+# alarm types
+# (0:non set,1: absolute, 2: unbalance, 3:dispersión)
+
+# relay_flag
+# (0: non set, 1: rele 1, 2: rele 2)
+
 qualityString = ['Out of service', 'Bad', 'Regular', 'Good', 'Excellent']
 
 async def sensorData(websocket):
@@ -203,6 +251,41 @@ async def handle_websocket(websocket, path):
 
                         # response = json.dumps(response_data)
                         # await websocket.send(response)
+                    else:
+                        # If "data" field is missing in the received message, send an error response
+                        response_data = {
+                            'status': 'error',
+                            'message': 'Invalid command: "data" field is missing',
+                        }
+                        response = json.dumps(response_data)
+                        await websocket.send(response)
+                else:
+                    # If the received "arg" is neither "get" nor "set", send an error response
+                    response_data = {
+                        'status': 'error',
+                        'message': 'Invalid argument',
+                    }
+                    response = json.dumps(response_data)
+                    await websocket.send(response)
+            # Alarm Config
+            elif "cmd" in received_data and received_data["cmd"] == "alarm_config":
+                if "arg" in received_data and received_data["arg"] == "get":
+                    # Prepare the JSON response with the stored data
+                    response_data = {
+                        'cmd': 'alarm_config',
+                        'arg': 'get',
+                        'data': alarm_stored_data.get('data'),
+                        'status': 'ok',
+                    }
+                    # Convert the response to JSON and send it back to the client
+                    response = json.dumps(response_data)
+                    await websocket.send(response)
+
+                elif "arg" in received_data and received_data["arg"] == "set":
+                    # Check if the "data" field is present in the received message
+                    if "data" in received_data:
+                        # Update the alarm_stored_data with the new value from "data"
+                        alarm_stored_data.update({'data':received_data["data"]})
                     else:
                         # If "data" field is missing in the received message, send an error response
                         response_data = {

@@ -46,6 +46,21 @@ export interface ISensorData {
   time_stamp: number; // seconds since epoch
 }
 
+// Alarms
+export interface IAlarm {
+  id: number;
+  name: string;
+  set_point: number;
+  alarm_type: number;
+  relay_flag: number;
+  fields: IAlarmField[];
+}
+
+export interface IAlarmField {
+  location: number;
+  equipment: number;
+}
+
 // System
 export interface ISystem {
   serial: number;

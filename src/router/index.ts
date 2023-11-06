@@ -38,6 +38,13 @@ const routes: Array<RouteRecordRaw > = [
     meta: {}
   },
   {
+    path: "/configuration/alarms",
+    name: "Alarms",
+    component: () => import('@/views/Alarms.vue'),
+    props: true,
+    meta: {}
+  },
+  {
     path: "/:catchAll(.*)",
     component: PageNotFound
   }

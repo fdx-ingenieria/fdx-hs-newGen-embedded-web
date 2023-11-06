@@ -38,10 +38,23 @@ export enum ModbusBitParity {
   EVEN = 'even',
 }
 
-export enum Baudrate {
-  B9600 = '9600',
-  B19200 = '19200',
-  B38400 = '38400',
-  B57600 = '57600',
-  B115200 = '115200',
-}
+export const Baudrate = [
+  9600,
+  19200,
+  38400,
+  57600,
+  115200,
+]
+
+export const AlarmType = [
+  'Non set',
+  'Absolute',
+  'Unbalance',
+  'Dispersion',
+]
+
+export const ReleFlag = [
+  'Non set',
+  'Rele 1',
+  'Rele 2',
+]
