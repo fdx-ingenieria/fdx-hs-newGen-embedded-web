@@ -1,10 +1,10 @@
 <script setup lang="ts">
-  import { PropType } from 'vue';
+  import { PropType, ref, watch } from 'vue';
   import { IAlarm, LabelType, AlarmType, ReleFlag } from '@/commons';
-  import { EditIcon } from '@/components/icons';
+  import { EditIcon, SearchIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global';
 
-  defineProps({
+  const props = defineProps({
     availableAlarms: {
       type: Array as PropType<IAlarm[]>,
       required: true
@@ -16,6 +16,8 @@
   })
 
   const globalStore = useGlobalStore()
+  const localAvailableAlarms = ref([] as IAlarm[])
+  const searchText = ref('')
 
   const getFieldClass = (equipment: number | undefined): string => {
     const classMap: Record<number, string> = {
@@ -32,6 +34,36 @@
       : '';
   };
 
+  watch(searchText, () => filter())
+  watch(
+    () => props.availableAlarms,
+    () => {
+      localAvailableAlarms.value = props.availableAlarms
+      filter()
+    },
+    { deep: true}
+  )
+
+  const filter = () => {
+    const str = searchText.value.toUpperCase()
+
+    if (!str) return
+    localAvailableAlarms.value = props.availableAlarms.filter(
+      alarm => {
+        return alarm.name.toUpperCase().includes(str)
+          || AlarmType[alarm.alarm_type].toUpperCase().includes(str)
+          || ReleFlag[alarm.relay_flag].toUpperCase().includes(str)
+      }
+    )
+  }
+
+  const searcHighlight = (text: string): string => {
+    if (!searchText.value) return text
+
+    const regex = new RegExp(`(${searchText.value})`, "gi");
+    return text.replace(regex, '<span class="text-red-500 font-bold">$1</span>');
+  }
+
   const emit = defineEmits<{
     edit: [index: number],
   }>()
@@ -40,6 +72,19 @@
 
 <template>
   <div class="overflow-x-auto">
+    <div class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4">
+      <div class="w-full md:w-1/2">
+        <div class="flex items-center">
+          <label for="simple-search" class="sr-only">Search</label>
+          <div class="relative w-full">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <SearchIcon class="w-5 h-5 text-gray-500" />
+            </div>
+            <input v-model="searchText" type="text" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2" placeholder="Search">
+          </div>
+        </div>
+      </div>
+    </div>
     <table class="w-full text-sm text-left text-gray-500 whitespace-nowrap">
       <thead class="text-xs text-gray-700 uppercase bg-gray-50">
         <tr>
@@ -53,16 +98,16 @@
         </tr>
       </thead>
       <transition-group name="list" tag="tbody">
-        <tr @click="emit('edit', item.id)" v-for="item in availableAlarms" class="border-b cursor-pointer hover:bg-gray-100" :key="`${item.id}`">
+        <tr @click="emit('edit', item.id)" v-for="item in localAvailableAlarms" class="border-b cursor-pointer hover:bg-gray-100" :key="`${item.id}`">
           <th scope="row" class="px-4 py-3 font-medium text-gray-900 ">{{ item.id }}</th>
-          <td class="px-4 py-3">{{ item.name }}</td>
-          <td class="px-4 py-3">{{ AlarmType[item.alarm_type] }}</td>
+          <td class="px-4 py-3" v-html="searcHighlight(item.name)"></td>
+          <td class="px-4 py-3" v-html="searcHighlight(AlarmType[item.alarm_type])"></td>
           <td class="px-4 py-3">{{ item.set_point }}</td>
-          <td class="px-4 py-3">{{ ReleFlag[item.relay_flag] }}</td>
+          <td class="px-4 py-3" v-html="searcHighlight(ReleFlag[item.relay_flag])"></td>
           <td class="px-4 py-3 flex flex-wrap gap-1 justify-center">
             <span v-for="field in item.fields" class="text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full"
-                :class="getFieldClass(field.equipment)">
-              {{ globalStore.getLabelName(LabelType.EQUIPMENT, field.equipment) }},
+              :class="getFieldClass(field.equipment)">
+              {{ globalStore.getLabelName(LabelType.EQUIPMENT, field.equipment) }}/
               {{ globalStore.getLabelName(LabelType.LOCATION, field.location) }}
             </span>
           </td>
@@ -79,14 +124,14 @@
       </transition-group>
     </table>
     <div
-      v-if="!availableAlarms"
+      v-if="!localAvailableAlarms.length"
       class="p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 mx-auto text-center" role="alert">
       <span class="font-medium">Nothing found.</span> It seems the data is on a coffee break.
     </div>
     <nav class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0 p-4">
       <span class="text-sm font-normal text-gray-500">
         Showing
-        <span class="font-semibold text-gray-900">{{ availableAlarms.length }}</span>
+        <span class="font-semibold text-gray-900">{{ localAvailableAlarms.length }}</span>
         of
         <span class="font-semibold text-gray-900">{{ availableAlarms.length }}</span>
         <template v-if="max" class="self-end">
