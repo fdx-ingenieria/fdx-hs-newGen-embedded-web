@@ -25,5 +25,4 @@ dist-ssr
 *.sw?
 
 # Vite
-vite-env.d.ts
 .env
