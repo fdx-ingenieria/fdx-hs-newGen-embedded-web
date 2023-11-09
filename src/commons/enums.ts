@@ -14,7 +14,7 @@ export enum SocketCommands {
   MODBUS_CONFIG = 'modbus_config',
   MODBUS_TABLE = 'modbus_table',
   NEW_SENSOR_DATA = 'new_sensor_data',
-  ALARM_STATE = 'alarm_states',
+  ALARM_STATES = 'alarm_states',
   HS_CONFIG = 'hs_config',
 }
 

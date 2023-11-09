@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { PropType, ref, watch } from 'vue';
+  import { PropType, onMounted, ref, watch } from 'vue';
   import { IAlarm, LabelType, AlarmType, ReleFlag } from '@/commons';
   import { EditIcon, SearchIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global';
@@ -8,6 +8,10 @@
     availableAlarms: {
       type: Array as PropType<IAlarm[]>,
       required: true
+    },
+    readonly: {
+      type: Boolean,
+      default: false
     },
     max: {
       type: Number,
@@ -40,14 +44,12 @@
     () => {
       localAvailableAlarms.value = props.availableAlarms
       filter()
-    },
-    { deep: true}
+    }
   )
 
   const filter = () => {
     const str = searchText.value.toUpperCase()
 
-    if (!str) return
     localAvailableAlarms.value = props.availableAlarms.filter(
       alarm => {
         return alarm.name.toUpperCase().includes(str)
@@ -68,6 +70,7 @@
     edit: [index: number],
   }>()
 
+  onMounted(() => filter())
 </script>
 
 <template>
@@ -94,11 +97,13 @@
           <th scope="col" class="px-4 py-3">Set point</th>
           <th scope="col" class="px-4 py-3 text-center">Rele</th>
           <th scope="col" class="px-4 py-3 text-center">Ubication</th>
-          <th scope="col" class="px-4 py-3 hidden md:table-cell"><span class="sr-only">Actions</span></th>
+          <th v-show="!readonly" scope="col" class="px-4 py-3 hidden md:table-cell"><span class="sr-only">Actions</span></th>
         </tr>
       </thead>
       <transition-group name="list" tag="tbody">
-        <tr @click="emit('edit', item.id)" v-for="item in localAvailableAlarms" class="border-b cursor-pointer hover:bg-gray-100" :key="`${item.id}`">
+        <tr @click="emit('edit', item.id)" v-for="item in localAvailableAlarms"
+          class="border-b hover:bg-gray-100" :key="`${item.id}`"
+          :class="{'cursor-ppointer': !readonly, 'bg-red-200': item.active}">
           <th scope="row" class="px-4 py-3 font-medium text-gray-900 ">{{ item.id }}</th>
           <td class="px-4 py-3" v-html="searcHighlight(item.name)"></td>
           <td class="px-4 py-3" v-html="searcHighlight(AlarmType[item.alarm_type])"></td>
@@ -111,7 +116,7 @@
               {{ globalStore.getLabelName(LabelType.LOCATION, field.location) }}
             </span>
           </td>
-          <td class="px-4 py-3 text-center hidden md:table-cell">
+          <td v-show="!readonly" class="px-4 py-3 text-center hidden md:table-cell">
               <button type="button"
                 @click="emit('edit', item.id)"
                 @click.stop

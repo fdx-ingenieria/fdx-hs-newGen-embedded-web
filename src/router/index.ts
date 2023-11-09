@@ -19,28 +19,28 @@ const routes: Array<RouteRecordRaw > = [
   {
     path: "/configuration/system",
     name: "System",
-    component: () => import('@/views/System.vue'),
+    component: () => import('@/views/configuration/System.vue'),
     props: true,
     meta: {}
   },
   {
     path: "/configuration/labels",
     name: "Labels",
-    component: () => import('@/views/Labels.vue'),
+    component: () => import('@/views/configuration/Labels.vue'),
     props: true,
     meta: {}
   },
   {
     path: "/configuration/sensors",
     name: "Sensors",
-    component: () => import('@/views/Sensors.vue'),
+    component: () => import('@/views/configuration/Sensors.vue'),
     props: true,
     meta: {}
   },
   {
     path: "/configuration/alarms",
     name: "Alarms",
-    component: () => import('@/views/Alarms.vue'),
+    component: () => import('@/views/configuration/Alarms.vue'),
     props: true,
     meta: {}
   },

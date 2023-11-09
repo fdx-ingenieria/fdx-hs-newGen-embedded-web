@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ISensor, ISensorData } from '@/commons';
+  import { ISensor } from '@/commons';
   import { RefreshIcon, SendIcon, ListIcon, PlayIcon, StopIcon, AlertIcon } from '@/components/icons';
   import SensorTable from '@/components/sensors/SensorTable.vue';
   import RightSideBar from '@/components/navigation/RightSideBar.vue';
@@ -8,48 +8,23 @@
   import { onMounted, watch, Ref, ref, onUnmounted, computed } from 'vue'
 
   const globalStore = useGlobalStore()
-  const { getAvailableSensors, getAvailableLabels, getSensorsData } = storeToRefs(globalStore)
+  const { getAvailableSensors, getAvailableLabels } = storeToRefs(globalStore)
   const showRightSideBar = ref(false)
   const editableSensor: Ref<ISensor> = ref({ id: 0, config: { equipment: 0, position: 0, location: 0 }})
   const configuredSensors: Ref<ISensor[]> = ref([])
   const unconfiguredSensors: Ref<ISensor[]> = ref([])
 
-  watch([getSensorsData], (newData) => {
-    const newAvailableSensors = newData.pop() || []
-    const availableSensorsIds = getAvailableSensors.value.map((item: ISensor) => item.id)
-
-    // Check if there are new sensors and update existing ones
-    newAvailableSensors.forEach((item: ISensorData) => {
-      if (!availableSensorsIds.includes(item.id)) {
-        globalStore.addNewSensor({
-          id: item.id,
-          config: {
-            equipment: 0,
-            position: 0,
-            location: 0
-          },
-          quality: item.quality,
-          rssid: item.rssid,
-        })
-      } else {
-        globalStore.updateSensorData(item)
-      }
-    })
-  })
-
-  watch([getAvailableSensors], (newData) => {
-    const newAvailableSensors = newData.pop() || []
-
+  watch(getAvailableSensors, (newData) => {
     configuredSensors.value = []
     unconfiguredSensors.value = []
-    newAvailableSensors.forEach((item: ISensor) => {
+    newData.forEach((item: ISensor) => {
       if (item.config.equipment && item.config.position && item.config.location) {
         configuredSensors.value.push(item)
       } else {
         unconfiguredSensors.value.push(item)
       }
     })
-    unconfiguredSensors.value.sort((a: ISensor, b: ISensor) => (a.rssid || 0) - (b.rssid || 0))
+    unconfiguredSensors.value.sort((a: ISensor, b: ISensor) => (a.data?.rssid || 0) - (b.data?.rssid || 0))
   })
 
   const isLimitReached = computed(() => {
@@ -75,15 +50,16 @@
 
   const saveSensor = () => {
     if (!isComplete()) return
-    const { id, config, quality, rssid, time_stamp } = editableSensor.value
-    const newSensorData = getAvailableSensors.value.map((item: ISensor) => {
+
+    const { id, config } = editableSensor.value
+    const newSensors = getAvailableSensors.value.map((item: ISensor) => {
       if (item.id === id) {
-        return { id, config, quality, rssid, time_stamp }
+        return { id, config }
       }
       return item
     })
 
-    globalStore.updateSensors(newSensorData)
+    globalStore.updateSensors(newSensors)
     showRightSideBar.value = false
   }
 
@@ -186,14 +162,14 @@
             </button>
           </div>
         </div>
-        <SensorTable :availableSensors="unconfiguredSensors" :unconfigured="true" :discovery="globalStore.getDiscoveryModeOn" @edit="editSensor" />
+        <SensorTable :availableSensors="unconfiguredSensors" :discovery="globalStore.getDiscoveryModeOn" @edit="editSensor" />
       </div>
       <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden mt-8">
         <div class="flex bg-fdx-dark text-white items-center py-2 px-4">
           <ListIcon class="h-6 hidden md:inline-flex mt-1 mr-2" />
           <h3 class="text-xl font-semibold">Configured sensors</h3>
         </div>
-        <SensorTable :availableSensors="configuredSensors" @edit="editSensor" @reset="resetSensor" :max="50" />
+        <SensorTable :availableSensors="configuredSensors" :showlabels="true" @edit="editSensor" @reset="resetSensor" :max="50" />
       </div>
     </div>
   </section>

@@ -30,9 +30,7 @@ export interface ISensorConfig {
 export interface ISensor {
   id: number;
   config: ISensorConfig;
-  quality?: SensorQuality;
-  rssid?: number;
-  time_stamp?: number;
+  data?: ISensorData;
 }
 
 export interface ISensorData {
@@ -54,11 +52,17 @@ export interface IAlarm {
   alarm_type: number;
   relay_flag: number;
   fields: IAlarmField[];
+  active?: boolean;
 }
 
 export interface IAlarmField {
   location: number;
   equipment: number;
+}
+
+export interface IAlarmState {
+  id: number;
+  alarm: boolean;
 }
 
 // System

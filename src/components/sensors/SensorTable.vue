@@ -14,13 +14,25 @@
       type: Boolean,
       default: false
     },
-    unconfigured : {
+    showlabels: {
       type: Boolean,
       default: false
+    },
+    showreset: {
+      type: Boolean,
+      default: false
+    },
+    showdata: {
+      type: Boolean,
+      default: false,
     },
     max: {
       type: Number,
       default: 0
+    },
+    readonly: {
+      type: Boolean,
+      default: false
     }
   })
 
@@ -60,30 +72,37 @@
       <thead class="text-xs text-gray-700 uppercase bg-gray-50">
         <tr>
           <th scope="col" class="px-4 py-3">Id</th>
-          <th v-if="!unconfigured" scope="col" class="px-4 py-3">{{ LabelType.EQUIPMENT }}</th>
-          <th v-if="!unconfigured" scope="col" class="px-4 py-3">{{ LabelType.POSITION }}</th>
-          <th v-if="!unconfigured" scope="col" class="px-4 py-3">{{ LabelType.LOCATION }}</th>
-          <th scope="col" class="px-4 py-3 text-center">Signal QTY</th>
-          <th scope="col" class="px-4 py-3 text-center">RSSID</th>
-          <th v-if="unconfigured" scope="col" class="px-4 py-3 hidden md:inline-block">Last update</th>
-          <th scope="col" class="px-4 py-3 hidden md:table-cell"><span class="sr-only">Actions</span></th>
+          <th v-if="showlabels" scope="col" class="px-4 py-3">{{ LabelType.EQUIPMENT }}</th>
+          <th v-if="showlabels" scope="col" class="px-4 py-3">{{ LabelType.POSITION }}</th>
+          <th v-if="showlabels" scope="col" class="px-4 py-3">{{ LabelType.LOCATION }}</th>
+          <th v-if="showdata" scope="col" class="px-4 py-3">Temp</th>
+          <th v-if="showdata" scope="col" class="px-4 py-3">Std desviation</th>
+          <th scope="col" class="px-4 py-3 text-center">Signal</th>
+          <th scope="col" class="px-4 py-3 hidden md:inline-block">Updated</th>
+          <th v-show="!readonly" scope="col" class="px-4 py-3 hidden md:table-cell"><span class="sr-only">Actions</span></th>
         </tr>
       </thead>
       <transition-group name="list" tag="tbody">
-        <tr @click="emit('edit', item.id)" v-for="item in availableSensors" class="border-b cursor-pointer hover:bg-gray-100" :key="`${item.id}`">
+        <tr @click="emit('edit', item.id)" v-for="item in availableSensors"
+          class="border-b hover:bg-gray-100" :key="`${item.id}`"
+          :class="{'cursor-pointer': !readonly}">
           <th scope="row" class="px-4 py-3 font-medium text-gray-900 ">{{ item.id.toString(16).toLocaleUpperCase() }}</th>
-          <td v-if="!unconfigured" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.EQUIPMENT, item.config.equipment) }}</td>
-          <td v-if="!unconfigured" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.POSITION, item.config.position) }}</td>
-          <td v-if="!unconfigured" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.LOCATION, item.config.location) }}</td>
+          <td v-if="showlabels" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.EQUIPMENT, item.config.equipment) }}</td>
+          <td v-if="showlabels" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.POSITION, item.config.position) }}</td>
+          <td v-if="showlabels" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.LOCATION, item.config.location) }}</td>
           <td class="px-4 py-3 text-center">
-            <span class="text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full"
-              :class="getQualityClass(item.quality)">
-              {{ item.quality }}
+            <span class="text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full relative"
+              :class="getQualityClass(item.data?.quality)">
+              {{ item.data?.quality }}
+              <small class="absolute -top-3 -right-2 rounded-full px-1 py-0.5"
+                :class="getQualityClass(item.data?.quality)" title="RSSID">
+                {{ item.data?.rssid }}
+              </small>
             </span>
           </td>
-          <td class="px-4 py-3 text-center">{{ item.rssid }}</td>
-          <td v-if="unconfigured" scope="col" class="px-4 py-3 hidden md:inline-block">{{ preatyDate(item.time_stamp) }}</td>
-          <td class="px-4 py-3 text-center hidden md:table-cell">
+          <!-- <td class="px-4 py-3 text-center">{{ item.data?.rssid }}</td> -->
+          <td scope="col" class="px-4 py-3 hidden md:inline-block">{{ preatyDate(item.data?.time_stamp) }}</td>
+          <td v-show="!readonly" class="px-4 py-3 text-center hidden md:table-cell">
               <button type="button"
                 @click="emit('edit', item.id)"
                 @click.stop
@@ -92,7 +111,7 @@
                 <span class="sr-only">Edit</span>
               </button>
               <button type="button"
-                v-if="!unconfigured"
+                v-if="showreset"
                 @click="emit('reset', item.id)"
                 @click.stop
                 class="text-white border border-red-500 bg-red-500 font-medium rounded-lg text-sm p-0.5 text-center inline-flex items-center mr-2">

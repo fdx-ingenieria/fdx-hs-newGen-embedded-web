@@ -1,4 +1,4 @@
-import { SocketStatus, SocketCommands, ILabelData, ISensor, LabelType, ISystem, ISensorData, IRequest, IAlarm } from '@/commons'
+import { SocketStatus, SocketCommands, ILabelData, ISensor, LabelType, ISystem, ISensorData, IRequest, IAlarm, IAlarmState } from '@/commons'
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
 
@@ -7,9 +7,11 @@ export const useGlobalStore = defineStore('global', () => {
   let socketInstace: WebSocket | null = null
   const status: Ref<SocketStatus> = ref(SocketStatus.CLOSED)
   const discoveryModeOn: Ref<boolean> = ref(false)
+  const normalModeOn: Ref<boolean> = ref(false)
   const availableLabels: Ref<ILabelData> = ref({} as ILabelData)
   const availableSensors: Ref<ISensor[]> = ref([])
   const availableAlarms: Ref<IAlarm[]> = ref([])
+  const alarmStates: Ref<IAlarmState[]> = ref([])
   const sensorsData: Ref<ISensorData[]> = ref([])
   const systeamData: Ref<ISystem> = ref({} as ISystem)
   const requestQueue: Array<IRequest> = [];
@@ -22,9 +24,13 @@ export const useGlobalStore = defineStore('global', () => {
   const getAvailableLabels = computed(() => availableLabels.value)
   const getAvailableSensors = computed(() => availableSensors.value)
   const getDiscoveryModeOn = computed(() => discoveryModeOn.value)
+  const getNormaModeOn = computed(() => normalModeOn.value)
   const getSystemData = computed(() => systeamData.value)
   const getSensorsData = computed(() => sensorsData.value)
+  const getConfiguredSensors = computed(() => availableSensors.value.filter(sensor => !!sensor.config.equipment))
   const getAvailableAlarms = computed(() => availableAlarms.value)
+  const getConfiguredAlarms = computed(() => availableAlarms.value.filter(alarm => !!alarm.alarm_type))
+  const getAlarmStates = computed(() => alarmStates.value)
 
   // Actions
   function connect(url: string) {
@@ -73,7 +79,12 @@ export const useGlobalStore = defineStore('global', () => {
     }
     if (cmd === SocketCommands.NEW_SENSOR_DATA && arg === 'get') {
       console.log('New sensor data received:', data)
-      sensorsData.value = data
+      updateSensorsData(data)
+      return
+    }
+    if (cmd === SocketCommands.ALARM_STATES && arg === 'get') {
+      console.log('New alarm states data received', data)
+      updateAlarmsStates(data)
       return
     }
     if (cmd === SocketCommands.HS_CONFIG && arg === 'get') {
@@ -81,6 +92,36 @@ export const useGlobalStore = defineStore('global', () => {
       systeamData.value = data
       return
     }
+  }
+
+  function updateAlarmsStates(data: IAlarmState[]) {
+    availableAlarms.value.forEach(alarm => {
+      const status = data.find(item => item.id === alarm.id)
+      alarm.active = status?.alarm || false
+    })
+    alarmStates.value = data
+  }
+
+  function updateSensorsData(data: ISensorData[]) {
+    const availableSensorsIds = availableSensors.value.map((item: ISensor) => item.id)
+
+    // Check if there are new sensors and update existing ones
+    data.forEach((item: ISensorData) => {
+      if (!availableSensorsIds.includes(item.id)) {
+        addNewSensor({
+          id: item.id,
+          config: {
+            equipment: 0,
+            position: 0,
+            location: 0
+          },
+          data: item,
+        })
+      } else {
+        updateSensorData(item)
+      }
+    })
+    sensorsData.value = data
   }
 
   function processRequests() {
@@ -153,9 +194,7 @@ export const useGlobalStore = defineStore('global', () => {
       if (sensor.id === sensorData.id) {
         return {
           ...sensor,
-          quality: sensorData.quality,
-          rssid: sensorData.rssid,
-          time_stamp: sensorData.time_stamp,
+          data: sensorData,
         }
       }
       return sensor
@@ -191,6 +230,16 @@ export const useGlobalStore = defineStore('global', () => {
       .then(() => loadSystemData())
   }
 
+  async function startNormalMode() {
+    normalModeOn.value = true
+    return addToRequestQueue({ cmd: SocketCommands.NORMAL_MODE, arg: "start", data: '' })
+  }
+
+  async function stopNormalMode() {
+    normalModeOn.value = false
+    return addToRequestQueue({ cmd: SocketCommands.NORMAL_MODE, arg: "stop", data: '' })
+  }
+
   return {
     status,
     getStatus,
@@ -202,15 +251,21 @@ export const useGlobalStore = defineStore('global', () => {
     loadSensors,
     updateSensors,
     getAvailableAlarms,
+    getConfiguredAlarms,
+    getAlarmStates,
     loadAlarms,
     updateAlarms,
     getDiscoveryModeOn,
+    getNormaModeOn,
     startDiscoveryMode,
     stopDiscoveryMode,
     getSystemData,
     loadSystemData,
     updateSystemData,
+    startNormalMode,
+    stopNormalMode,
     getSensorsData,
+    getConfiguredSensors,
     addNewSensor,
     updateSensorData,
     connect
