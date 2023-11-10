@@ -1,6 +1,12 @@
 import { LabelType, ModbusBitParity, SensorQuality } from "./enums";
 
 // Request
+export interface IRequestQueue {
+  request: IRequest;
+  resolve: (value: unknown) => void;
+  reject: (value: unknown) => void;
+}
+
 export interface IRequest {
   cmd: string;
   arg: string;
@@ -52,7 +58,7 @@ export interface IAlarm {
   alarm_type: number;
   relay_flag: number;
   fields: IAlarmField[];
-  active?: boolean;
+  state?: IAlarmData;
 }
 
 export interface IAlarmField {
@@ -60,9 +66,14 @@ export interface IAlarmField {
   equipment: number;
 }
 
-export interface IAlarmState {
-  id: number;
-  alarm: boolean;
+export interface ISensorState {
+  id: number; // long int
+  state: boolean;
+}
+export interface IAlarmData {
+  id: number; //int
+  state: boolean;
+  sensors: ISensorState[];
 }
 
 // System

@@ -1,4 +1,4 @@
-import { SocketStatus, SocketCommands, ILabelData, ISensor, LabelType, ISystem, ISensorData, IRequest, IAlarm, IAlarmState } from '@/commons'
+import { SocketStatus, SocketCommands, ILabelData, ISensor, LabelType, ISystem, ISensorData, IRequest, IAlarm, IAlarmData, IRequestQueue } from '@/commons'
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
 
@@ -11,10 +11,10 @@ export const useGlobalStore = defineStore('global', () => {
   const availableLabels: Ref<ILabelData> = ref({} as ILabelData)
   const availableSensors: Ref<ISensor[]> = ref([])
   const availableAlarms: Ref<IAlarm[]> = ref([])
-  const alarmStates: Ref<IAlarmState[]> = ref([])
+  const alarmsData: Ref<IAlarmData[]> = ref([])
   const sensorsData: Ref<ISensorData[]> = ref([])
   const systeamData: Ref<ISystem> = ref({} as ISystem)
-  const requestQueue: Array<IRequest> = [];
+  const requestQueue: Array<IRequestQueue> = [];
   let isProcessing: boolean = false;
 
   const wait = async(ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -30,7 +30,7 @@ export const useGlobalStore = defineStore('global', () => {
   const getConfiguredSensors = computed(() => availableSensors.value.filter(sensor => !!sensor.config.equipment))
   const getAvailableAlarms = computed(() => availableAlarms.value)
   const getConfiguredAlarms = computed(() => availableAlarms.value.filter(alarm => !!alarm.alarm_type))
-  const getAlarmStates = computed(() => alarmStates.value)
+  const getAlarmsData = computed(() => alarmsData.value)
 
   // Actions
   function connect(url: string) {
@@ -82,9 +82,9 @@ export const useGlobalStore = defineStore('global', () => {
       updateSensorsData(data)
       return
     }
-    if (cmd === SocketCommands.ALARM_STATES && arg === 'get') {
-      console.log('New alarm states data received', data)
-      updateAlarmsStates(data)
+    if (cmd === SocketCommands.ALARM_DATA && arg === 'get') {
+      console.log('New alarms data received', data)
+      updateAlarmsData(data)
       return
     }
     if (cmd === SocketCommands.HS_CONFIG && arg === 'get') {
@@ -94,12 +94,12 @@ export const useGlobalStore = defineStore('global', () => {
     }
   }
 
-  function updateAlarmsStates(data: IAlarmState[]) {
+  function updateAlarmsData(data: IAlarmData[]) {
     availableAlarms.value.forEach(alarm => {
       const status = data.find(item => item.id === alarm.id)
-      alarm.active = status?.alarm || false
+      alarm.state = status || undefined
     })
-    alarmStates.value = data
+    alarmsData.value = data
   }
 
   function updateSensorsData(data: ISensorData[]) {
@@ -124,31 +124,41 @@ export const useGlobalStore = defineStore('global', () => {
     sensorsData.value = data
   }
 
-  function processRequests() {
+  function processRequests(): void {
     if (!isProcessing && requestQueue.length) {
       isProcessing = true;
       const nextRequest = requestQueue.shift();
       if (!nextRequest) return
 
-      return send(nextRequest)
-        .then(() => console.log('Request processed:', nextRequest))
-        .catch(() => console.error('Unable to process the request:', nextRequest))
+      send(nextRequest.request)
+        .then(() => {
+          console.log('Request processed:', nextRequest)
+          nextRequest.resolve(true)
+        })
+        .catch(() => {
+          console.error('Unable to process the request:', nextRequest)
+          nextRequest.reject(false)
+        })
         .finally(async () => {
-          await wait(500);
+          await wait(5000);
           isProcessing = false;
           processRequests();
         });
     }
   }
 
-  function addToRequestQueue(request: IRequest): void {
-    requestQueue.push(request);
+  async function addToRequestQueue(request: IRequest): Promise<any> {
+    const process = new Promise((resolve, reject) => {
+      requestQueue.push({ request, resolve, reject }); // Agrega resolve y reject al pedido
+    });
     if (!isProcessing) {
       processRequests();
     }
+
+    return process;
   }
 
-  async function send(message: IRequest, attempt = 1) {
+  async function send(message: IRequest, attempt = 1): Promise<void> {
     if (status.value !== SocketStatus.OPEN) {
       if (attempt === maxRetries) {
         throw new Error("Socket is not connected");
@@ -162,13 +172,14 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   async function loadLabels(): Promise<void> {
-    addToRequestQueue({ cmd: SocketCommands.LABEL, arg: "get", data: '' })
+    return addToRequestQueue({ cmd: SocketCommands.LABEL, arg: "get", data: '' })
   }
 
   async function updateLabels(data: ILabelData): Promise<void> {
     // split data and send
-    addToRequestQueue({ cmd: SocketCommands.LABEL, arg: 'set', data })
-    loadLabels()
+    return addToRequestQueue({ cmd: SocketCommands.LABEL, arg: 'set', data })
+      .then(() => loadLabels())
+
   }
 
   function getLabelName(type: LabelType, index: number) {
@@ -176,13 +187,13 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   async function loadSensors(): Promise<void> {
-    addToRequestQueue({ cmd: SocketCommands.SENSOR_CONFIG, arg: "get_all", data: '' })
+    return addToRequestQueue({ cmd: SocketCommands.SENSOR_CONFIG, arg: "get_all", data: '' })
   }
 
   async function updateSensors(data: ISensor[]): Promise<void> {
     // split data and send
-    addToRequestQueue({ cmd: SocketCommands.SENSOR_CONFIG, arg: "set", data })
-    loadSensors()
+    return addToRequestQueue({ cmd: SocketCommands.SENSOR_CONFIG, arg: "set", data })
+      .then(() => loadSensors())
   }
 
   function addNewSensor(newSensor: ISensor): void {
@@ -202,43 +213,43 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   async function loadAlarms(): Promise<void> {
-    addToRequestQueue({ cmd: SocketCommands.ALARM_CONFIG, arg: "get", data: '' })
+    return addToRequestQueue({ cmd: SocketCommands.ALARM_CONFIG, arg: "get", data: '' })
   }
 
   async function updateAlarms(data: IAlarm[]): Promise<void> {
     // split data and send
-    addToRequestQueue({ cmd: SocketCommands.ALARM_CONFIG, arg: 'set', data })
-    loadAlarms()
+    return addToRequestQueue({ cmd: SocketCommands.ALARM_CONFIG, arg: 'set', data })
+      .then(() => loadAlarms())
   }
 
   async function startDiscoveryMode(): Promise<void> {
-    discoveryModeOn.value = true
-    addToRequestQueue({ cmd: SocketCommands.DISCOVERY, arg: "start", data: '' })
+    return addToRequestQueue({ cmd: SocketCommands.DISCOVERY, arg: "start", data: '' })
+      .then(() => { discoveryModeOn.value = true })
   }
 
   async function stopDiscoveryMode(): Promise<void> {
-    discoveryModeOn.value = false
-    addToRequestQueue({ cmd: SocketCommands.DISCOVERY, arg: "stop", data: '' })
-    startNormalMode()
+    return addToRequestQueue({ cmd: SocketCommands.DISCOVERY, arg: "stop", data: '' })
+      .then(() => { discoveryModeOn.value = false })
+      .then(() => startNormalMode())
   }
 
   async function loadSystemData(): Promise<void> {
-    addToRequestQueue({ cmd: SocketCommands.HS_CONFIG, arg: "get", data: '' })
+    return addToRequestQueue({ cmd: SocketCommands.HS_CONFIG, arg: "get", data: '' })
   }
 
   async function updateSystemData(data: ISystem): Promise<void> {
-    addToRequestQueue({ cmd: SocketCommands.HS_CONFIG, arg: "set", data })
-    loadSystemData()
+    return addToRequestQueue({ cmd: SocketCommands.HS_CONFIG, arg: "set", data })
+      .then(() => loadSystemData())
   }
 
   async function startNormalMode(): Promise<void> {
-    normalModeOn.value = true
-    addToRequestQueue({ cmd: SocketCommands.NORMAL_MODE, arg: "start", data: '' })
+    return addToRequestQueue({ cmd: SocketCommands.NORMAL_MODE, arg: "start", data: '' })
+      .then(() => { normalModeOn.value = true })
   }
 
   async function stopNormalMode(): Promise<void> {
-    normalModeOn.value = false
-    addToRequestQueue({ cmd: SocketCommands.NORMAL_MODE, arg: "stop", data: '' })
+    return addToRequestQueue({ cmd: SocketCommands.NORMAL_MODE, arg: "stop", data: '' })
+      .then(() => { normalModeOn.value = false })
   }
 
   return {
@@ -253,7 +264,7 @@ export const useGlobalStore = defineStore('global', () => {
     updateSensors,
     getAvailableAlarms,
     getConfiguredAlarms,
-    getAlarmStates,
+    getAlarmsData,
     loadAlarms,
     updateAlarms,
     getDiscoveryModeOn,
