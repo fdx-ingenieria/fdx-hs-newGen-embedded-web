@@ -3,7 +3,8 @@ import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
 
 export const useGlobalStore = defineStore('global', () => {
-  const maxRetries = 5
+  const maxRetries = parseInt(import.meta.env.VITE_MAX_RETRIES) || 5
+  const timeBetweenRequests = parseInt(import.meta.env.VITE_TIME_BETWEEN_REQUESTS) || 500
   let socketInstace: WebSocket | null = null
   const status: Ref<SocketStatus> = ref(SocketStatus.CLOSED)
   const discoveryModeOn: Ref<boolean> = ref(false)
@@ -17,7 +18,7 @@ export const useGlobalStore = defineStore('global', () => {
   const requestQueue: Array<IRequestQueue> = [];
   let isProcessing: boolean = false;
 
-  const wait = async(ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+  const sleep = async(ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
   // Getters
   const getStatus = computed(() => status.value)
@@ -140,7 +141,7 @@ export const useGlobalStore = defineStore('global', () => {
           nextRequest.reject(false)
         })
         .finally(async () => {
-          await wait(5000);
+          await sleep(timeBetweenRequests);
           isProcessing = false;
           processRequests();
         });
@@ -164,7 +165,7 @@ export const useGlobalStore = defineStore('global', () => {
         throw new Error("Socket is not connected");
       }
       console.error(`Socket is not connected. Cmd: ${message.cmd} Attempt ${attempt} of ${maxRetries}.`)
-      await wait(2000).then(() => send(message, attempt + 1))
+      await sleep(2000).then(() => send(message, attempt + 1))
       return
     }
     console.log('Sending message:', message)
