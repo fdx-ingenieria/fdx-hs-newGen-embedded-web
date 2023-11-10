@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ILabelData, LabelType } from '@/commons';
-  import { EditIcon, ListIcon, SendIcon } from '@/components/icons';
+  import { EditIcon, ListIcon, LoadingIcon, SendIcon } from '@/components/icons';
   import LabelTable from '@/components/labels/LabelTable.vue';
   import { useGlobalStore } from '@/stores/global'
   import { storeToRefs } from 'pinia';
@@ -14,6 +14,7 @@
   const activeTab = ref('equipment')
   const hasUnsavedChanges = ref(false)
   const isLargeScreen = ref(false)
+  const loading = ref(true)
   const { getAvailableLabels } = storeToRefs(globalStore)
 
   watch([getAvailableLabels], () => {
@@ -58,13 +59,15 @@
     }
     next()
   })
-  
+
   onMounted(async () => {
     sizeWatcher = window.matchMedia('(min-width: 1024px)')
     isLargeScreen.value = sizeWatcher.matches
     sizeWatcher.addEventListener('change', handleMqlChange)
     window.addEventListener("beforeunload", preventUnsaved)
+
     await globalStore.loadLabels()
+      .then(() => loading.value = false)
   })
 
   onUnmounted(() => {
@@ -102,7 +105,8 @@
         <transition-group name="slide-down-fade" appear tag="div" class="overflow-x-auto">
           <template v-for="labelType in LabelType" :key="labelType">
             <div v-if="activeTab === labelType">
-              <LabelTable :availableLabels="availableLabels[labelType]" :labelType="labelType" @edit="editLabel" />
+              <LoadingIcon v-if="loading" class="w-8 h-8 animate-spin text-fdx-red fill-white mx-auto my-4" />
+              <LabelTable v-else :availableLabels="availableLabels[labelType]" :labelType="labelType" @edit="editLabel" />
             </div>
           </template>
         </transition-group>
@@ -113,7 +117,8 @@
             <ListIcon class="w-6 mt-1 mr-2" />
             <h3 class="text-xl font-semibold">{{ labelType.toLocaleUpperCase() }}</h3>
           </div>
-          <LabelTable :availableLabels="availableLabels[labelType]" :labelType="labelType" @edit="editLabel" />
+          <LoadingIcon v-if="loading" class="w-8 h-8 animate-spin text-fdx-red fill-white mx-auto my-4" />
+          <LabelTable v-else :availableLabels="availableLabels[labelType]" :labelType="labelType" @edit="editLabel" />
         </div>
       </div>
       <div v-if="hasUnsavedChanges" class="fixed bottom-0 w-full p-4 text-blue-800 border-t-4 border-blue-300 bg-blue-50">
