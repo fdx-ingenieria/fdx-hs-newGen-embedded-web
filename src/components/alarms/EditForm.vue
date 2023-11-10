@@ -119,13 +119,13 @@
                 <td class="px-2 py-2">
                   <select v-model="field.equipment"
                     class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1.5">
-                    <option v-for="(item, index) in globalStore.getAvailableLabels.equipment" :value="index" :class="{'hidden': !index}">{{ item }}</option>
+                    <option v-for="(item, index) in globalStore.getAvailableLabels.equipment" :value="index" :class="{'hidden': !index || !item}">{{ item }}</option>
                   </select>
                 </td>
                 <td class="px-2 py-2">
                   <select v-model="field.location"
                     class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1.5">
-                    <option v-for="(item, index) in globalStore.getAvailableLabels.location" :value="index" :class="{'hidden': !index}">{{ item }}</option>
+                    <option v-for="(item, index) in globalStore.getAvailableLabels.location" :value="index" :class="{'hidden': !index || !item }">{{ item }}</option>
                   </select>
                 </td>
                 <td class="px-1 py-2">
