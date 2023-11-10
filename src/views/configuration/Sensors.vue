@@ -96,7 +96,7 @@
       <div class="grid gap-4 mb-4">
         <div>
           <label class="block mb-2 text-sm font-semibold text-gray-900">id</label>
-          <input type="text" :value="editableSensor.id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" disabled>
+          <input type="text" :value="editableSensor.id.toString(16).toLocaleUpperCase()" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" disabled>
         </div>
         <div>
           <label class="block mb-2 text-sm font-semibold text-gray-900">Equipment</label>

@@ -100,7 +100,6 @@
               </small>
             </span>
           </td>
-          <!-- <td class="px-4 py-3 text-center">{{ item.data?.rssid }}</td> -->
           <td scope="col" class="px-4 py-3 hidden md:inline-block">{{ preatyDate(item.data?.time_stamp) }}</td>
           <td v-show="!readonly" class="px-4 py-3 text-center hidden md:table-cell">
               <button type="button"
