@@ -104,16 +104,16 @@ alarm_stored_data = {
 
 qualityString = ['Out of service', 'Bad', 'Regular', 'Good', 'Excellent']
 
-async def sensorData(websocket):
+async def discoveryMode(websocket):
     # try:
-    print('Starting sensor Data')
+    print('Starting Discovery mode')
     while True:
         await asyncio.sleep(5)
         print('Sending sensor data')
         # Prepare the JSON response with the new sensor data
         response_data = {
             'cmd': 'new_sensor_data',
-            'arg': 'get',
+            'arg': 'get_all',
             'data': [],
             'status': 'ok',
         }
@@ -129,6 +129,7 @@ async def sensorData(websocket):
                 'time_stamp': int(time.time())
             })
         if random.randint(1, 10) < 2:
+            print('New sensor found')
             element = {
                 'id': random.randint(10000000000000, 99999999999999),
                 'avg_temp': round(random.uniform(20, 30), 2),
@@ -155,9 +156,59 @@ async def sensorData(websocket):
     # except:
     #     print ("Task ended")
 
+async def normalMode(websocket):
+    print('Starting Normal mode')
+    while True:
+        await asyncio.sleep(15)
+        print('Sending sensor data')
+        # Prepare the JSON response with the new sensor data
+        response_data = {
+            'cmd': 'new_sensor_data',
+            'arg': 'get_all',
+            'data': [],
+            'status': 'ok',
+        }
+        for i in sensors_stored_data['data']:
+            response_data['data'].append({
+                'id': i['id'],
+                'avg_temp': round(random.uniform(20, 30), 2),
+                'temp': round(random.uniform(20, 30), 2),
+                'std_dev': round(random.uniform(0, 5), 2),
+                'n_readings': random.randint(0, 15),
+                'quality': qualityString[random.randint(0, 4)],
+                'rssid': random.randint(0, 100),
+                'time_stamp': int(time.time())
+            })
+
+        # Convert the response to JSON and send it back to the client
+        response = json.dumps(response_data)
+        await websocket.send(response)
+
+        print('Sending alarms data')
+        # Prepare the JSON response with the new sensor data
+        response_data = {
+            'cmd': 'alarm_data',
+            'arg': 'get_all',
+            'data': [],
+            'status': 'ok',
+        }
+        for i in alarm_stored_data['data']:
+            response_data['data'].append({
+                'id': i['id'],
+                'state': random.randint(0, 1),
+                'sensors': [],
+            })
+
+        # Convert the response to JSON and send it back to the client
+        response = json.dumps(response_data)
+        await websocket.send(response)
+    # except:
+    #     print ("Task ended")
+
 
 async def handle_websocket(websocket, path):
-    sensorDataTask = None
+    discoveryModeTask = None
+    normalModeTask = None
     try:
         # Handle messages received from the client
         async for message in websocket:
@@ -222,11 +273,11 @@ async def handle_websocket(websocket, path):
                     await websocket.send(response)
             # Labels
             elif "cmd" in received_data and received_data["cmd"] == "label":
-                if "arg" in received_data and received_data["arg"] == "get":
+                if "arg" in received_data and received_data["arg"] == "get_all":
                     # Prepare the JSON response with the stored data
                     response_data = {
                         'cmd': 'label',
-                        'arg': 'get',
+                        'arg': 'get_all',
                         'data': labels_stored_data,
                         'status': 'ok',
                     }
@@ -234,23 +285,11 @@ async def handle_websocket(websocket, path):
                     response = json.dumps(response_data)
                     await websocket.send(response)
 
-                elif "arg" in received_data and received_data["arg"] == "set":
+                elif "arg" in received_data and received_data["arg"] == "set_all":
                     # Check if the "data" field is present in the received message
                     if "data" in received_data:
                         # Update the labels_stored_data with the new value from "data"
                         labels_stored_data.update(received_data["data"])
-
-                        # Segun lo hablado con Facu no hay respuesta para este comando
-                        # # Send a success response back to the client
-                        # response_data = {
-                        #     'cmd': 'label',
-                        #     'arg': 'set',
-                        #     'data': labels_stored_data,
-                        #     'status': 'ok',
-                        # }
-
-                        # response = json.dumps(response_data)
-                        # await websocket.send(response)
                     else:
                         # If "data" field is missing in the received message, send an error response
                         response_data = {
@@ -269,11 +308,11 @@ async def handle_websocket(websocket, path):
                     await websocket.send(response)
             # Alarm Config
             elif "cmd" in received_data and received_data["cmd"] == "alarm_config":
-                if "arg" in received_data and received_data["arg"] == "get":
+                if "arg" in received_data and received_data["arg"] == "get_all":
                     # Prepare the JSON response with the stored data
                     response_data = {
                         'cmd': 'alarm_config',
-                        'arg': 'get',
+                        'arg': 'get_all',
                         'data': alarm_stored_data.get('data'),
                         'status': 'ok',
                     }
@@ -281,7 +320,7 @@ async def handle_websocket(websocket, path):
                     response = json.dumps(response_data)
                     await websocket.send(response)
 
-                elif "arg" in received_data and received_data["arg"] == "set":
+                elif "arg" in received_data and received_data["arg"] == "set_all":
                     # Check if the "data" field is present in the received message
                     if "data" in received_data:
                         # Update the alarm_stored_data with the new value from "data"
@@ -317,23 +356,11 @@ async def handle_websocket(websocket, path):
                     response = json.dumps(response_data)
                     await websocket.send(response)
 
-                elif "arg" in received_data and received_data["arg"] == "set":
+                elif "arg" in received_data and received_data["arg"] == "set_all":
                     # Check if the "data" field is present in the received message
                     if "data" in received_data:
                         # Update the sensors_stored_data with the new value from "data"
                         sensors_stored_data.update({'data':received_data["data"]})
-
-                        # Segun lo hablado con Facu no hay respuesta para este comando
-                        # # Send a success response back to the client
-                        # response_data = {
-                        #     'cmd': 'sensor_config',
-                        #     'arg': 'set',
-                        #     'data': sensors_stored_data.get('data'),
-                        #     'status': 'ok',
-                        # }
-
-                        # response = json.dumps(response_data)
-                        # await websocket.send(response)
                     else:
                         # If "data" field is missing in the received message, send an error response
                         response_data = {
@@ -353,16 +380,16 @@ async def handle_websocket(websocket, path):
             # Sensor Discovery
             elif "cmd" in received_data and received_data["cmd"] == "discovery":
                 if "arg" in received_data and received_data["arg"] == "start":
-                    if sensorDataTask is None:
-                        sensorDataTask = asyncio.create_task(sensorData(websocket))
+                    if discoveryModeTask is None:
+                        discoveryModeTask = asyncio.create_task(discoveryMode(websocket))
                     else:
-                        print('Task already running')
+                        print('Discovery mode already started')
                 elif "arg" in received_data and received_data["arg"] == "stop":
-                    if sensorDataTask is not None:
-                        sensorDataTask.cancel()
-                        sensorDataTask = None
+                    if discoveryModeTask is not None:
+                        discoveryModeTask.cancel()
+                        discoveryModeTask = None
                     else:
-                        print('Task already stopped')
+                        print('Discovery mode is already stopped')
                 else:
                     # If the received "arg" is not "get", send an error response
                     response_data = {
@@ -374,16 +401,16 @@ async def handle_websocket(websocket, path):
             # Normal Mode
             elif "cmd" in received_data and received_data["cmd"] == "normal_mode":
                 if "arg" in received_data and received_data["arg"] == "start":
-                    if sensorDataTask is None:
-                        sensorDataTask = asyncio.create_task(sensorData(websocket))
+                    if normalModeTask is None:
+                        normalModeTask = asyncio.create_task(normalMode(websocket))
                     else:
-                        print('Task already running')
+                        print('Normal mode is already started')
                 elif "arg" in received_data and received_data["arg"] == "stop":
-                    if sensorDataTask is not None:
-                        sensorDataTask.cancel()
-                        sensorDataTask = None
+                    if normalModeTask is not None:
+                        normalModeTask.cancel()
+                        normalModeTask = None
                     else:
-                        print('Task already stopped')
+                        print('Normal mode is already stopped')
                 else:
                     # If the received "arg" is not "get", send an error response
                     response_data = {
