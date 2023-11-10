@@ -102,8 +102,8 @@
       </thead>
       <transition-group name="list" tag="tbody">
         <tr @click="emit('edit', item.id)" v-for="item in localAvailableAlarms"
-          class="border-b hover:bg-gray-100" :key="`${item.id}`"
-          :class="{'cursor-ppointer': !readonly, 'bg-red-200': item.active}">
+          class="border-b hover:bg-gray-100 cursor-pointer" :key="`${item.id}`"
+          :class="{'cursor-ppointer': !readonly, 'bg-red-200': item.status?.state}">
           <th scope="row" class="px-4 py-3 font-medium text-gray-900 ">{{ item.id }}</th>
           <td class="px-4 py-3" v-html="searcHighlight(item.name)"></td>
           <td class="px-4 py-3" v-html="searcHighlight(AlarmType[item.alarm_type])"></td>

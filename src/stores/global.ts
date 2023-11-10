@@ -65,7 +65,7 @@ export const useGlobalStore = defineStore('global', () => {
       console.error('Invalid message received:', event.data)
       return
     }
-    if (cmd === SocketCommands.LABEL && arg === 'get') {
+    if (cmd === SocketCommands.LABEL && arg === 'get_all') {
       availableLabels.value = data
       return
     }
@@ -73,17 +73,17 @@ export const useGlobalStore = defineStore('global', () => {
       availableSensors.value = data
       return
     }
-    if (cmd === SocketCommands.ALARM_CONFIG && arg === 'get') {
+    if (cmd === SocketCommands.ALARM_CONFIG && arg === 'get_all') {
       console.log('New alarm data received:', data)
       availableAlarms.value = data
       return
     }
-    if (cmd === SocketCommands.NEW_SENSOR_DATA && arg === 'get') {
+    if (cmd === SocketCommands.NEW_SENSOR_DATA && arg === 'get_all') {
       console.log('New sensor data received:', data)
       updateSensorsData(data)
       return
     }
-    if (cmd === SocketCommands.ALARM_DATA && arg === 'get') {
+    if (cmd === SocketCommands.ALARM_DATA && arg === 'get_all') {
       console.log('New alarms data received', data)
       updateAlarmsData(data)
       return
@@ -98,7 +98,7 @@ export const useGlobalStore = defineStore('global', () => {
   function updateAlarmsData(data: IAlarmData[]) {
     availableAlarms.value.forEach(alarm => {
       const status = data.find(item => item.id === alarm.id)
-      alarm.state = status || undefined
+      alarm.status = status || undefined
     })
     alarmsData.value = data
   }
@@ -173,12 +173,12 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   async function loadLabels(): Promise<void> {
-    return addToRequestQueue({ cmd: SocketCommands.LABEL, arg: "get", data: '' })
+    return addToRequestQueue({ cmd: SocketCommands.LABEL, arg: "get_all", data: '' })
   }
 
   async function updateLabels(data: ILabelData): Promise<void> {
     // split data and send
-    return addToRequestQueue({ cmd: SocketCommands.LABEL, arg: 'set', data })
+    return addToRequestQueue({ cmd: SocketCommands.LABEL, arg: 'set_all', data })
       .then(() => loadLabels())
 
   }
@@ -193,7 +193,7 @@ export const useGlobalStore = defineStore('global', () => {
 
   async function updateSensors(data: ISensor[]): Promise<void> {
     // split data and send
-    return addToRequestQueue({ cmd: SocketCommands.SENSOR_CONFIG, arg: "set", data })
+    return addToRequestQueue({ cmd: SocketCommands.SENSOR_CONFIG, arg: "set_all", data })
       .then(() => loadSensors())
   }
 
@@ -214,12 +214,12 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   async function loadAlarms(): Promise<void> {
-    return addToRequestQueue({ cmd: SocketCommands.ALARM_CONFIG, arg: "get", data: '' })
+    return addToRequestQueue({ cmd: SocketCommands.ALARM_CONFIG, arg: "get_all", data: '' })
   }
 
   async function updateAlarms(data: IAlarm[]): Promise<void> {
     // split data and send
-    return addToRequestQueue({ cmd: SocketCommands.ALARM_CONFIG, arg: 'set', data })
+    return addToRequestQueue({ cmd: SocketCommands.ALARM_CONFIG, arg: 'set_all', data })
       .then(() => loadAlarms())
   }
 

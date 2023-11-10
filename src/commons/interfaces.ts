@@ -58,7 +58,7 @@ export interface IAlarm {
   alarm_type: number;
   relay_flag: number;
   fields: IAlarmField[];
-  state?: IAlarmData;
+  status?: IAlarmData;
 }
 
 export interface IAlarmField {

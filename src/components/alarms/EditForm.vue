@@ -2,9 +2,10 @@
   import { ref, Ref, watch } from 'vue';
   import { AlarmType, IAlarm, ReleFlag } from '@/commons';
   import { useGlobalStore } from '@/stores/global';
-  import { PlusIcon, RemoveIcon, SendIcon } from '../icons';
+  import { LoadingIcon, PlusIcon, RemoveIcon, SendIcon } from '../icons';
 
   const localValue: Ref<IAlarm> = ref({} as IAlarm)
+  const savingData = ref(false)
 
   const props = defineProps({
     alarmId: {
@@ -33,13 +34,16 @@
   }
 
   const save = () => {
+    savingData.value = true
     const dirtyAlarms = [...globalStore.getAvailableAlarms].map(item => {
       if (item.id === localValue.value.id) {
         return localValue.value
       }
       return item
     })
-    globalStore.updateAlarms(dirtyAlarms).then(() => emit('close'))
+    globalStore.updateAlarms(dirtyAlarms)
+      .then(() => emit('close'))
+      .finally(() => savingData.value = false)
   }
 
   const addFieldRow = () => localValue.value.fields.push({ equipment:0, location: 0})
@@ -129,17 +133,20 @@
                   </select>
                 </td>
                 <td class="px-1 py-2">
-                  <button type="button"
+                  <button class="text-red-600 disabled:opacity-50 hover:text-red-700 hover:scale-125 flex font-semibold px-1 py-1 focus:outline-none"
                     @click="removeFieldRow(index)"
-                    class="text-red-600 hover:text-red-700 hover:scale-125 flex font-semibold px-1 py-1 focus:outline-none">
+                    :disabled="savingData"
+                    type="button">
                     <RemoveIcon class="w-5" />
                   </button>
                 </td>
               </tr>
             </tbody>
           </table>
-          <button @click="addFieldRow()" type="button"
-            class="text-white flex items-center mx-auto bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-5 py-1.5 my-2 focus:outline-none">
+          <button class="text-white flex items-center disabled:opacity-50 mx-auto bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-5 py-1.5 my-2 focus:outline-none"
+            @click="addFieldRow()"
+            :disabled="savingData"
+            type="button">
             <PlusIcon class="w-5 mr-1" />
             Add new row
           </button>
@@ -147,13 +154,23 @@
       </div>
     </div>
     <div class="flex items-center space-x-4">
-      <button @click="save()" :disabled="!isComplete()" type="button"
-        class="text-white flex items-center disabled:opacity-50 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2 focus:outline-none">
-        <SendIcon class="w-4 mr-1" />
-        Save
+      <button class="text-white flex items-center disabled:opacity-50 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2 focus:outline-none"
+        @click="save()"
+        :disabled="!isComplete() || savingData"
+        type="button">
+        <template v-if="savingData">
+            <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto mr-1" />
+            Saving...
+          </template>
+          <template v-else>
+            <SendIcon class="w-4 mr-1" />
+            Save
+          </template>
       </button>
-      <button @click="emit('close')" type="button"
-        class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2">Cancel</button>
+      <button class="text-gray-900 bg-white border disabled:opacity-50 border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2"
+        @click="emit('close')"
+        :disabled="savingData"
+        type="button">Cancel</button>
     </div>
   </div>
 </template>
