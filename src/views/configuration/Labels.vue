@@ -1,10 +1,10 @@
 <script setup lang="ts">
   import { ILabelData, LabelType } from '@/commons';
-  import { EditIcon, ListIcon, LoadingIcon, SendIcon } from '@/components/icons';
+  import { AlertIcon, EditIcon, ListIcon, LoadingIcon, SendIcon } from '@/components/icons';
   import LabelTable from '@/components/labels/LabelTable.vue';
   import { useGlobalStore } from '@/stores/global'
   import { storeToRefs } from 'pinia';
-  import { Ref, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { Ref, computed, onMounted, onUnmounted, ref, watch } from 'vue'
   import { onBeforeRouteLeave } from 'vue-router';
 
   const globalStore = useGlobalStore()
@@ -31,6 +31,18 @@
       hasUnsavedChanges.value = false
     }
   }
+
+  const hasDuplicateLabel = (labels: string[]): boolean => {
+    const uniqueLabels = new Set(labels);
+    return labels.length !== uniqueLabels.size;
+  };
+
+  const hasAnyDuplicateLabel = computed((): boolean => {
+    const labelTypes = Object.values(LabelType);
+    return labelTypes.some(type => hasDuplicateLabel(availableLabels.value[type]));
+  });
+  
+
 
   const saveLabel = () => {
     savingData.value = true
@@ -124,13 +136,21 @@
           <LabelTable v-else :availableLabels="availableLabels[labelType]" :labelType="labelType" @edit="editLabel" />
         </div>
       </div>
-      <div v-if="hasUnsavedChanges" class="fixed bottom-0 w-full p-4 text-blue-800 border-t-4 border-blue-300 bg-blue-50">
+      <div v-if="hasUnsavedChanges"
+        class="fixed bottom-0 w-full p-4 text-blue-800 border-t-4 border-blue-300 bg-blue-50"
+        :class="{'text-red-800 border-red-300 bg-red-50': hasAnyDuplicateLabel}">
         <div class="ml-3 text-sm font-medium flex items-center">
-          <EditIcon class="w-4 mr-1" />
-          Oops, unsaved changes alert! Time to save the day!
+          <template v-if="hasAnyDuplicateLabel">
+            <AlertIcon class="w-4 mr-1" />
+            Oops, duplicate labels! Please fix them before saving.
+          </template>
+          <template v-else>
+            <EditIcon class="w-4 mr-1" />
+            Oops, unsaved changes alert! Time to save the day!
+          </template>
           <button class="text-white disabled:opacity-50 text-center inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-xs px-3 ml-3 py-1.5 focus:outline-none"
             @click="saveLabel()"
-            :disabled="savingData"
+            :disabled="savingData || hasAnyDuplicateLabel"
             type="button" >
             <template v-if="savingData">
               <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto mr-1" />
