@@ -141,7 +141,7 @@ export const useGlobalStore = defineStore('global', () => {
     }
   }
 
-  async function addToRequestQueue(request: IRequest) {
+  function addToRequestQueue(request: IRequest): void {
     requestQueue.push(request);
     if (!isProcessing) {
       processRequests();
@@ -161,28 +161,28 @@ export const useGlobalStore = defineStore('global', () => {
     socketInstace?.send(JSON.stringify(message))
   }
 
-  async function loadLabels() {
-    return addToRequestQueue({ cmd: SocketCommands.LABEL, arg: "get", data: '' })
+  async function loadLabels(): Promise<void> {
+    addToRequestQueue({ cmd: SocketCommands.LABEL, arg: "get", data: '' })
   }
 
-  async function updateLabels(data: ILabelData) {
+  async function updateLabels(data: ILabelData): Promise<void> {
     // split data and send
-    return addToRequestQueue({ cmd: SocketCommands.LABEL, arg: 'set', data })
-      .then(() => loadLabels())
+    addToRequestQueue({ cmd: SocketCommands.LABEL, arg: 'set', data })
+    loadLabels()
   }
 
   function getLabelName(type: LabelType, index: number) {
     return getAvailableLabels.value[type][index] || 'Not found'
   }
 
-  async function loadSensors() {
-    return addToRequestQueue({ cmd: SocketCommands.SENSOR_CONFIG, arg: "get_all", data: '' })
+  async function loadSensors(): Promise<void> {
+    addToRequestQueue({ cmd: SocketCommands.SENSOR_CONFIG, arg: "get_all", data: '' })
   }
 
-  async function updateSensors(data: ISensor[]) {
+  async function updateSensors(data: ISensor[]): Promise<void> {
     // split data and send
-    return addToRequestQueue({ cmd: SocketCommands.SENSOR_CONFIG, arg: "set", data })
-      .then(() => loadSensors())
+    addToRequestQueue({ cmd: SocketCommands.SENSOR_CONFIG, arg: "set", data })
+    loadSensors()
   }
 
   function addNewSensor(newSensor: ISensor): void {
@@ -201,43 +201,44 @@ export const useGlobalStore = defineStore('global', () => {
     })
   }
 
-  async function loadAlarms() {
-    return addToRequestQueue({ cmd: SocketCommands.ALARM_CONFIG, arg: "get", data: '' })
+  async function loadAlarms(): Promise<void> {
+    addToRequestQueue({ cmd: SocketCommands.ALARM_CONFIG, arg: "get", data: '' })
   }
 
-  async function updateAlarms(data: IAlarm[]) {
+  async function updateAlarms(data: IAlarm[]): Promise<void> {
     // split data and send
-    return addToRequestQueue({ cmd: SocketCommands.ALARM_CONFIG, arg: 'set', data })
-      .then(() => loadAlarms())
+    addToRequestQueue({ cmd: SocketCommands.ALARM_CONFIG, arg: 'set', data })
+    loadAlarms()
   }
 
-  async function startDiscoveryMode() {
+  async function startDiscoveryMode(): Promise<void> {
     discoveryModeOn.value = true
-    return addToRequestQueue({ cmd: SocketCommands.DISCOVERY, arg: "start", data: '' })
+    addToRequestQueue({ cmd: SocketCommands.DISCOVERY, arg: "start", data: '' })
   }
 
-  async function stopDiscoveryMode() {
+  async function stopDiscoveryMode(): Promise<void> {
     discoveryModeOn.value = false
-    return addToRequestQueue({ cmd: SocketCommands.DISCOVERY, arg: "stop", data: '' })
+    addToRequestQueue({ cmd: SocketCommands.DISCOVERY, arg: "stop", data: '' })
+    startNormalMode()
   }
 
-  async function loadSystemData() {
-    return addToRequestQueue({ cmd: SocketCommands.HS_CONFIG, arg: "get", data: '' })
+  async function loadSystemData(): Promise<void> {
+    addToRequestQueue({ cmd: SocketCommands.HS_CONFIG, arg: "get", data: '' })
   }
 
-  async function updateSystemData(data: ISystem) {
-    return addToRequestQueue({ cmd: SocketCommands.HS_CONFIG, arg: "set", data })
-      .then(() => loadSystemData())
+  async function updateSystemData(data: ISystem): Promise<void> {
+    addToRequestQueue({ cmd: SocketCommands.HS_CONFIG, arg: "set", data })
+    loadSystemData()
   }
 
-  async function startNormalMode() {
+  async function startNormalMode(): Promise<void> {
     normalModeOn.value = true
-    return addToRequestQueue({ cmd: SocketCommands.NORMAL_MODE, arg: "start", data: '' })
+    addToRequestQueue({ cmd: SocketCommands.NORMAL_MODE, arg: "start", data: '' })
   }
 
-  async function stopNormalMode() {
+  async function stopNormalMode(): Promise<void> {
     normalModeOn.value = false
-    return addToRequestQueue({ cmd: SocketCommands.NORMAL_MODE, arg: "stop", data: '' })
+    addToRequestQueue({ cmd: SocketCommands.NORMAL_MODE, arg: "stop", data: '' })
   }
 
   return {
