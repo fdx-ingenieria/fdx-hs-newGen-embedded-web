@@ -126,7 +126,7 @@
       <span class="font-medium">Nothing found.</span> It seems the data is on a coffee break.
     </div>
     <div v-if="discovery" class="w-full flex justify-center items-center mt-6 animate-pulse">
-      <LoadingIcon class="animate-spin fill-white text-green-600 w-8 opacity-80 mr-2" />
+      <LoadingIcon class="animate-spin fill-transparent text-green-600 w-8 opacity-80 mr-2" />
       <span class="font-bold text-gray-600">Discovering .... stay tuned!</span>
     </div>
     <nav class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0 p-4">

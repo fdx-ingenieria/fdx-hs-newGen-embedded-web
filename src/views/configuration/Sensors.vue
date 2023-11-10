@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ISensor } from '@/commons';
-  import { RefreshIcon, SendIcon, ListIcon, PlayIcon, StopIcon, AlertIcon } from '@/components/icons';
+  import { RefreshIcon, SendIcon, ListIcon, PlayIcon, StopIcon, AlertIcon, LoadingIcon } from '@/components/icons';
   import SensorTable from '@/components/sensors/SensorTable.vue';
   import RightSideBar from '@/components/navigation/RightSideBar.vue';
   import { useGlobalStore } from '@/stores/global'
@@ -10,6 +10,8 @@
   const globalStore = useGlobalStore()
   const { getAvailableSensors, getAvailableLabels } = storeToRefs(globalStore)
   const showRightSideBar = ref(false)
+  const loadingData = ref(true)
+  const savingData = ref(false)
   const editableSensor: Ref<ISensor> = ref({ id: 0, config: { equipment: 0, position: 0, location: 0 }})
   const configuredSensors: Ref<ISensor[]> = ref([])
   const unconfiguredSensors: Ref<ISensor[]> = ref([])
@@ -51,6 +53,7 @@
   const saveSensor = () => {
     if (!isComplete()) return
 
+    savingData.value = true
     const { id, config } = editableSensor.value
     const newSensors = getAvailableSensors.value.map((item: ISensor) => {
       if (item.id === id) {
@@ -60,7 +63,8 @@
     })
 
     globalStore.updateSensors(newSensors)
-    showRightSideBar.value = false
+      .then(() => showRightSideBar.value = false)
+      .finally(() => savingData.value = false)
   }
 
   const resetSensor = (id: number) => {
@@ -79,7 +83,7 @@
     await Promise.all([
       globalStore.loadLabels(),
       globalStore.loadSensors()
-    ])
+    ]).then(() => loadingData.value = false)
   })
 
   onUnmounted(() => {
@@ -127,15 +131,30 @@
         </div>
       </div>
       <div class="flex items-center space-x-4">
-        <button @click="saveSensor()" :disabled="!isComplete()" type="button" class="text-white flex disabled:opacity-50 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2 focus:outline-none">
-          <SendIcon class="w-4 mr-1" />
-          Save
+        <button class="text-white flex disabled:opacity-50 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2 focus:outline-none"
+          @click="saveSensor()"
+          :disabled="!isComplete() || savingData"
+          type="button" >
+          <template v-if="savingData">
+            <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto mr-1" />
+            Saving...
+          </template>
+          <template v-else>
+            <SendIcon class="w-4 mr-1" />
+            Save
+          </template>
         </button>
-        <button @click="resetSensor(editableSensor.id)" type="button" class="text-white flex disabled:opacity-50 bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2 focus:outline-none">
+        <button class="text-white flex disabled:opacity-50 bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2 focus:outline-none"
+          @click="resetSensor(editableSensor.id)"
+          :disabled="savingData"
+          type="button" >
           <RefreshIcon class="w-5 mr-1" />
           Reset
         </button>
-        <button @click="showRightSideBar = false" type="button" class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2">Cancel</button>
+        <button class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2"
+          @click="showRightSideBar = false"
+          :disabled="savingData"
+          type="button" >Cancel</button>
       </div>
     </RightSideBar>
     <div class="mx-auto">
@@ -149,7 +168,8 @@
             <button type="button"
               v-if="!globalStore.getDiscoveryModeOn"
               @click="globalStore.startDiscoveryMode()"
-              class="inline-flex items-center text-green-700 bg-white border border-gray-300 focus:outline-none hover:bg-green-700 hover:border-green-700 hover:text-white focus:ring-0 font-semibold rounded-md text-sm sm:text-md px-3 py-.5">
+              :disabled="loadingData"
+              class="inline-flex items-center disabled:opacity-50 text-green-700 bg-white border border-gray-300 focus:outline-none hover:bg-green-700 hover:border-green-700 hover:text-white focus:ring-0 font-semibold rounded-md text-sm sm:text-md px-3 py-.5">
               <PlayIcon class="h-5 mr-1"/>
               Start
             </button>
@@ -162,14 +182,16 @@
             </button>
           </div>
         </div>
-        <SensorTable :availableSensors="unconfiguredSensors" :discovery="globalStore.getDiscoveryModeOn" @edit="editSensor" />
+        <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-4" />
+        <SensorTable v-else :availableSensors="unconfiguredSensors" :discovery="globalStore.getDiscoveryModeOn" @edit="editSensor" />
       </div>
       <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden mt-8">
         <div class="flex bg-fdx-dark text-white items-center py-2 px-4">
           <ListIcon class="h-6 hidden md:inline-flex mt-1 mr-2" />
           <h3 class="text-xl font-semibold">Configured sensors</h3>
         </div>
-        <SensorTable :availableSensors="configuredSensors" :showlabels="true" @edit="editSensor" @reset="resetSensor" :max="50" />
+        <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-4" />
+        <SensorTable v-else :availableSensors="configuredSensors" :showlabels="true" @edit="editSensor" @reset="resetSensor" :max="50" />
       </div>
     </div>
   </section>

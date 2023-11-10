@@ -14,10 +14,11 @@
   const activeTab = ref('equipment')
   const hasUnsavedChanges = ref(false)
   const isLargeScreen = ref(false)
-  const loading = ref(true)
+  const loadingData = ref(true)
+  const savingData = ref(false)
   const { getAvailableLabels } = storeToRefs(globalStore)
 
-  watch([getAvailableLabels], () => {
+  watch(getAvailableLabels, () => {
     // force deep copy
     availableLabels.value = JSON.parse(JSON.stringify(globalStore.getAvailableLabels))
   })
@@ -32,8 +33,10 @@
   }
 
   const saveLabel = () => {
+    savingData.value = true
     globalStore.updateLabels(availableLabels.value)
-    hasUnsavedChanges.value = false
+      .then(() => hasUnsavedChanges.value = false)
+      .finally(() => savingData.value = false)
   }
 
   const getTabClass = (type: LabelType) => {
@@ -67,7 +70,7 @@
     window.addEventListener("beforeunload", preventUnsaved)
 
     await globalStore.loadLabels()
-      .then(() => loading.value = false)
+      .then(() => loadingData.value = false)
   })
 
   onUnmounted(() => {
@@ -105,7 +108,7 @@
         <transition-group name="slide-down-fade" appear tag="div" class="overflow-x-auto">
           <template v-for="labelType in LabelType" :key="labelType">
             <div v-if="activeTab === labelType">
-              <LoadingIcon v-if="loading" class="w-8 h-8 animate-spin text-fdx-red fill-white mx-auto my-4" />
+              <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-4" />
               <LabelTable v-else :availableLabels="availableLabels[labelType]" :labelType="labelType" @edit="editLabel" />
             </div>
           </template>
@@ -117,7 +120,7 @@
             <ListIcon class="w-6 mt-1 mr-2" />
             <h3 class="text-xl font-semibold">{{ labelType.toLocaleUpperCase() }}</h3>
           </div>
-          <LoadingIcon v-if="loading" class="w-8 h-8 animate-spin text-fdx-red fill-white mx-auto my-4" />
+          <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-4" />
           <LabelTable v-else :availableLabels="availableLabels[labelType]" :labelType="labelType" @edit="editLabel" />
         </div>
       </div>
@@ -125,9 +128,18 @@
         <div class="ml-3 text-sm font-medium flex items-center">
           <EditIcon class="w-4 mr-1" />
           Oops, unsaved changes alert! Time to save the day!
-          <button @click="saveLabel()" type="button" class="text-white disabled:opacity-50 text-center inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-xs px-3 ml-3 py-1.5 focus:outline-none">
-            <SendIcon class="w-4 mr-1" />
-            Save
+          <button class="text-white disabled:opacity-50 text-center inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-xs px-3 ml-3 py-1.5 focus:outline-none"
+            @click="saveLabel()"
+            :disabled="savingData"
+            type="button" >
+            <template v-if="savingData">
+              <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto mr-1" />
+              Saving...
+            </template>
+            <template v-else>
+              <SendIcon class="w-4 mr-1" />
+              Save
+            </template>
           </button>
         </div>
       </div>
