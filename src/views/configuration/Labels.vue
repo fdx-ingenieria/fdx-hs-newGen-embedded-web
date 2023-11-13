@@ -33,16 +33,16 @@
   }
 
   const hasDuplicateLabel = (labels: string[]): boolean => {
-    const uniqueLabels = new Set(labels);
-    return labels.length !== uniqueLabels.size;
+    const noEmpty = labels.filter(label => label !== '');
+    const uniqueLabels = new Set(noEmpty);
+
+    return noEmpty.length !== uniqueLabels.size;
   };
 
   const hasAnyDuplicateLabel = computed((): boolean => {
     const labelTypes = Object.values(LabelType);
     return labelTypes.some(type => hasDuplicateLabel(availableLabels.value[type]));
   });
-  
-
 
   const saveLabel = () => {
     savingData.value = true
