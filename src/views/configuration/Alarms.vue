@@ -10,7 +10,7 @@
   const globalStore = useGlobalStore()
   const { getAvailableAlarms } = storeToRefs(globalStore)
   const showRightSideBar = ref(false)
-  const alarmId = ref(0)
+  const alarmId = ref(-1)
   const loadingData = ref(true)
 
   const editAlarm = (id: number) => {
