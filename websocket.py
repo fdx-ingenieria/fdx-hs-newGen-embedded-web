@@ -57,7 +57,7 @@ system_stored_data = {
 alarm_stored_data = {
     'data': [
         {
-            'id': 1,
+            'id': 0,
             'name': 'alarm_1',
             'set_point': random.randint(0, 140),
             'alarm_type': random.randint(0, 3),
@@ -70,7 +70,7 @@ alarm_stored_data = {
             ]
         },
         {
-            'id': 2,
+            'id': 1,
             'name': 'alarm_2',
             'set_point': random.randint(0, 140),
             'alarm_type': random.randint(0, 3),
@@ -87,7 +87,7 @@ alarm_stored_data = {
             ]
         },
         {
-            'id': 3,
+            'id': 2,
             'name': 'alarm_3',
             'set_point': 0,
             'alarm_type': 0,
@@ -125,7 +125,7 @@ async def discoveryMode(websocket):
                 'std_dev': round(random.uniform(0, 5), 2),
                 'n_readings': random.randint(0, 15),
                 'quality': qualityString[random.randint(0, 4)],
-                'rssid': random.randint(0, 100),
+                'rssi': random.randint(0, 100),
                 'time_stamp': int(time.time())
             })
         if random.randint(1, 10) < 2:
@@ -137,7 +137,7 @@ async def discoveryMode(websocket):
                 'std_dev': round(random.uniform(0, 5), 2),
                 'n_readings': random.randint(0, 15),
                 'quality': qualityString[random.randint(0, 4)],
-                'rssid': random.randint(0, 100),
+                'rssi': random.randint(0, 100),
                 'time_stamp': int(time.time())
             }
             sensors_stored_data.get('data').append({
@@ -176,7 +176,7 @@ async def normalMode(websocket):
                 'std_dev': round(random.uniform(0, 5), 2),
                 'n_readings': random.randint(0, 15),
                 'quality': qualityString[random.randint(0, 4)],
-                'rssid': random.randint(0, 100),
+                'rssi': random.randint(0, 100),
                 'time_stamp': int(time.time())
             })
 
