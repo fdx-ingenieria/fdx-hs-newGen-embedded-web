@@ -237,8 +237,8 @@ export const useGlobalStore = defineStore('global', () => {
 
   async function stopDiscoveryMode(): Promise<void> {
     return addToRequestQueue({ cmd: SocketCommands.DISCOVERY, arg: "stop", data: '' })
-      .then(() => { discoveryModeOn.value = false })
       .then(() => startNormalMode())
+      .then(() => { discoveryModeOn.value = false })
   }
 
   async function loadSystemData(): Promise<void> {
