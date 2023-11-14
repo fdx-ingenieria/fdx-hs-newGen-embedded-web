@@ -11,6 +11,7 @@
   const { getAvailableSensors, getAvailableLabels } = storeToRefs(globalStore)
   const showRightSideBar = ref(false)
   const loadingData = ref(true)
+  const loadingDiscoveryMode = ref(false)
   const savingData = ref(false)
   const editableSensor: Ref<ISensor> = ref({ id: 0, config: { equipment: 0, position: 0, location: 0 }})
   const configuredSensors: Ref<ISensor[]> = ref([])
@@ -88,6 +89,21 @@
     save()
   }
 
+  const switchDiscoveryMode = () => {
+    loadingDiscoveryMode.value = true
+    const promise = globalStore.getDiscoveryModeOn
+      ? globalStore.stopDiscoveryMode()
+      : globalStore.startDiscoveryMode()
+
+      promise.finally(() => loadingDiscoveryMode.value = false)
+  }
+
+  const clearUnconfiguredSensors = () => {
+    loadingData.value = true
+
+    globalStore.clearUnconfiguredSensors()
+      .finally(() => loadingData.value = false)
+  }
   onMounted(async () => {
     await Promise.all([
       globalStore.loadLabels(),
@@ -175,19 +191,46 @@
           </div>
           <div class="flex space-x-1">
             <button type="button"
+              v-if="unconfiguredSensors.length"
+              @click="clearUnconfiguredSensors()"
+              :disabled="loadingData || loadingDiscoveryMode"
+              class="inline-flex items-center disabled:opacity-50 text-yellow-700 bg-white border border-gray-300 focus:outline-none hover:bg-yellow-700 hover:border-yellow-700 hover:text-white focus:ring-0 font-semibold rounded-md text-sm sm:text-md px-3 py-.5">
+              <template v-if="loadingData">
+                <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto mr-1" />
+                Loading...
+              </template>
+              <template v-else>
+                <RefreshIcon class="h-5 mr-1"/>
+                Clear
+              </template>
+            </button>
+            <button type="button"
               v-if="!globalStore.getDiscoveryModeOn"
-              @click="globalStore.startDiscoveryMode()"
-              :disabled="loadingData"
+              @click="switchDiscoveryMode"
+              :disabled="loadingData || loadingDiscoveryMode"
               class="inline-flex items-center disabled:opacity-50 text-green-700 bg-white border border-gray-300 focus:outline-none hover:bg-green-700 hover:border-green-700 hover:text-white focus:ring-0 font-semibold rounded-md text-sm sm:text-md px-3 py-.5">
-              <PlayIcon class="h-5 mr-1"/>
-              Start
+              <template v-if="loadingDiscoveryMode">
+                <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto mr-1" />
+                Starting...
+              </template>
+              <template v-else>
+                <PlayIcon class="h-5 mr-1"/>
+                Start
+              </template>
             </button>
             <button type="button"
               v-if="globalStore.getDiscoveryModeOn"
-              @click="globalStore.stopDiscoveryMode()"
+              @click="switchDiscoveryMode"
+              :disabled="loadingData || loadingDiscoveryMode"
               class="flex items-center text-red-700 bg-white border border-gray-300 focus:outline-none hover:bg-red-600 hover:border-red-600 hover:text-white focus:ring-0 font-semibold rounded-md text-md px-3 py-.5">
-              <StopIcon class="h-5 mr-1"/>
-              Stop
+              <template v-if="loadingDiscoveryMode">
+                <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto mr-1" />
+                Stopping...
+              </template>
+              <template v-else>
+                <StopIcon class="h-5 mr-1"/>
+                Stop
+              </template>
             </button>
           </div>
         </div>

@@ -165,8 +165,9 @@ export const useGlobalStore = defineStore('global', () => {
         throw new Error("Socket is not connected");
       }
       console.error(`Socket is not connected. Cmd: ${message.cmd} Attempt ${attempt} of ${maxRetries}.`)
-      await sleep(2000)
+      await sleep(1000)
         .then(() => connect(import.meta.env.VITE_WS_URL))
+        .then(() => sleep(1000))
         .then(() => send(message, attempt + 1))
       return
     }
@@ -194,7 +195,6 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   async function updateSensors(data: ISensor[]): Promise<void> {
-    // split data and send
     return addToRequestQueue({ cmd: SocketCommands.SENSOR_CONFIG, arg: "set_all", data })
       .then(() => loadSensors())
   }
@@ -213,6 +213,11 @@ export const useGlobalStore = defineStore('global', () => {
       }
       return sensor
     })
+  }
+
+  async function clearUnconfiguredSensors(): Promise<void> {
+    return addToRequestQueue({ cmd: SocketCommands.CLEAR_SENSORS_RAM, arg: "all", data: '' })
+      .then(() => loadSensors())
   }
 
   async function loadAlarms(): Promise<void> {
@@ -265,6 +270,7 @@ export const useGlobalStore = defineStore('global', () => {
     getAvailableSensors,
     loadSensors,
     updateSensors,
+    clearUnconfiguredSensors,
     getAvailableAlarms,
     getConfiguredAlarms,
     getAlarmsData,
