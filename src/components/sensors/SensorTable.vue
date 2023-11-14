@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { PropType } from 'vue';
   import { LabelType, ISensor, SensorQuality } from '@/commons';
-  import { EditIcon, RefreshIcon, LoadingIcon } from '@/components/icons';
+  import { EditIcon, RefreshIcon, LoadingIcon, ClockIcon, FlagIcon, ThermometerIcon, BellCurveIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global'
   import { format } from 'date-fns';
 
@@ -24,7 +24,7 @@
     },
     showdata: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     max: {
       type: Number,
@@ -76,9 +76,8 @@
           <th v-if="showlabels" scope="col" class="px-4 py-3">{{ LabelType.POSITION }}</th>
           <th v-if="showlabels" scope="col" class="px-4 py-3">{{ LabelType.LOCATION }}</th>
           <th v-if="showdata" scope="col" class="px-4 py-3">Temp</th>
-          <th v-if="showdata" scope="col" class="px-4 py-3">Std desviation</th>
-          <th scope="col" class="px-4 py-3 text-center">Signal</th>
-          <th scope="col" class="px-4 py-3 hidden md:inline-block">Updated</th>
+          <th v-if="showdata" scope="col" class="px-4 py-3 text-center">Signal</th>
+          <th v-if="showdata" scope="col" class="px-4 py-3 hidden md:table-cell">Updated</th>
           <th v-show="!readonly" scope="col" class="px-4 py-3 hidden md:table-cell"><span class="sr-only">Actions</span></th>
         </tr>
       </thead>
@@ -90,17 +89,24 @@
           <td v-if="showlabels" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.EQUIPMENT, item.config.equipment) }}</td>
           <td v-if="showlabels" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.POSITION, item.config.position) }}</td>
           <td v-if="showlabels" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.LOCATION, item.config.location) }}</td>
-          <td class="px-4 py-3 text-center">
+          <td v-if="showdata" class="px-4 py-3">
+            <small title="Average temperature" class="text-xs flex items-center"><ThermometerIcon class="w- h-4 mr-1" />{{ item.data?.avg_temp }}</small>
+            <small title='Standard deviation' class="flex items-center"><BellCurveIcon class="w-3 h-3 mx-1" />{{ item.data?.std_dev }}</small>
+          </td>
+          <td v-if="showdata" class="px-4 py-3 text-center">
             <span class="text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full relative"
               :class="getQualityClass(item.data?.quality)">
               {{ item.data?.quality }}
               <small class="absolute -top-3 -right-2 rounded-full px-1 py-0.5"
-                :class="getQualityClass(item.data?.quality)" title="RSSID">
-                {{ item.data?.rssid }}
+                :class="getQualityClass(item.data?.quality)" title="RSSI">
+                {{ item.data?.rssi }}
               </small>
             </span>
           </td>
-          <td scope="col" class="px-4 py-3 hidden md:inline-block">{{ preatyDate(item.data?.time_stamp) }}</td>
+          <td v-if="showdata" scope="col" class="px-4 py-3 hidden md:table-cell">
+            <small title="Number of readings" class="text-xs flex items-center"><FlagIcon class="w-4 h-4 mr-1" />{{ item.data?.n_readings }}</small>
+            <small title='Last update' class="flex items-center"><ClockIcon class="w-3 h-3 mr-1" />{{ preatyDate(item.data?.time_stamp) }}</small>
+          </td>
           <td v-show="!readonly" class="px-4 py-3 text-center hidden md:table-cell">
               <button type="button"
                 @click="emit('edit', item.id)"

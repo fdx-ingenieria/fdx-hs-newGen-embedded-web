@@ -165,7 +165,9 @@ export const useGlobalStore = defineStore('global', () => {
         throw new Error("Socket is not connected");
       }
       console.error(`Socket is not connected. Cmd: ${message.cmd} Attempt ${attempt} of ${maxRetries}.`)
-      await sleep(2000).then(() => send(message, attempt + 1))
+      await sleep(2000)
+        .then(() => connect(import.meta.env.VITE_WS_URL))
+        .then(() => send(message, attempt + 1))
       return
     }
     console.log('Sending message:', message)

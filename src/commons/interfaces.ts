@@ -46,7 +46,7 @@ export interface ISensorData {
   std_dev: number;
   n_readings: number;
   quality: SensorQuality;
-  rssid: number;
+  rssi: number;
   time_stamp: number; // seconds since epoch
 }
 

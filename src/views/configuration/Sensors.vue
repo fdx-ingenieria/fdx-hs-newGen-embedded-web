@@ -26,7 +26,7 @@
         unconfiguredSensors.value.push(item)
       }
     })
-    unconfiguredSensors.value.sort((a: ISensor, b: ISensor) => (a.data?.rssid || 0) - (b.data?.rssid || 0))
+    unconfiguredSensors.value.sort((a: ISensor, b: ISensor) => (a.data?.rssi || 0) - (b.data?.rssi || 0))
   })
 
   const isLimitReached = computed(() => {
