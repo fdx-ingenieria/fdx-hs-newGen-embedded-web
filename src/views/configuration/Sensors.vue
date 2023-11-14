@@ -39,8 +39,6 @@
 
     if (!sensor) return
 
-    if (globalStore.getDiscoveryModeOn) globalStore.stopDiscoveryMode()
-
     // Deep copy prevents the reactivity of the original object
     editableSensor.value = JSON.parse(JSON.stringify(sensor))
     showRightSideBar.value = true
