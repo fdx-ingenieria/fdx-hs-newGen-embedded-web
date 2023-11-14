@@ -45,21 +45,32 @@
     showRightSideBar.value = true
   }
 
-  const isComplete = () => {
-    const { equipment, position, location } = editableSensor.value.config
+  const isComplete = (editableSensor: ISensor) => {
+    const { equipment, position, location } = editableSensor.config
     return !!equipment && !!position && !!location && isLimitReached
   }
 
   const saveSensor = () => {
-    if (!isComplete()) return
+    if (!isComplete(editableSensor.value)) return
+    save()
+  }
 
+  const save = () => {
     savingData.value = true
     const { id, config } = editableSensor.value
-    const newSensors = getAvailableSensors.value.map((item: ISensor) => {
+    const newSensors: ISensor[] = []
+
+    // Replace sensor data
+    // and filter only the configured sensors
+    getAvailableSensors.value.forEach((item: ISensor) => {
       if (item.id === id) {
-        return { id, config }
+        newSensors.push({ id, config })
+        return
       }
-      return item
+
+      if (isComplete(item)) {
+        newSensors.push(item)
+      }
     })
 
     globalStore.updateSensors(newSensors)
@@ -68,15 +79,13 @@
   }
 
   const resetSensor = (id: number) => {
-    const newSensorData = getAvailableSensors.value.map((item: ISensor) => {
-      if (item.id === id) {
-        return { id, config: { equipment: 0, position: 0, location: 0 }}
-      }
-      return item
-    })
+    let sensor = getAvailableSensors.value.find((item: ISensor) => item.id === id)
 
-    globalStore.updateSensors(newSensorData)
-    showRightSideBar.value = false
+    if (!sensor) return
+
+    editableSensor.value =  { id, config: { equipment: 0, position: 0, location: 0 }}
+
+    save()
   }
 
   onMounted(async () => {
@@ -133,7 +142,7 @@
       <div class="flex items-center space-x-4">
         <button class="text-white flex disabled:opacity-50 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2 focus:outline-none"
           @click="saveSensor()"
-          :disabled="!isComplete() || savingData"
+          :disabled="!isComplete(editableSensor) || savingData"
           type="button" >
           <template v-if="savingData">
             <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto mr-1" />
@@ -191,7 +200,7 @@
           <h3 class="text-xl font-semibold">Configured sensors</h3>
         </div>
         <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-4" />
-        <SensorTable v-else :availableSensors="configuredSensors" :showlabels="true" @edit="editSensor" @reset="resetSensor" :max="50" />
+        <SensorTable v-else :availableSensors="configuredSensors" :showlabels="true" @edit="editSensor" @reset="resetSensor" :showreset="true" :max="50" />
       </div>
     </div>
   </section>
