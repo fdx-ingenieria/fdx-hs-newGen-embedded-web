@@ -202,12 +202,13 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   async function updateSensors(data: ISensor[]): Promise<void> {
+    // split data and send
+    data = data.map(({data, ...sensor}) => sensor)
     return addToRequestQueue({ cmd: SocketCommands.SENSOR_CONFIG, arg: "set_all", data })
       .then(() => loadSensors())
   }
 
   function addNewSensor(newSensor: ISensor): void {
-    console.log('New sensor added:', newSensor)
     availableSensors.value = [...availableSensors.value, newSensor]
   }
 
