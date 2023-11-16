@@ -37,11 +37,19 @@ labels_stored_data = {
 sensors_stored_data = {
     'data': [
         {
-            'id': 10995384722910,
+            'id': 10995384722910999987,
             'config': {
                 'location': 1,
                 'position': 1,
                 'equipment': 1,
+            }
+        },
+        {
+            'id': 10995384722910999988,
+            'config': {
+                'location': 2,
+                'position': 2,
+                'equipment': 2,
             }
         },
     ]
@@ -120,12 +128,12 @@ async def discoveryMode(websocket):
         for i in sensors_stored_data['data']:
             response_data['data'].append({
                 'id': i['id'],
-                'avg_temp': round(random.uniform(20, 30), 2),
-                'temp': round(random.uniform(20, 30), 2),
-                'std_dev': round(random.uniform(0, 5), 2),
+                'avg_temp': round(random.uniform(20, 30), 6),
+                'temp': round(random.uniform(20, 30), 6),
+                'std_dev': round(random.uniform(0, 5), 6),
                 'n_readings': random.randint(0, 15),
                 'quality': qualityString[random.randint(0, 4)],
-                'rssi': random.randint(0, 100),
+                'rssi': round(random.uniform(-100, 0),6),
                 'time_stamp': int(time.time())
             })
         if random.randint(1, 10) < 2:

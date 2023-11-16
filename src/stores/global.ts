@@ -1,6 +1,7 @@
 import { SocketStatus, SocketCommands, ILabelData, ISensor, LabelType, ISystem, ISensorData, IRequest, IAlarm, IAlarmData, IRequestQueue } from '@/commons'
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
+import * as JSONBigInt from 'json-bigint'
 
 export const useGlobalStore = defineStore('global', () => {
   const maxRetries = parseInt(import.meta.env.VITE_MAX_RETRIES) || 5
@@ -59,7 +60,8 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   function messageHandler(event: MessageEvent) {
-    const { cmd, arg, data } = JSON.parse(event.data)
+    const { cmd, arg, data } = JSONBigInt.parse(event.data)
+
     console.log(`Message received cmd: ${cmd}, arg: ${arg}`, data)
     if (!cmd || !arg) {
       console.error('Invalid message received:', event.data)
@@ -104,11 +106,16 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   function updateSensorsData(data: ISensorData[]) {
-    const availableSensorsIds = availableSensors.value.map((item: ISensor) => item.id)
+    const availableSensorsIds = availableSensors.value.map((item: ISensor) => item.id.toString(16))
 
     // Check if there are new sensors and update existing ones
     data.forEach((item: ISensorData) => {
-      if (!availableSensorsIds.includes(item.id)) {
+      // Round decimals
+      item.avg_temp = parseFloat(item.avg_temp.toFixed(1))
+      item.std_dev = parseFloat(item.std_dev.toFixed(1))
+      item.rssi = Math.round(item.rssi)
+
+      if (!availableSensorsIds.includes(item.id.toString(16))) {
         addNewSensor({
           id: item.id,
           config: {
@@ -172,7 +179,7 @@ export const useGlobalStore = defineStore('global', () => {
       return
     }
     console.log('Sending message:', message)
-    socketInstace?.send(JSON.stringify(message))
+    socketInstace?.send(JSONBigInt.stringify(message))
   }
 
   async function loadLabels(): Promise<void> {
@@ -200,12 +207,13 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   function addNewSensor(newSensor: ISensor): void {
+    console.log('New sensor added:', newSensor)
     availableSensors.value = [...availableSensors.value, newSensor]
   }
 
   function updateSensorData(sensorData: ISensorData): void {
     availableSensors.value = availableSensors.value.map((sensor) => {
-      if (sensor.id === sensorData.id) {
+      if (sensor.id.toString(16) === sensorData.id.toString(16)) {
         return {
           ...sensor,
           data: sensorData,

@@ -57,7 +57,7 @@
       : '';
   };
 
-  const preatyDate = (timestamp: number | undefined) => {
+  const prettyDate = (timestamp: number | undefined) => {
     if (!timestamp) return 'Unknown'
 
     const date = new Date(timestamp * 1000);
@@ -105,7 +105,7 @@
           </td>
           <td v-if="showdata" scope="col" class="px-4 py-3 hidden md:table-cell">
             <small title="Number of readings" class="text-xs flex items-center"><FlagIcon class="w-4 h-4 mr-1" />{{ item.data?.n_readings }}</small>
-            <small title='Last update' class="flex items-center"><ClockIcon class="w-3 h-3 mr-1" />{{ preatyDate(item.data?.time_stamp) }}</small>
+            <small title='Last update' class="flex items-center"><ClockIcon class="w-3 h-3 mr-1" />{{ prettyDate(item.data?.time_stamp) }}</small>
           </td>
           <td v-show="!readonly" class="px-4 py-3 text-center hidden md:table-cell">
               <button type="button"

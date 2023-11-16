@@ -40,7 +40,7 @@ export interface ISensor {
 }
 
 export interface ISensorData {
-  id: number; 
+  id: number;
   avg_temp: number;
   temp: number;
   std_dev: number;
