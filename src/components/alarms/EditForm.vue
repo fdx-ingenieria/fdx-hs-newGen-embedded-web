@@ -75,6 +75,7 @@
         <label class="block mb-2 text-sm font-semibold text-gray-900">Name</label>
         <input type="text"
           v-model="localValue.name"
+          maxlength="20"
           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5">
         <p v-show="!localValue.name" class="mt-2 text-sm text-red-600">
           <span class="font-semibold">Oops!</span> This is required!
