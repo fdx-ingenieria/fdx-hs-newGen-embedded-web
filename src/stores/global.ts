@@ -193,8 +193,10 @@ export const useGlobalStore = defineStore('global', () => {
 
   }
 
-  function getLabelName(type: LabelType, index: number) {
-    return getAvailableLabels.value[type][index] || 'Not found'
+  function getLabelName(type: LabelType, index: number | undefined) {
+    return index
+      ? getAvailableLabels.value[type][index] || 'Not found'
+      : 'Not found'
   }
 
   async function loadSensors(): Promise<void> {
