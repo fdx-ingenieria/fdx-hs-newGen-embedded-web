@@ -62,8 +62,8 @@ export interface IAlarm {
 }
 
 export interface IAlarmField {
-  location: number;
-  equipment: number;
+  location: number | undefined;
+  equipment: number | undefined;
 }
 
 export interface ISensorState {

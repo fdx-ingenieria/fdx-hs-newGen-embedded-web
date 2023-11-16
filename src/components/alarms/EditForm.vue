@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ref, Ref, watch } from 'vue';
-  import { AlarmType, IAlarm, ReleFlag } from '@/commons';
+  import { AlarmType, IAlarm, IAlarmField, ReleFlag } from '@/commons';
   import { useGlobalStore } from '@/stores/global';
   import { LoadingIcon, PlusIcon, RemoveIcon, SendIcon } from '../icons';
 
@@ -26,11 +26,16 @@
     return value >= 0 && value <= 140
   }
 
+  const validFields = (fields: IAlarmField[]): boolean => {
+    return fields.every(item => !!item.equipment && !!item.location)
+  }
+
   const isComplete = () => {
     return !!localValue.value.name
       && !!localValue.value.alarm_type
       && validSetPoint(localValue.value.set_point)
       && !!localValue.value.relay_flag
+      && validFields(localValue.value.fields)
   }
 
   const save = () => {
@@ -46,7 +51,7 @@
       .finally(() => savingData.value = false)
   }
 
-  const addFieldRow = () => localValue.value.fields.push({ equipment:0, location: 0})
+  const addFieldRow = () => localValue.value.fields.push({ equipment: undefined, location: undefined})
   const removeFieldRow = (index: number) => localValue.value.fields.splice(index, 1)
 
   const emit = defineEmits<{
