@@ -22,6 +22,10 @@
       type: Boolean,
       default: false
     },
+    showfooter: {
+      type: Boolean,
+      default: true
+    },
     showdata: {
       type: Boolean,
       default: true,
@@ -84,7 +88,7 @@
       <transition-group name="list" tag="tbody">
         <tr @click="emit('edit', item.id)" v-for="item in availableSensors"
           class="border-b hover:bg-gray-100" :key="`${item.id}`"
-          :class="{'cursor-pointer': !readonly}">
+          :class="{'cursor-pointer': !readonly, 'bg-red-200 hover:bg-red-300': item?.alarmed}">
           <th scope="row" class="px-4 py-3 font-medium text-gray-900 ">{{ item.id.toString(16).toLocaleUpperCase() }}</th>
           <td v-if="showlabels" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.EQUIPMENT, item.config.equipment) }}</td>
           <td v-if="showlabels" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.POSITION, item.config.position) }}</td>
@@ -135,7 +139,7 @@
       <LoadingIcon class="animate-spin fill-transparent text-green-600 w-8 opacity-80 mr-2" />
       <span class="font-bold text-gray-600">Discovering .... stay tuned!</span>
     </div>
-    <nav class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0 p-4">
+    <nav v-if="showfooter" class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0 p-4">
       <span class="text-sm font-normal text-gray-500">
         Showing
         <span class="font-semibold text-gray-900">{{ availableSensors.length }}</span>

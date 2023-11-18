@@ -37,6 +37,7 @@ export interface ISensor {
   id: number;
   config: ISensorConfig;
   data?: ISensorData;
+  alarmed?: boolean
 }
 
 export interface ISensorData {
