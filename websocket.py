@@ -204,7 +204,16 @@ async def normalMode(websocket):
             response_data['data'].append({
                 'id': i['id'],
                 'state': random.randint(0, 1),
-                'sensors': [],
+                'sensors': [
+                    {
+                        'id': 10995384722910999987,
+                        'state': random.randint(0, 1),
+                    },
+                    {
+                        'id': 10995384722910999988,
+                        'state': random.randint(0, 1),
+                    }
+                ],
             })
 
         # Convert the response to JSON and send it back to the client
