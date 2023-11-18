@@ -1,6 +1,5 @@
 <script setup lang="ts">
-  import { PieIcon, CogIcon, AlarmIcon } from '@/components/icons';
-  import ThermometerIcon from '../icons/ThermometerIcon.vue';
+  import { PieIcon, CogIcon, ModbusIcon } from '@/components/icons';
   import LeftSideBarItem from './LeftSideBarItem.vue';
 
   defineProps({
@@ -27,9 +26,6 @@
       label: 'Alarms',
       route: 'Alarms'
     },
-    {
-      label: 'Modbus'
-    }
   ]
 </script>
 <template>
@@ -41,17 +37,15 @@
         <LeftSideBarItem label="Overview" route="Overview">
           <PieIcon class="w-7 text-gray-500 transition duration-75 group-hover:text-gray-900" />
         </LeftSideBarItem>
-        <LeftSideBarItem label="Temperatures" route="Temperatures">
-          <ThermometerIcon class="w-7 text-gray-500 transition duration-75 group-hover:text-gray-900" />
-        </LeftSideBarItem>
-        <LeftSideBarItem label="Alarms">
-          <AlarmIcon class="w-7 text-gray-500 transition duration-75 group-hover:text-gray-900" />
-        </LeftSideBarItem>
         <LeftSideBarItem label="Configuration" :items="options">
           <CogIcon class="w-7 text-gray-500 transition duration-75 group-hover:text-gray-900" />
         </LeftSideBarItem>
+        <LeftSideBarItem label="Modbus" route="Modbus">
+          <ModbusIcon class="w-7 text-gray-500 transition duration-75 group-hover:text-gray-900" />
+        </LeftSideBarItem>
       </ul>
     </div>
+
     <div class="absolute bottom-0 left-0 justify-left p-4 space-x-4 w-full lg:flex bg-white z-20">
       <small>Version: 0.0.1</small>
     </div>

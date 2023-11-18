@@ -6,7 +6,7 @@
 
 <template>
   <section class="antialiased bg-gray-50">
-    <h1 class="text-2xl">Not implemented. It will probably be replaced by overview</h1>
+    <h1 class="text-2xl">Not implemented.</h1>
   </section>
 </template>
 

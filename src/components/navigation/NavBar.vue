@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { ThermometerIcon } from '../icons';
   import SocketStatus from './SocketStatus.vue';
 
   defineProps({
@@ -29,7 +30,14 @@
       <a href="#" class="flex mr-4">
         <img src="@/assets/fdx_no_bg_lg.png" class="mr-3 h-12" alt="FDX Logo" />
       </a>
-      <SocketStatus />
+      <div class="flex">
+        <div class="flex items-center hidden sm:inline-flex">
+          <ThermometerIcon class="w-5 h-5 text-gray-600" />
+          43.10
+          <small class="ml-1">°C</small>
+        </div>
+        <SocketStatus class="ml-4" />
+      </div>
     </div>
   </nav>
 </template>

@@ -39,7 +39,7 @@
         aria-controls="dropdown-authentication" data-collapse-toggle="dropdown-authentication">
         <slot></slot>
         <span class="flex-1 ml-3 text-left whitespace-nowrap">{{ label }}</span>
-        <ChevronUpIcon class="w-7"/>
+        <ChevronUpIcon class="w-7" :class="{'rotate-180': !showItems}"/>
       </button>
       <ul class="py-2 space-y-2" :class="{'hidden': !showItems}">
         <li v-for="item in items">

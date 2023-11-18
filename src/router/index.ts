@@ -10,13 +10,6 @@ const routes: Array<RouteRecordRaw > = [
     meta: {}
   },
   {
-    path: "/temperatures",
-    name: "Temperatures",
-    component: () => import('@/views/Temperatures.vue'),
-    props: true,
-    meta: {}
-  },
-  {
     path: "/configuration/system",
     name: "System",
     component: () => import('@/views/configuration/System.vue'),
@@ -41,6 +34,13 @@ const routes: Array<RouteRecordRaw > = [
     path: "/configuration/alarms",
     name: "Alarms",
     component: () => import('@/views/configuration/Alarms.vue'),
+    props: true,
+    meta: {}
+  },
+  {
+    path: "/modbus",
+    name: "Modbus",
+    component: () => import('@/views/Modbus.vue'),
     props: true,
     meta: {}
   },

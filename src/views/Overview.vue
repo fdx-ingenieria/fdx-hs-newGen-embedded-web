@@ -7,7 +7,6 @@
     SensorIcon,
     ThermometerHighIcon,
     ThermometerLowIcon,
-    CelsiusIcon,
     BellRingIcon
   } from '@/components/icons';
   import SensorTable from '@/components/sensors/SensorTable.vue';
@@ -119,7 +118,7 @@
         <div v-else class="px-4 text-gray-700">
           <h3 class="text-sm tracking-wider font-semibold">Lower Temperature</h3>
           <p class="text-xl flex items-center" title="Lower">
-            {{  temperatures.min?.temp }} <CelsiusIcon class="w-5 h-5 ml-1" />
+            {{  temperatures.min?.temp }} <small class="ml-1 font-bold">°C</small>
             <small class="absolute bottom-0 right-2">{{  temperatures.min?.id.toString(16) }}</small>
           </p>
         </div>
@@ -132,7 +131,7 @@
         <div v-else class="px-4 text-gray-700">
           <h3 class="text-sm tracking-wider font-semibold">Higher Temperature</h3>
           <p class="text-xl flex items-center" title="Higher">
-            {{  temperatures.max?.temp }} <CelsiusIcon class="w-5 h-5 ml-1" />
+            {{  temperatures.max?.temp }} <small class="ml-1 font-bold">°C</small>
             <small class="absolute bottom-0 right-2">{{  temperatures.max?.id.toString(16) }}</small>
           </p>
         </div>
