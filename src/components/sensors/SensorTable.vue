@@ -1,11 +1,10 @@
 <script setup lang="ts">
-  import { PropType } from 'vue';
+  import { PropType, onBeforeUnmount, watch, Ref, ref } from 'vue';
   import { LabelType, ISensor, SensorQuality } from '@/commons';
   import { EditIcon, RefreshIcon, LoadingIcon, ClockIcon, FlagIcon, ThermometerIcon, BellCurveIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global'
-  import { format } from 'date-fns';
 
-  defineProps({
+  const props = defineProps({
     availableSensors: {
       type: Array as PropType<ISensor[]>,
       required: true
@@ -41,6 +40,13 @@
   })
 
   const globalStore = useGlobalStore()
+  const elapsed_times: Ref<Record<string, number>> = ref({})
+
+  watch(() => props.availableSensors, () => {
+    props.availableSensors.forEach(item => {
+      elapsed_times.value[item.id.toString(16).toLocaleUpperCase()] = item.data?.elapsed_time || 0;
+    });
+  })
 
   const emit = defineEmits<{
     edit: [index: number],
@@ -61,12 +67,17 @@
       : '';
   };
 
-  const prettyDate = (timestamp: number | undefined) => {
-    if (!timestamp) return 'Unknown'
+  // Update the elapsed_time field every second
+  const intervalId = setInterval(() => {
+    Object.keys(elapsed_times.value).forEach(key => {
+      elapsed_times.value[key] = elapsed_times.value[key] + 1;
+    });
+  }, 1000);
 
-    const date = new Date(timestamp * 1000);
-    return format(date, 'HH:mm:ss');
-  }
+  // Remove the interval before unmounting the component
+  onBeforeUnmount(() => {
+    clearInterval(intervalId);
+  });
 
 </script>
 
@@ -109,7 +120,9 @@
           </td>
           <td v-if="showdata" scope="col" class="px-4 py-3 hidden md:table-cell">
             <small title="Number of readings" class="text-xs flex items-center"><FlagIcon class="w-4 h-4 mr-1" />{{ item.data?.n_readings }}</small>
-            <small title='Last update' class="flex items-center"><ClockIcon class="w-3 h-3 mr-1" />{{ prettyDate(item.data?.time_stamp) }}</small>
+            <small title='Last update' class="flex items-center"><ClockIcon class="w-3 h-3 mr-1" />
+              {{ elapsed_times[item.id.toString(16).toLocaleUpperCase()] }}s
+            </small>
           </td>
           <td v-show="!readonly" class="px-4 py-3 text-center hidden md:table-cell">
               <button type="button"

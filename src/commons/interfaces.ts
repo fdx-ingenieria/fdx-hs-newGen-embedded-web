@@ -48,6 +48,7 @@ export interface ISensorData {
   n_readings: number;
   quality: SensorQuality;
   rssi: number;
+  elapsed_time: number; // seconds
   time_stamp: number; // seconds since epoch
 }
 

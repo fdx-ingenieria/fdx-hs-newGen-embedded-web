@@ -32,9 +32,7 @@
 
   const isComplete = () => {
     return !!localValue.value.name
-      && !!localValue.value.alarm_type
       && validSetPoint(localValue.value.set_point)
-      && !!localValue.value.relay_flag
       && validFields(localValue.value.fields)
   }
 
@@ -87,8 +85,8 @@
           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
           <option v-for="(item, index) in AlarmType" :value="index">{{ item }}</option>
         </select>
-        <p v-show="!localValue.alarm_type" class="mt-2 text-sm text-red-600"><span
-            class="font-semibold">Oops!</span> This is required!</p>
+        <p v-show="!localValue.alarm_type" class="mt-2 text-sm text-orange-600"><span
+            class="font-semibold">Warning:</span> The alarm will remain deactivated.</p>
       </div>
       <div>
         <label class="block mb-2 text-sm font-semibold text-gray-900">Set Point</label>
@@ -105,8 +103,6 @@
           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
           <option v-for="(item, index) in ReleFlag" :value="index">{{ item }}</option>
         </select>
-        <p v-show="!localValue.relay_flag" class="mt-2 text-sm text-red-600"><span
-            class="font-semibold">Oops!</span> This is required!</p>
       </div>
       <div>
         <label class="block mb-2 text-sm font-semibold text-gray-900">Fields</label>
