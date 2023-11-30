@@ -134,6 +134,7 @@ async def discoveryMode(websocket):
                 'n_readings': random.randint(0, 15),
                 'quality': qualityString[random.randint(0, 4)],
                 'rssi': round(random.uniform(-100, 0),6),
+                'elapsed_time': random.randint(0, 90),
                 'time_stamp': int(time.time())
             })
         if random.randint(1, 10) < 2:
@@ -146,6 +147,7 @@ async def discoveryMode(websocket):
                 'n_readings': random.randint(0, 15),
                 'quality': qualityString[random.randint(0, 4)],
                 'rssi': random.randint(0, 100),
+                'elapsed_time': 0,
                 'time_stamp': int(time.time())
             }
             sensors_stored_data.get('data').append({
@@ -185,6 +187,7 @@ async def normalMode(websocket):
                 'n_readings': random.randint(0, 15),
                 'quality': qualityString[random.randint(0, 4)],
                 'rssi': random.randint(0, 100),
+                'elapsed_time': random.randint(0, 90),
                 'time_stamp': int(time.time())
             })
 
