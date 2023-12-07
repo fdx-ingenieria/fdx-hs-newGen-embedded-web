@@ -1,4 +1,4 @@
-import { LabelType, ModbusBitParity, SensorQuality } from "./enums";
+import { LabelType, SensorQuality } from "./enums";
 
 // Request
 export interface IRequestQueue {
