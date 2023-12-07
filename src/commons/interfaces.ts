@@ -83,10 +83,11 @@ export interface IAlarmData {
 
 // System
 export interface ISystem {
-  serial: number;
-  dir_modbus: number;
-  baudrate: number;
-  bit_parity: ModbusBitParity; 
+  serial_num: number;
+  password?: string;
+  modbus_address: number;
+  baud_rate: number;
+  bit_parity: number; 
 }
 // Menu & Sidebars
 export interface IMenuItem {

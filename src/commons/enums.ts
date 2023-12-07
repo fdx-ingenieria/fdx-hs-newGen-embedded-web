@@ -33,13 +33,13 @@ export enum LabelType {
   POSITION = 'position',
 }
 
-export enum ModbusBitParity {
-  NONE = 'none',
-  ODD = 'odd',
-  EVEN = 'even',
-}
+export const ModbusBitParity = [
+  'none',
+  'odd',
+  'even',
+]
 
-export const Baudrate = [
+export const BaudRate = [
   9600,
   19200,
   38400,
