@@ -35,7 +35,7 @@ export const useGlobalStore = defineStore('global', () => {
   const getAlarmsData = computed(() => alarmsData.value)
 
   // Actions
-  function connect(url: string) {
+  async function connect(url = import.meta.env.VITE_WS_URL as string): Promise<void> {
     const socket = new WebSocket(url)
     status.value = SocketStatus.CONNECTING
 
@@ -52,6 +52,7 @@ export const useGlobalStore = defineStore('global', () => {
 
     socket.onerror = (error) => {
       console.error('WebSocket error:', error)
+      setTimeout(connect, 2000)
       status.value = SocketStatus.CLOSED
     };
 

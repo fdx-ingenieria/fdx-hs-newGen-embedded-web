@@ -8,8 +8,8 @@
   const showSideBar = ref(false);
 
   const globalStore = useGlobalStore()
-  onMounted(() => {
-    globalStore.connect(import.meta.env.VITE_WS_URL as string)
+  onMounted(async() => {
+    await globalStore.connect()
   })
 </script>
 
