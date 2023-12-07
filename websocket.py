@@ -58,10 +58,10 @@ sensors_stored_data = {
 }
 
 system_stored_data = {
-    'serial': random.randint(1000000000, 9999999999),
-    'dir_modbus': random.randint(1, 247),
-    'baudrate': 9600,
-    'bit_parity': 'even',
+    'serial_num': 10995384722910999988,
+    'modbus_address': random.randint(1, 247),
+    'baud_rate': 9600,
+    'bit_parity': 0,
 }
 
 alarm_stored_data = {
