@@ -35,6 +35,7 @@ export interface ISensorConfig {
 
 export interface ISensor {
   id: number;
+  EPC: string;
   config: ISensorConfig;
   data?: ISensorData;
   alarmed?: boolean
@@ -42,14 +43,15 @@ export interface ISensor {
 
 export interface ISensorData {
   id: number;
+  EPC: string;
   avg_temp: number;
   temp: number;
   std_dev: number;
   n_readings: number;
   quality: SensorQuality;
   rssi: number;
-  elapsed_time: number; // seconds
-  time_stamp: number; // seconds since epoch
+  elapsed_time: number; // seconds since last reading
+  timestamp: number; // seconds since epoch unused
 }
 
 // Alarms
@@ -70,6 +72,7 @@ export interface IAlarmField {
 
 export interface ISensorState {
   id: number; // long int
+  EPC: string;
   state: boolean;
 }
 export interface IAlarmData {

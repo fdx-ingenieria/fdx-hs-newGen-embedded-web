@@ -106,7 +106,7 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   function updateSensorsData(data: ISensorData[]) {
-    const availableSensorsIds = availableSensors.value.map((item: ISensor) => item.id.toString(16))
+    const availableSensorsEPCs = availableSensors.value.map((item: ISensor) => item.EPC)
 
     // Check if there are new sensors and update existing ones
     data.forEach((item: ISensorData) => {
@@ -115,9 +115,10 @@ export const useGlobalStore = defineStore('global', () => {
       item.std_dev = parseFloat(item.std_dev.toFixed(1))
       item.rssi = Math.round(item.rssi)
 
-      if (!availableSensorsIds.includes(item.id.toString(16))) {
+      if (!availableSensorsEPCs.includes(item.EPC)) {
         addNewSensor({
           id: item.id,
+          EPC: item.EPC,
           config: {
             equipment: 0,
             position: 0,
@@ -216,7 +217,7 @@ export const useGlobalStore = defineStore('global', () => {
 
   function updateSensorData(sensorData: ISensorData): void {
     availableSensors.value = availableSensors.value.map((sensor) => {
-      if (sensor.id.toString(16) === sensorData.id.toString(16)) {
+      if (sensor.EPC === sensorData.EPC) {
         return {
           ...sensor,
           data: sensorData,
@@ -248,7 +249,6 @@ export const useGlobalStore = defineStore('global', () => {
 
   async function stopDiscoveryMode(): Promise<void> {
     return addToRequestQueue({ cmd: SocketCommands.DISCOVERY, arg: "stop", data: '' })
-      .then(() => startNormalMode())
       .then(() => { discoveryModeOn.value = false })
   }
 

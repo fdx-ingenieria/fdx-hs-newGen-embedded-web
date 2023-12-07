@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ISensor } from '@/commons';
-  import { RefreshIcon, SendIcon, ListIcon, PlayIcon, StopIcon, AlertIcon, LoadingIcon } from '@/components/icons';
+  import { RefreshIcon, SendIcon, ListIcon, PlayIcon, StopIcon, AlertIcon, LoadingIcon, ChevronUpIcon } from '@/components/icons';
   import SensorTable from '@/components/sensors/SensorTable.vue';
   import RightSideBar from '@/components/navigation/RightSideBar.vue';
   import { useGlobalStore } from '@/stores/global'
@@ -13,9 +13,10 @@
   const loadingData = ref(true)
   const loadingDiscoveryMode = ref(false)
   const savingData = ref(false)
-  const editableSensor: Ref<ISensor> = ref({ id: 0, config: { equipment: 0, position: 0, location: 0 }})
+  const editableSensor: Ref<ISensor> = ref({ id: 0, EPC: '', config: { equipment: 0, position: 0, location: 0 }})
   const configuredSensors: Ref<ISensor[]> = ref([])
   const unconfiguredSensors: Ref<ISensor[]> = ref([])
+  const showUnconfiguredTable = ref(true)
 
   watch(getAvailableSensors, (newData) => {
     configuredSensors.value = []
@@ -34,8 +35,8 @@
     return getAvailableSensors.value.length >= 50;
   });
 
-  const editSensor = (id: number) => {
-    let sensor = getAvailableSensors.value.find((item: ISensor) => item.id === id)
+  const editSensor = (EPC: string) => {
+    let sensor = getAvailableSensors.value.find((item: ISensor) => item.EPC === EPC)
 
     if (!sensor) return
 
@@ -56,14 +57,15 @@
 
   const save = () => {
     savingData.value = true
-    const { id, config } = editableSensor.value
+    const { id, EPC, config } = editableSensor.value
     const newSensors: ISensor[] = []
 
     // Replace sensor data
     // and filter only the configured sensors
     getAvailableSensors.value.forEach((item: ISensor) => {
-      if (item.id === id) {
-        newSensors.push({ id, config })
+
+      if (item.EPC === EPC) {
+        newSensors.push({ id, EPC, config })
         return
       }
 
@@ -77,12 +79,16 @@
       .finally(() => savingData.value = false)
   }
 
-  const resetSensor = (id: number) => {
-    let sensor = getAvailableSensors.value.find((item: ISensor) => item.id === id)
+  const resetSensor = (EPC: string) => {
+    let sensor = getAvailableSensors.value.find((item: ISensor) => item.EPC === EPC)
 
     if (!sensor) return
 
-    editableSensor.value =  { id, config: { equipment: 0, position: 0, location: 0 }}
+    editableSensor.value =  {
+      id: sensor.id,
+      EPC: sensor.EPC,
+      config: { equipment: 0, position: 0, location: 0 }
+    }
 
     save()
   }
@@ -106,11 +112,14 @@
     await Promise.all([
       globalStore.loadLabels(),
       globalStore.loadSensors()
-    ]).then(() => loadingData.value = false)
+    ])
+    .then(() => globalStore.startNormalMode())
+    .then(() => loadingData.value = false)
   })
 
   onUnmounted(() => {
     if (globalStore.getDiscoveryModeOn) globalStore.stopDiscoveryMode()
+    if (globalStore.getNormaModeOn) globalStore.stopNormalMode()
   })
 </script>
 
@@ -124,6 +133,10 @@
         <div>
           <label class="block mb-2 text-sm font-semibold text-gray-900">id</label>
           <input type="text" :value="editableSensor.id.toString(16).toLocaleUpperCase()" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" disabled>
+        </div>
+        <div>
+          <label class="block mb-2 text-sm font-semibold text-gray-900">epc</label>
+          <input type="text" :value="editableSensor.EPC" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" disabled>
         </div>
         <div>
           <label class="block mb-2 text-sm font-semibold text-gray-900">Equipment</label>
@@ -168,7 +181,7 @@
           </template>
         </button>
         <button class="text-white flex disabled:opacity-50 bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2 focus:outline-none"
-          @click="resetSensor(editableSensor.id)"
+          @click="resetSensor(editableSensor.EPC)"
           :disabled="savingData"
           type="button" >
           <RefreshIcon class="w-5 mr-1" />
@@ -187,7 +200,7 @@
             <ListIcon class="h-6 hidden md:inline-flex mt-1 mr-2" />
             <h3 class="text-xl font-semibold">Unconfigured sensors</h3>
           </div>
-          <div class="flex space-x-1">
+          <div class="flex space-x-1 -mx-2">
             <button type="button"
               v-if="unconfiguredSensors.length"
               @click="clearUnconfiguredSensors()"
@@ -230,10 +243,15 @@
                 Stop
               </template>
             </button>
+            <ChevronUpIcon class="h-6 w-6 scale-110 cursor-pointer hover:scale-125"
+              :class="{'rotate-180': !showUnconfiguredTable}"
+              @click="showUnconfiguredTable = !showUnconfiguredTable" />
           </div>
         </div>
-        <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-4" />
-        <SensorTable v-else :availableSensors="unconfiguredSensors" :discovery="globalStore.getDiscoveryModeOn" @edit="editSensor" />
+        <template v-if="showUnconfiguredTable">
+          <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-4" />
+          <SensorTable v-else :availableSensors="unconfiguredSensors" :discovery="globalStore.getDiscoveryModeOn" @edit="editSensor" />
+        </template>
       </div>
       <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden mt-8">
         <div class="flex bg-fdx-dark text-white items-center py-2 px-4">

@@ -80,7 +80,7 @@
     console.log(sensorsStates)
     const alarmSensors: ISensor[] = []
     globalStore.getConfiguredSensors.forEach(sensor => {
-      const sensorState = sensorsStates.find(state => state.id.toString(16) === sensor.id.toString(16))
+      const sensorState = sensorsStates.find(state => state.EPC === sensor.EPC)
       if (sensorState) {
         sensor.alarmed = sensorState.state
         alarmSensors.push(sensor)

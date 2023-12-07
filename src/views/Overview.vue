@@ -58,7 +58,7 @@
       if (element.state) {
         alarms.set(element.id.toString(16), element)
         element.sensors.forEach(sensor => {
-          sensors.set(sensor.id.toString(16), sensor)
+          sensors.set(sensor.EPC, sensor)
         });
       }
     });
@@ -119,7 +119,7 @@
           <h3 class="text-sm tracking-wider font-semibold">Lower Temperature</h3>
           <p class="text-xl flex items-center" title="Lower">
             {{  temperatures.min?.temp }} <small class="ml-1 font-bold">°C</small>
-            <small class="absolute bottom-0 right-2">{{  temperatures.min?.id.toString(16) }}</small>
+            <small class="absolute bottom-0 right-2">{{  temperatures.min?.EPC }}</small>
           </p>
         </div>
       </div>
@@ -132,7 +132,7 @@
           <h3 class="text-sm tracking-wider font-semibold">Higher Temperature</h3>
           <p class="text-xl flex items-center" title="Higher">
             {{  temperatures.max?.temp }} <small class="ml-1 font-bold">°C</small>
-            <small class="absolute bottom-0 right-2">{{  temperatures.max?.id.toString(16) }}</small>
+            <small class="absolute bottom-0 right-2">{{  temperatures.max?.EPC }}</small>
           </p>
         </div>
       </div>

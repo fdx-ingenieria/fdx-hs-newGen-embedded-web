@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { PropType, onBeforeUnmount, watch, Ref, ref } from 'vue';
   import { LabelType, ISensor, SensorQuality } from '@/commons';
-  import { EditIcon, RefreshIcon, LoadingIcon, ClockIcon, FlagIcon, ThermometerIcon, BellCurveIcon } from '@/components/icons';
+  import { EditIcon, RefreshIcon, LoadingIcon, ClockIcon, FlagIcon, ThermometerIcon, BellCurveIcon, SearchIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global'
 
   const props = defineProps({
@@ -41,16 +41,32 @@
 
   const globalStore = useGlobalStore()
   const elapsed_times: Ref<Record<string, number>> = ref({})
+  const searchText = ref('')
+  const localAvailableSensors = ref(props.availableSensors)
 
   watch(() => props.availableSensors, () => {
     props.availableSensors.forEach(item => {
-      elapsed_times.value[item.id.toString(16).toLocaleUpperCase()] = item.data?.elapsed_time || 0;
+      elapsed_times.value[item.EPC] = item.data?.elapsed_time || 0;
     });
+    filter()
   })
+  watch(searchText, () => filter())
+
+  const filter = () => {
+    const str = searchText.value.toUpperCase()
+
+    localAvailableSensors.value = props.availableSensors.filter(
+      sensor => {
+        return sensor.EPC.toUpperCase().includes(str)
+      }
+    ).sort((a, b) =>
+      a.EPC.toUpperCase().localeCompare(b.EPC.toUpperCase(), 'en', { sensitivity: 'base' })
+    )
+  }
 
   const emit = defineEmits<{
-    edit: [index: number],
-    reset: [index: number]
+    edit: [EPC: string],
+    reset: [EPC: string]
   }>()
 
   const getQualityClass = (quality: SensorQuality | undefined): string => {
@@ -66,6 +82,13 @@
       ? classMap[quality]
       : '';
   };
+
+  const searcHighlight = (text: string): string => {
+    if (!searchText.value) return text
+
+    const regex = new RegExp(`(${searchText.value})`, "gi");
+    return text.replace(regex, '<span class="text-red-500 font-bold">$1</span>');
+  }
 
   // Update the elapsed_time field every second
   const intervalId = setInterval(() => {
@@ -83,10 +106,23 @@
 
 <template>
   <div class="overflow-x-auto">
+    <div class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4">
+      <div class="w-full md:w-1/2">
+        <div class="flex items-center">
+          <label for="simple-search" class="sr-only">Search</label>
+          <div class="relative w-full">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <SearchIcon class="w-5 h-5 text-gray-500" />
+            </div>
+            <input v-model="searchText" type="text" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2" placeholder="Search">
+          </div>
+        </div>
+      </div>
+    </div>
     <table class="w-full text-sm text-left text-gray-500 whitespace-nowrap">
       <thead class="text-xs text-gray-700 uppercase bg-gray-50">
         <tr>
-          <th scope="col" class="px-4 py-3">Id</th>
+          <th scope="col" class="px-4 py-3">EPC</th>
           <th v-if="showlabels" scope="col" class="px-4 py-3">{{ LabelType.EQUIPMENT }}</th>
           <th v-if="showlabels" scope="col" class="px-4 py-3">{{ LabelType.POSITION }}</th>
           <th v-if="showlabels" scope="col" class="px-4 py-3">{{ LabelType.LOCATION }}</th>
@@ -97,10 +133,10 @@
         </tr>
       </thead>
       <transition-group name="list" tag="tbody">
-        <tr @click="emit('edit', item.id)" v-for="item in availableSensors"
+        <tr @click="emit('edit', item.EPC)" v-for="item in localAvailableSensors"
           class="border-b hover:bg-gray-100" :key="`${item.id}`"
           :class="{'cursor-pointer': !readonly, 'bg-red-200 hover:bg-red-300': item?.alarmed}">
-          <th scope="row" class="px-4 py-3 font-medium text-gray-900 ">{{ item.id.toString(16).toLocaleUpperCase() }}</th>
+          <th scope="row" class="px-4 py-3 font-medium text-gray-900" v-html="searcHighlight(item.EPC)"></th>
           <td v-if="showlabels" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.EQUIPMENT, item.config.equipment) }}</td>
           <td v-if="showlabels" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.POSITION, item.config.position) }}</td>
           <td v-if="showlabels" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.LOCATION, item.config.location) }}</td>
@@ -121,12 +157,12 @@
           <td v-if="showdata" scope="col" class="px-4 py-3 hidden md:table-cell">
             <small title="Number of readings" class="text-xs flex items-center"><FlagIcon class="w-4 h-4 mr-1" />{{ item.data?.n_readings }}</small>
             <small title='Last update' class="flex items-center"><ClockIcon class="w-3 h-3 mr-1" />
-              {{ elapsed_times[item.id.toString(16).toLocaleUpperCase()] }}s
+              {{ elapsed_times[item.EPC] }}s
             </small>
           </td>
           <td v-show="!readonly" class="px-4 py-3 text-center hidden md:table-cell">
               <button type="button"
-                @click="emit('edit', item.id)"
+                @click="emit('edit', item.EPC)"
                 @click.stop
                 class="text-white border border-blue-500 bg-blue-500 font-medium rounded-lg text-sm p-0.5 text-center inline items-center mr-2">
                 <EditIcon class="w-4" />
@@ -134,7 +170,7 @@
               </button>
               <button type="button"
                 v-if="showreset"
-                @click="emit('reset', item.id)"
+                @click="emit('reset', item.EPC)"
                 @click.stop
                 class="text-white border border-red-500 bg-red-500 font-medium rounded-lg text-sm p-0.5 text-center inline-flex items-center mr-2">
                 <RefreshIcon class="w-4" />
@@ -155,7 +191,7 @@
     <nav v-if="showfooter" class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0 p-4">
       <span class="text-sm font-normal text-gray-500">
         Showing
-        <span class="font-semibold text-gray-900">{{ availableSensors.length }}</span>
+        <span class="font-semibold text-gray-900">{{ localAvailableSensors.length }}</span>
         of
         <span class="font-semibold text-gray-900">{{ availableSensors.length }}</span>
         <template v-if="max" class="self-end">
