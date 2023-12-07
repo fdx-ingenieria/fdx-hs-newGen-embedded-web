@@ -38,6 +38,7 @@ sensors_stored_data = {
     'data': [
         {
             'id': 10995384722910999987,
+            'EPC': hex(10995384722910999987),
             'config': {
                 'location': 1,
                 'position': 1,
@@ -46,6 +47,7 @@ sensors_stored_data = {
         },
         {
             'id': 10995384722910999988,
+            'EPC': hex(10995384722910999988),
             'config': {
                 'location': 2,
                 'position': 2,
@@ -117,7 +119,7 @@ async def discoveryMode(websocket):
     print('Starting Discovery mode')
     while True:
         await asyncio.sleep(5)
-        print('Sending sensor data')
+        print('Sending sensor data... discovery mode')
         # Prepare the JSON response with the new sensor data
         response_data = {
             'cmd': 'new_sensor_data',
@@ -128,6 +130,7 @@ async def discoveryMode(websocket):
         for i in sensors_stored_data['data']:
             response_data['data'].append({
                 'id': i['id'],
+                'EPC': hex(i['id']),
                 'avg_temp': round(random.uniform(20, 30), 6),
                 'temp': round(random.uniform(20, 30), 6),
                 'std_dev': round(random.uniform(0, 5), 6),
@@ -135,12 +138,14 @@ async def discoveryMode(websocket):
                 'quality': qualityString[random.randint(0, 4)],
                 'rssi': round(random.uniform(-100, 0),6),
                 'elapsed_time': random.randint(0, 90),
-                'time_stamp': int(time.time())
+                'timestamp': int(time.time())
             })
-        if random.randint(1, 10) < 2:
-            print('New sensor found')
+        if random.randint(1, 10) < 4:
+            print('New sensor found... discovery mode')
+            id = random.randint(10000000000000, 99999999999999)
             element = {
-                'id': random.randint(10000000000000, 99999999999999),
+                'id': id,
+                'EPC': hex(id),
                 'avg_temp': round(random.uniform(20, 30), 2),
                 'temp': round(random.uniform(20, 30), 2),
                 'std_dev': round(random.uniform(0, 5), 2),
@@ -148,10 +153,11 @@ async def discoveryMode(websocket):
                 'quality': qualityString[random.randint(0, 4)],
                 'rssi': random.randint(0, 100),
                 'elapsed_time': 0,
-                'time_stamp': int(time.time())
+                'timestamp': int(time.time())
             }
             sensors_stored_data.get('data').append({
                 'id': element['id'],
+                'EPC': hex(id),
                 'config': {
                     'location': 0,
                     'position': 0,
@@ -181,6 +187,7 @@ async def normalMode(websocket):
         for i in sensors_stored_data['data']:
             response_data['data'].append({
                 'id': i['id'],
+                'EPC': hex(i['id']),
                 'avg_temp': round(random.uniform(20, 30), 2),
                 'temp': round(random.uniform(20, 30), 2),
                 'std_dev': round(random.uniform(0, 5), 2),
@@ -188,7 +195,7 @@ async def normalMode(websocket):
                 'quality': qualityString[random.randint(0, 4)],
                 'rssi': random.randint(0, 100),
                 'elapsed_time': random.randint(0, 90),
-                'time_stamp': int(time.time())
+                'timestamp': int(time.time())
             })
 
         # Convert the response to JSON and send it back to the client
