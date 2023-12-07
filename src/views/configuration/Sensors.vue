@@ -118,8 +118,11 @@
   })
 
   onUnmounted(() => {
-    if (globalStore.getDiscoveryModeOn) globalStore.stopDiscoveryMode()
-    if (globalStore.getNormaModeOn) globalStore.stopNormalMode()
+    if (globalStore.getDiscoveryModeOn) {
+      globalStore.stopDiscoveryMode()
+    } else {
+      if (globalStore.getNormaModeOn) globalStore.stopNormalMode()
+    }
   })
 </script>
 
