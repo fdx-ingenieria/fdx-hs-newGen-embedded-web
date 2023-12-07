@@ -96,7 +96,7 @@
   const switchDiscoveryMode = () => {
     loadingDiscoveryMode.value = true
     const promise = globalStore.getDiscoveryModeOn
-      ? globalStore.stopDiscoveryMode()
+      ? globalStore.stopDiscoveryMode().then(() => globalStore.startNormalMode())
       : globalStore.startDiscoveryMode()
 
       promise.finally(() => loadingDiscoveryMode.value = false)
