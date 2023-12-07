@@ -128,7 +128,7 @@
           <th v-if="showlabels" scope="col" class="px-4 py-3">{{ LabelType.LOCATION }}</th>
           <th v-if="showdata" scope="col" class="px-4 py-3">Temp</th>
           <th v-if="showdata" scope="col" class="px-4 py-3 text-center">Signal</th>
-          <th v-if="showdata" scope="col" class="px-4 py-3 hidden md:table-cell">Updated</th>
+          <th v-if="showdata" scope="col" class="px-4 py-3">Updated</th>
           <th v-show="!readonly" scope="col" class="px-4 py-3 hidden md:table-cell"><span class="sr-only">Actions</span></th>
         </tr>
       </thead>
@@ -154,7 +154,7 @@
               </small>
             </span>
           </td>
-          <td v-if="showdata" scope="col" class="px-4 py-3 hidden md:table-cell">
+          <td v-if="showdata" scope="col" class="px-4 py-3">
             <small title="Number of readings" class="text-xs flex items-center"><FlagIcon class="w-4 h-4 mr-1" />{{ item.data?.n_readings }}</small>
             <small title='Last update' class="flex items-center"><ClockIcon class="w-3 h-3 mr-1" />
               {{ elapsed_times[item.EPC] }}s
