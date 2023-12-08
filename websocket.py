@@ -232,6 +232,17 @@ async def normalMode(websocket):
     # except:
     #     print ("Task ended")
 
+def replace_sensor(sensor_EPC, new_sensor):
+    for i, sensor in enumerate(sensors_stored_data['data']):
+        if sensor['EPC'] == sensor_EPC:
+            sensors_stored_data['data'][i] = new_sensor
+            break
+
+def update_sensor_config(sensor_EPC, new_config):
+    for sensor in sensors_stored_data['data']:
+        if sensor['EPC'] == sensor_EPC:
+            sensor['config'].update(new_config)
+            break
 
 async def handle_websocket(websocket, path):
     discoveryModeTask = None
@@ -388,6 +399,19 @@ async def handle_websocket(websocket, path):
                     if "data" in received_data:
                         # Update the sensors_stored_data with the new value from "data"
                         sensors_stored_data.update({'data':received_data["data"]})
+                    else:
+                        # If "data" field is missing in the received message, send an error response
+                        response_data = {
+                            'status': 'error',
+                            'message': 'Invalid command: "data" field is missing',
+                        }
+                        response = json.dumps(response_data)
+                        await websocket.send(response)
+                elif "arg" in received_data and received_data["arg"] == "set":
+                    # Check if the "data" field is present in the received message
+                    if "data" in received_data:
+                        # Update the sensors_stored_data with the new value from "data"
+                        update_sensor_config(received_data["data"]['EPC'], received_data["data"]['config'])
                     else:
                         # If "data" field is missing in the received message, send an error response
                         response_data = {

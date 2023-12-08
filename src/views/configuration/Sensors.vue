@@ -58,23 +58,8 @@
   const save = () => {
     savingData.value = true
     const { id, EPC, config } = editableSensor.value
-    const newSensors: ISensor[] = []
 
-    // Replace sensor data
-    // and filter only the configured sensors
-    getAvailableSensors.value.forEach((item: ISensor) => {
-
-      if (item.EPC === EPC) {
-        newSensors.push({ id, EPC, config })
-        return
-      }
-
-      if (isComplete(item)) {
-        newSensors.push(item)
-      }
-    })
-
-    globalStore.updateSensors(newSensors)
+    globalStore.updateSensor({ id, EPC, config })
       .then(() => showRightSideBar.value = false)
       .finally(() => savingData.value = false)
   }

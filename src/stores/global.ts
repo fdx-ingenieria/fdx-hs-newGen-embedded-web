@@ -212,6 +212,11 @@ export const useGlobalStore = defineStore('global', () => {
       .then(() => loadSensors())
   }
 
+  async function updateSensor(data: ISensor): Promise<void> {
+    return addToRequestQueue({ cmd: SocketCommands.SENSOR_CONFIG, arg: "set", data })
+      .then(() => loadSensors())
+  }
+
   function addNewSensor(newSensor: ISensor): void {
     availableSensors.value = [...availableSensors.value, newSensor]
   }
@@ -281,6 +286,7 @@ export const useGlobalStore = defineStore('global', () => {
     getLabelName,
     getAvailableSensors,
     loadSensors,
+    updateSensor,
     updateSensors,
     clearUnconfiguredSensors,
     getAvailableAlarms,
