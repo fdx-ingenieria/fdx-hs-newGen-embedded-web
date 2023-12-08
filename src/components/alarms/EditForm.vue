@@ -2,25 +2,19 @@
   import { ref, Ref, watch } from 'vue';
   import { AlarmType, IAlarm, IAlarmField, ReleFlag } from '@/commons';
   import { useGlobalStore } from '@/stores/global';
-  import { LoadingIcon, PlusIcon, RemoveIcon, SendIcon } from '../icons';
-
-  const localValue: Ref<IAlarm> = ref({} as IAlarm)
-  const savingData = ref(false)
+  import { PlusIcon, RemoveIcon } from '../icons';
 
   const props = defineProps({
-    alarmId: {
-      type: Number,
+    alarm: {
+      type: Object as () => IAlarm,
       required: true,
     },
   })
-  const globalStore = useGlobalStore()
 
-  watch(props, () => {
-    const alarm = globalStore.getAvailableAlarms.find(item => item.id === props.alarmId)
-    if (alarm) {
-      localValue.value = {...alarm}
-    }
-  })
+  const globalStore = useGlobalStore()
+  // force deep copy
+  const localValue: Ref<IAlarm> = ref(JSON.parse(JSON.stringify(props.alarm)))
+  watch(props, () => localValue.value = JSON.parse(JSON.stringify(props.alarm)))
 
   const validSetPoint = (value: number): boolean => {
     return value >= 0 && value <= 140
@@ -36,17 +30,15 @@
       && validFields(localValue.value.fields)
   }
 
-  const save = () => {
-    savingData.value = true
-    const dirtyAlarms = [...globalStore.getAvailableAlarms].map(item => {
-      if (item.id === localValue.value.id) {
-        return localValue.value
-      }
-      return item
-    })
-    globalStore.updateAlarms(dirtyAlarms)
-      .then(() => emit('close'))
-      .finally(() => savingData.value = false)
+  const done = () => {
+    const { name, alarm_type, fields, relay_flag, set_point } = localValue.value
+    props.alarm.name = name
+    props.alarm.alarm_type = alarm_type
+    props.alarm.fields = fields
+    props.alarm.relay_flag = relay_flag
+    props.alarm.set_point = set_point
+
+    emit('close')
   }
 
   const addFieldRow = () => localValue.value.fields.push({ equipment: undefined, location: undefined})
@@ -65,7 +57,7 @@
     <div class="grid gap-4 mb-4">
       <div>
         <label class="block mb-2 text-sm font-semibold text-gray-900">ID</label>
-        <input type="text" :value="localValue.id"
+        <input type="text" :value="alarm.id"
           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
           disabled>
       </div>
@@ -137,7 +129,6 @@
                 <td class="px-1 py-2">
                   <button class="text-red-600 disabled:opacity-50 hover:text-red-700 hover:scale-125 flex font-semibold px-1 py-1 focus:outline-none"
                     @click="removeFieldRow(index)"
-                    :disabled="savingData"
                     type="button">
                     <RemoveIcon class="w-5" />
                   </button>
@@ -147,7 +138,6 @@
           </table>
           <button class="text-white flex items-center disabled:opacity-50 mx-auto bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-5 py-1.5 my-2 focus:outline-none"
             @click="addFieldRow()"
-            :disabled="savingData"
             type="button">
             <PlusIcon class="w-5 mr-1" />
             Add new row
@@ -157,21 +147,13 @@
     </div>
     <div class="flex items-center space-x-4">
       <button class="text-white flex items-center disabled:opacity-50 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2 focus:outline-none"
-        @click="save()"
-        :disabled="!isComplete() || savingData"
+        @click="done()"
+        :disabled="!isComplete()"
         type="button">
-        <template v-if="savingData">
-            <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto mr-1" />
-            Saving...
-          </template>
-          <template v-else>
-            <SendIcon class="w-4 mr-1" />
-            Save
-          </template>
+          Done
       </button>
       <button class="text-gray-900 bg-white border disabled:opacity-50 border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2"
         @click="emit('close')"
-        :disabled="savingData"
         type="button">Cancel</button>
     </div>
   </div>

@@ -77,7 +77,6 @@
   }
 
   const alarmSensors = (sensorsStates: ISensorState[] = []) => {
-    console.log(sensorsStates)
     const alarmSensors: ISensor[] = []
     globalStore.getConfiguredSensors.forEach(sensor => {
       const sensorState = sensorsStates.find(state => state.EPC === sensor.EPC)
