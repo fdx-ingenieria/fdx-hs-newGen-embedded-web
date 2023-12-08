@@ -108,6 +108,17 @@
     globalStore.clearUnconfiguredSensors()
       .finally(() => loadingData.value = false)
   }
+
+  const checkDuplicate = (editableSensor: ISensor): boolean => {
+    const { equipment, position, location } = editableSensor.config
+    return !!getAvailableSensors.value.filter(sensor =>
+      sensor.EPC !== editableSensor.EPC
+        && sensor.config.equipment === equipment
+        && sensor.config.position === position
+        && sensor.config.location === location
+    ).length
+  }
+
   onMounted(async () => {
     await Promise.all([
       globalStore.loadLabels(),
@@ -164,9 +175,15 @@
         </div>
       </div>
       <div v-if="isLimitReached" class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 mt-2" role="alert">
-        <AlertIcon class="w-5 h-5 mr-3" />
+        <AlertIcon class="flex-none w-5 mr-3" />
         <div class="ml-3 text-sm font-medium">
           Hey, you've reached the limit of 50 sensors.
+        </div>
+      </div>
+      <div v-if="checkDuplicate(editableSensor)" class="flex items-center p-4 mb-4 text-yellow-800 rounded-lg bg-yellow-50 mt-2" role="alert">
+        <AlertIcon class="flex-none w-5 mr-3" />
+        <div class="ml-3 text-sm font-medium">
+          You are about to save a configuration that is already stored for another sensor. Continuing will overwrite the existing configuration. Are you sure?
         </div>
       </div>
       <div class="flex items-center space-x-4">
