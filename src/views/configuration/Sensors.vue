@@ -262,7 +262,7 @@
           <h3 class="text-xl font-semibold">Configured sensors</h3>
         </div>
         <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-4" />
-        <SensorTable v-else :availableSensors="configuredSensors" :showlabels="true" @edit="editSensor" @reset="resetSensor" :showreset="true" :max="50" />
+        <SensorTable v-else :availableSensors="configuredSensors" :showlabels="true" @edit="editSensor" @reset="resetSensor" :max="50" />
       </div>
     </div>
   </section>
