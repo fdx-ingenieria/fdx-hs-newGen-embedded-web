@@ -9,10 +9,5 @@ export default defineConfig({
     alias: {
       '@': resolve(__dirname, 'src'),
     },
-  },
-  build: {
-    target: 'esnext',
-    sourcemap: 'inline',
-    assetsInlineLimit: 0
-  },
+  }
 })

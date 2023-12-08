@@ -1,6 +1,10 @@
 import { createWebHistory, createRouter, RouteRecordRaw } from "vue-router"
 import PageNotFound from '@/views/PageNotFound.vue'
 
+/**
+ * DONT USE LAZY LOADING FOR ROUTES
+ * it's has an unexpected behavior on the board
+ */
 const routes: Array<RouteRecordRaw > = [
   {
     path: "",
@@ -12,35 +16,35 @@ const routes: Array<RouteRecordRaw > = [
   {
     path: "/configuration/system",
     name: "System",
-    component: () => import('@/views/configuration/System.vue'),
+    component: import('@/views/configuration/System.vue'),
     props: true,
     meta: {}
   },
   {
     path: "/configuration/labels",
     name: "Labels",
-    component: () => import('@/views/configuration/Labels.vue'),
+    component: import('@/views/configuration/Labels.vue'),
     props: true,
     meta: {}
   },
   {
     path: "/configuration/sensors",
     name: "Sensors",
-    component: () => import('@/views/configuration/Sensors.vue'),
+    component: import('@/views/configuration/Sensors.vue'),
     props: true,
     meta: {}
   },
   {
     path: "/configuration/alarms",
     name: "Alarms",
-    component: () => import('@/views/configuration/Alarms.vue'),
+    component: import('@/views/configuration/Alarms.vue'),
     props: true,
     meta: {}
   },
   {
     path: "/modbus",
     name: "Modbus",
-    component: () => import('@/views/Modbus.vue'),
+    component: import('@/views/Modbus.vue'),
     props: true,
     meta: {}
   },

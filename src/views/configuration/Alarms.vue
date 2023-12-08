@@ -7,7 +7,7 @@
   import { useGlobalStore } from '@/stores/global'
   import { storeToRefs } from 'pinia';
   import { Ref, onMounted, onUnmounted, ref, watch } from 'vue'
-import { onBeforeRouteLeave } from 'vue-router';
+  import { onBeforeRouteLeave } from 'vue-router';
 
   const globalStore = useGlobalStore()
   const { getAvailableAlarms } = storeToRefs(globalStore)
