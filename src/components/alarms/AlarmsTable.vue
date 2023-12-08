@@ -81,12 +81,16 @@
     globalStore.getConfiguredSensors.forEach(sensor => {
       const sensorState = sensorsStates.find(state => state.EPC === sensor.EPC)
       if (sensorState) {
-        sensor.alarmed = sensorState.state
-        alarmSensors.push(sensor)
+        // Copy sensor to avoid mutations
+        const sensorCopy = { ...sensor }
+        sensorCopy.alarmed = sensorState.state
+        alarmSensors.push(sensorCopy)
       }
     })
+
     return alarmSensors
   }
+
 
   const emit = defineEmits<{
     edit: [index: number],
@@ -152,7 +156,7 @@
           <tr v-show="showSensor === item.id" class="transition-all duration-700 ease-in-out">
             <td class="bg-gray-700 text-white text-center"><div class="-rotate-90">Sensors</div></td>
             <td colspan="100%" class="transition-all duration-700 ease-in-out">
-              <SensorTable :availableSensors="alarmSensors(item.status?.sensors)" :readonly="true" :max="50" :showfooter="false" />
+              <SensorTable :availableSensors="alarmSensors(item.status?.sensors)" :readonly="true" :showfooter="false" />
             </td>
           </tr>
         </template>

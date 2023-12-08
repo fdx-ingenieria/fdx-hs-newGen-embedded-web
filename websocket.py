@@ -210,20 +210,33 @@ async def normalMode(websocket):
             'data': [],
             'status': 'ok',
         }
+
         for i in alarm_stored_data['data']:
-            response_data['data'].append({
-                'id': i['id'],
-                'state': random.randint(0, 1),
-                'sensors': [
+            sensors = [
                     {
                         'id': 10995384722910999987,
-                        'state': random.randint(0, 1),
+                        'EPC': hex(10995384722910999987),
+                        'state': random.choice([0, 1]),
                     },
                     {
                         'id': 10995384722910999988,
-                        'state': random.randint(0, 1),
+                        'EPC': hex(10995384722910999988),
+                        'state': random.choice([0, 1]),
                     }
-                ],
+                ]
+            randChoice = random.randint(1, 10)
+            print('choice', randChoice)
+            if  randChoice < 2:
+                del sensors[0]
+            if randChoice > 2 and randChoice < 7:
+                del sensors[1]
+
+            # Verificar si alguno de los elementos es 1
+            is_alarmed = any(ele['state'] == 1 for ele in sensors)
+            response_data['data'].append({
+                'id': i['id'],
+                'state': is_alarmed,
+                'sensors': sensors,
             })
 
         # Convert the response to JSON and send it back to the client
