@@ -4,7 +4,7 @@ import { Ref, computed, ref } from 'vue'
 import * as JSONBigInt from 'json-bigint'
 
 export const useGlobalStore = defineStore('global', () => {
-  const maxRetries = parseInt(import.meta.env.VITE_MAX_RETRIES) || 5
+  const maxRetries = parseInt(import.meta.env.VITE_MAX_RETRIES) || 150
   const timeBetweenRequests = parseInt(import.meta.env.VITE_TIME_BETWEEN_REQUESTS) || 500
   let socketInstace: WebSocket | null = null
   const status: Ref<SocketStatus> = ref(SocketStatus.CLOSED)
@@ -45,19 +45,25 @@ export const useGlobalStore = defineStore('global', () => {
     };
 
     socket.onclose = (e) => {
-      console.log('WebSocket disconnected. Reconnection attempt in 2 seconds.', e.reason)
-      setTimeout(connect, 2000)
+      console.log('WebSocket disconnected. Reconnection attempt in 10 seconds.', e)
+      socketInstace = null
+      setTimeout(connect, 10000)
       status.value = SocketStatus.CLOSED
     };
 
-    socket.onerror = (error) => {
-      console.error('WebSocket error:', error)
-      setTimeout(connect, 2000)
+    socket.onerror = () => {
       status.value = SocketStatus.CLOSED
     };
 
     // Set up the message event handler to update messageReceived
     socket.onmessage = (event) => messageHandler(event)
+
+    setTimeout(() => {
+      if (socket.readyState !== 1) {
+        console.warn('Connection attempt timed out. Retrying...')
+        socket.close(3506, 'Connection attempt timed out')
+      }
+    }, 5000)
   }
 
   function messageHandler(event: MessageEvent) {
@@ -175,7 +181,6 @@ export const useGlobalStore = defineStore('global', () => {
       }
       console.error(`Socket is not connected. Cmd: ${message.cmd} Attempt ${attempt} of ${maxRetries}.`)
       await sleep(1000)
-        .then(() => connect(import.meta.env.VITE_WS_URL))
         .then(() => sleep(1000))
         .then(() => send(message, attempt + 1))
       return
