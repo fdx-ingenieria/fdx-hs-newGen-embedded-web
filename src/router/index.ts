@@ -1,5 +1,11 @@
 import { createWebHistory, createRouter, RouteRecordRaw } from "vue-router"
 import PageNotFound from '@/views/PageNotFound.vue'
+import Overview from '@/views/Overview.vue'
+import System from '@/views/configuration/System.vue'
+import Labels from '@/views/configuration/Labels.vue'
+import Sensors from '@/views/configuration/Sensors.vue'
+import Alarms from '@/views/configuration/Alarms.vue'
+import Modbus from '@/views/Modbus.vue'
 
 /**
  * DONT USE LAZY LOADING FOR ROUTES
@@ -9,42 +15,42 @@ const routes: Array<RouteRecordRaw > = [
   {
     path: "",
     name: "Overview",
-    component: () => import('@/views/Overview.vue'),
+    component: Overview,
     props: true,
     meta: {}
   },
   {
     path: "/configuration/system",
     name: "System",
-    component: import('@/views/configuration/System.vue'),
+    component: System,
     props: true,
     meta: {}
   },
   {
     path: "/configuration/labels",
     name: "Labels",
-    component: import('@/views/configuration/Labels.vue'),
+    component: Labels,
     props: true,
     meta: {}
   },
   {
     path: "/configuration/sensors",
     name: "Sensors",
-    component: import('@/views/configuration/Sensors.vue'),
+    component: Sensors,
     props: true,
     meta: {}
   },
   {
     path: "/configuration/alarms",
     name: "Alarms",
-    component: import('@/views/configuration/Alarms.vue'),
+    component: Alarms,
     props: true,
     meta: {}
   },
   {
     path: "/modbus",
     name: "Modbus",
-    component: import('@/views/Modbus.vue'),
+    component: Modbus,
     props: true,
     meta: {}
   },
