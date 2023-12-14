@@ -106,6 +106,71 @@ alarm_stored_data = {
         },
     ]
 }
+# Modbus Table
+modbus_table = {
+    "data": [
+        {
+            "name": "System",
+            "columns": [
+                "MODBUS Address",
+                "Parameter",
+                "Options"
+            ],
+            "values": [
+                [0,"Serial number","1st segment: 0 - 6535"],
+                [1,"Serial number","2nd segment: 0 - 6535"],
+                [2,"Serial number","3rd segment: 0 - 6535"],
+                [3,"Serial number","4th segment: 0 - 6535"],
+                [4,"Version","System release version: 0 - 6535"],
+                [5,"Label Version","Labeling version: 0 - 6535"],
+                [6,"Reader temperature","Integer ranging: 0 - 120 °C"]
+            ]
+        },
+        {
+            "name": "Other table",
+            "columns": [
+                "Id",
+                "a column"
+            ],
+            "values": [
+                [0,"1st segment: 0 - 6535"],
+                [1,"2nd segment: 0 - 6535"],
+                [2,"3rd segment: 0 - 6535"],
+                [3,"4th segment: 0 - 6535"],
+                [4,"System release version: 0 - 6535"],
+                [5,"Labeling version: 0 - 6535"],
+                [6,"Integer ranging: 0 - 120 °C"]
+            ]
+        },
+        {
+            "name": "Sensors",
+            "columns": [
+                "Sensor ID",
+                "Location",
+                "Equipment",
+                "Position",
+                "MODBUS Address",
+                "Parameter",
+                "Options"
+            ],
+            "values": [
+                ["A51P","Sector 1","Motor 1","Cable entry 2",220],
+                ["A57P","Sector 1","Motor 2","Cable entry 4",230]
+            ],
+            "autoincrementColumn": 4,
+            "commonRows": [
+                ["Temperature","Integer value: -40-120 °C"],
+                ["Alarm","0: OFF , 1: ON"],
+                ["Quality","0: Out of service , 1: Bad , 2: Regular , 3: Good, 4: Excellent"],
+                ["Sensor ID","Sensor ID decimal of 2 chars: High Part"],
+                ["Sensor ID","Sensor ID decimal of 2 chars: Low Part"],
+                ["Location","Measuring point location"],
+                ["Equipment","Measuring point equipment"],
+                ["Position","Measuring point position"]
+            ]
+        }
+    ]
+}
 # alarm types
 # (0:non set,1: absolute, 2: unbalance, 3:dispersión)
 
@@ -314,6 +379,26 @@ async def handle_websocket(websocket, path):
                         }
                         response = json.dumps(response_data)
                         await websocket.send(response)
+                else:
+                    # If the received "arg" is neither "get" nor "set", send an error response
+                    response_data = {
+                        'status': 'error',
+                        'message': 'Invalid argument',
+                    }
+                    response = json.dumps(response_data)
+                    await websocket.send(response)
+            elif "cmd" in received_data and received_data["cmd"] == "modbus_table":
+                if "arg" in received_data and received_data["arg"] == "get":
+                    # Prepare the JSON response with the stored data
+                    response_data = {
+                        'cmd': 'modbus_table',
+                        'arg': 'get',
+                        'data': modbus_table.get('data'),
+                        'status': 'ok',
+                    }
+                    # Convert the response to JSON and send it back to the client
+                    response = json.dumps(response_data)
+                    await websocket.send(response)
                 else:
                     # If the received "arg" is neither "get" nor "set", send an error response
                     response_data = {
