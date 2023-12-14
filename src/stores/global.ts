@@ -1,4 +1,4 @@
-import { SocketStatus, SocketCommands, ILabelData, ISensor, LabelType, ISystem, ISensorData, IRequest, IAlarm, IAlarmData, IRequestQueue } from '@/commons'
+import { SocketStatus, SocketCommands, ILabelData, ISensor, LabelType, ISystem, ISensorData, IRequest, IAlarm, IAlarmData, IRequestQueue, IModbusTableEntry } from '@/commons'
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
 import * as JSONBigInt from 'json-bigint'
@@ -16,6 +16,7 @@ export const useGlobalStore = defineStore('global', () => {
   const alarmsData: Ref<IAlarmData[]> = ref([])
   const sensorsData: Ref<ISensorData[]> = ref([])
   const systeamData: Ref<ISystem> = ref({} as ISystem)
+  const modbusTable: Ref<Array<IModbusTableEntry>> = ref([])
   const requestQueue: Array<IRequestQueue> = [];
   let isProcessing: boolean = false;
 
@@ -28,6 +29,7 @@ export const useGlobalStore = defineStore('global', () => {
   const getDiscoveryModeOn = computed(() => discoveryModeOn.value)
   const getNormaModeOn = computed(() => normalModeOn.value)
   const getSystemData = computed(() => systeamData.value)
+  const getModbusTable = computed(() => modbusTable.value)
   const getSensorsData = computed(() => sensorsData.value)
   const getConfiguredSensors = computed(() => availableSensors.value.filter(sensor => !!sensor.config.equipment))
   const getAvailableAlarms = computed(() => availableAlarms.value)
@@ -66,6 +68,7 @@ export const useGlobalStore = defineStore('global', () => {
     }, 5000)
   }
 
+  //TODO: refactor as dictionary
   function messageHandler(event: MessageEvent) {
     const { cmd, arg, data } = JSONBigInt.parse(event.data)
 
@@ -100,6 +103,11 @@ export const useGlobalStore = defineStore('global', () => {
     if (cmd === SocketCommands.HS_CONFIG && arg === 'get') {
       console.log('New sytem data received:', data)
       systeamData.value = data
+      return
+    }
+    if (cmd === SocketCommands.MODBUS_TABLE && arg === 'get') {
+      console.log('New modbus table data received:', data)
+      modbusTable.value = data
       return
     }
   }
@@ -272,6 +280,10 @@ export const useGlobalStore = defineStore('global', () => {
       .then(() => loadSystemData())
   }
 
+  async function loadModbusTable(): Promise<void> {
+    return addToRequestQueue({ cmd: SocketCommands.MODBUS_TABLE, arg: "get", data: '' })
+  }
+
   async function startNormalMode(): Promise<void> {
     return addToRequestQueue({ cmd: SocketCommands.NORMAL_MODE, arg: "start", data: '' })
       .then(() => { normalModeOn.value = true })
@@ -306,6 +318,8 @@ export const useGlobalStore = defineStore('global', () => {
     getSystemData,
     loadSystemData,
     updateSystemData,
+    loadModbusTable,
+    getModbusTable,
     startNormalMode,
     stopNormalMode,
     getSensorsData,
