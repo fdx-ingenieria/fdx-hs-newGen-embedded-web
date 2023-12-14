@@ -94,3 +94,11 @@ export interface IMenuItem {
   label: string;
   route?: string;
 }
+// Modbus table
+export interface IModbusTableEntry {
+  name: string;
+  columns: Array<string>;
+  values: Array<Array<string | number>>;
+  autoincrementColumn?: number;
+  commonRows?: Array<string | number>;
+}
