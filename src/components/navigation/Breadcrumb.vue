@@ -16,7 +16,7 @@
 </script>
 
 <template>
-  <nav class="flex mb-4" aria-label="Breadcrumb">
+  <nav class="flex mb-4 print:hidden" aria-label="Breadcrumb">
     <ol class="inline-flex items-center space-x-1 md:space-x-3">
       <li class="inline-flex items-center">
         <a class="inline-flex items-center text-sm text-fdx-red">

@@ -29,7 +29,7 @@
   ]
 </script>
 <template>
-  <aside class="fixed top-0 left-0 z-40 w-64 h-screen pt-16 transition-transform bg-white border-r border-gray-200 md:translate-x-0"
+  <aside class="fixed top-0 left-0 z-40 w-64 h-screen pt-16 transition-transform bg-white border-r border-gray-200 md:translate-x-0 print:hidden"
     :class="{'translate-x-0': show, '-translate-x-full': !show}"
     aria-label="Sidenav">
     <div class="overflow-y-auto py-3 px-3 h-full bg-white">
