@@ -310,6 +310,25 @@ async def normalMode(websocket):
     # except:
     #     print ("Task ended")
 
+async def tempUpdate(websocket):
+    # try:
+    print('Starting Temp updates task')
+    while True:
+        await asyncio.sleep(20)
+        print('Sending temp data...')
+        # Prepare the JSON response with the new sensor data
+        response_data = {
+            'cmd': 'reader_temp',
+            'arg': 'get',
+            'data': round(random.uniform(5, 90), 2),
+            'status': 'ok',
+        }
+        # Convert the response to JSON and send it back to the client
+        response = json.dumps(response_data)
+        await websocket.send(response)
+    # except:
+    #     print ("Task ended")
+
 def replace_sensor(sensor_EPC, new_sensor):
     for i, sensor in enumerate(sensors_stored_data['data']):
         if sensor['EPC'] == sensor_EPC:
@@ -325,6 +344,8 @@ def update_sensor_config(sensor_EPC, new_config):
 async def handle_websocket(websocket, path):
     discoveryModeTask = None
     normalModeTask = None
+    print('Starting websocket connection')
+    asyncio.create_task(tempUpdate(websocket))
     try:
         # Handle messages received from the client
         async for message in websocket:
