@@ -18,6 +18,7 @@ export const useGlobalStore = defineStore('global', () => {
   const systeamData: Ref<ISystem> = ref({} as ISystem)
   const modbusTable: Ref<Array<IModbusTableEntry>> = ref([])
   const requestQueue: Array<IRequestQueue> = [];
+  const boardTemp: Ref<number> = ref(0)
   let isProcessing: boolean = false;
 
   const sleep = async(ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -108,6 +109,11 @@ export const useGlobalStore = defineStore('global', () => {
     if (cmd === SocketCommands.MODBUS_TABLE && arg === 'get') {
       console.log('New modbus table data received:', data)
       modbusTable.value = data
+      return
+    }
+    if (cmd === SocketCommands.READER_TEMP && arg === 'get') {
+      console.log('New board temp data received:', data)
+      boardTemp.value = data
       return
     }
   }
@@ -296,6 +302,7 @@ export const useGlobalStore = defineStore('global', () => {
 
   return {
     status,
+    boardTemp,
     getStatus,
     getAvailableLabels,
     updateLabels,

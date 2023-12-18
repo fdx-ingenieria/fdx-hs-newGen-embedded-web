@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { useGlobalStore } from '@/stores/global';
   import { ThermometerIcon } from '../icons';
   import SocketStatus from './SocketStatus.vue';
 
@@ -9,6 +10,7 @@
     },
   })
 
+  const globalStore = useGlobalStore();
   const emit = defineEmits<{
     (e: 'toggle-side-bar'): void
   }>()
@@ -33,7 +35,7 @@
       <div class="flex print:hidden">
         <div class="flex items-center hidden sm:inline-flex">
           <ThermometerIcon class="w-5 h-5 text-gray-600" />
-          43.10
+          {{  globalStore.boardTemp }}
           <small class="ml-1">°C</small>
         </div>
         <SocketStatus class="ml-4" />

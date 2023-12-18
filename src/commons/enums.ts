@@ -17,6 +17,7 @@ export enum SocketCommands {
   CLEAR_SENSORS_RAM = 'clean_sensors_RAM',
   ALARM_DATA = 'alarm_data',
   HS_CONFIG = 'hs_config',
+  READER_TEMP = 'reader_temp'
 }
 
 export enum SensorQuality {
