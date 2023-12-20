@@ -2,7 +2,7 @@
   import { SocketStatus } from '@/commons/enums';
   import { useGlobalStore } from '@/stores/global';
   import { computed } from 'vue';
-import { NetworkConnectedIcon, NetworkConnectingIcon, NetworkDisconnectedIcon } from '../icons';
+  import { NetworkConnectedIcon, NetworkConnectingIcon, NetworkDisconnectedIcon } from '../icons';
 
   const globalStore = useGlobalStore();
 
