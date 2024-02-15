@@ -105,12 +105,12 @@
   }
 
   onMounted(async () => {
-    await Promise.all([
-      globalStore.loadLabels(),
-      globalStore.loadSensors()
-    ])
-    .then(() => globalStore.startNormalMode())
-    .then(() => loadingData.value = false)
+    // await Promise.all([
+    //   globalStore.loadLabels(),
+    //   globalStore.loadSensors()
+    // ])
+    // .then(() => globalStore.startNormalMode())
+    // .then(() => loadingData.value = false)
   })
 
   onUnmounted(() => {
@@ -198,12 +198,13 @@
           type="button" >Cancel</button>
       </div>
     </RightSideBar>
+
     <div class="mx-auto">
       <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden mt-8">
         <div class="flex justify-between bg-fdx-dark text-white items-center py-2 px-4">
           <div class="flex">
             <ListIcon class="h-6 hidden md:inline-flex mt-1 mr-2" />
-            <h3 class="text-xl font-semibold">Unconfigured sensors</h3>
+            <h3 class="text-xl font-semibold">Tag inventory</h3>
           </div>
           <div class="flex space-x-1 -mx-2">
             <button type="button"
@@ -248,9 +249,9 @@
                 Stop
               </template>
             </button>
-            <ChevronUpIcon class="h-6 w-6 scale-110 cursor-pointer hover:scale-125"
+            <!-- <ChevronUpIcon class="h-6 w-6 scale-110 cursor-pointer hover:scale-125"
               :class="{'rotate-180': !showUnconfiguredTable}"
-              @click="showUnconfiguredTable = !showUnconfiguredTable" />
+              @click="showUnconfiguredTable = !showUnconfiguredTable" /> -->
           </div>
         </div>
         <template v-if="showUnconfiguredTable">
@@ -258,14 +259,14 @@
           <SensorTable v-else :availableSensors="unconfiguredSensors" :discovery="globalStore.getDiscoveryModeOn" @edit="editSensor" />
         </template>
       </div>
-      <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden mt-8">
+      <!-- <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden mt-8">
         <div class="flex bg-fdx-dark text-white items-center py-2 px-4">
           <ListIcon class="h-6 hidden md:inline-flex mt-1 mr-2" />
           <h3 class="text-xl font-semibold">Configured sensors</h3>
         </div>
         <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-4" />
         <SensorTable v-else :availableSensors="configuredSensors" :showlabels="true" @edit="editSensor" @reset="resetSensor" :max="50" />
-      </div>
+      </div> -->
     </div>
   </section>
 </template>

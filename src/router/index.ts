@@ -1,11 +1,10 @@
 import { createWebHistory, createRouter, RouteRecordRaw } from "vue-router"
 import PageNotFound from '@/views/PageNotFound.vue'
-import Overview from '@/views/Overview.vue'
-import System from '@/views/configuration/System.vue'
-import Labels from '@/views/configuration/Labels.vue'
-import Sensors from '@/views/configuration/Sensors.vue'
-import Alarms from '@/views/configuration/Alarms.vue'
-import Modbus from '@/views/Modbus.vue'
+import Home from '@/views/Home.vue'
+import Command from '@/views/Command.vue'
+import Wired from '@/views/configuration/Wired.vue'
+import Wireless from '@/views/configuration/Wireless.vue'
+import Reader from '@/views/configuration/Reader.vue'
 
 /**
  * DONT USE LAZY LOADING FOR ROUTES
@@ -14,46 +13,45 @@ import Modbus from '@/views/Modbus.vue'
 const routes: Array<RouteRecordRaw > = [
   {
     path: "",
-    name: "Overview",
-    component: Overview,
+    name: "Home",
+    component: Home,
     props: true,
     meta: {}
   },
   {
-    path: "/configuration/system",
-    name: "System",
-    component: System,
+    path: "/Network/Wireless",
+    name: "Wireless",
+    component: Wireless,
     props: true,
     meta: {}
   },
   {
-    path: "/configuration/labels",
-    name: "Labels",
-    component: Labels,
+    path: "/Network/Wired",
+    name: "Wired",
+    component: Wired,
     props: true,
     meta: {}
   },
+
   {
-    path: "/configuration/sensors",
-    name: "Sensors",
-    component: Sensors,
+    path: "/Reader",
+    name: "Reader",
+    component: Reader,
     props: true,
     meta: {}
   },
+
   {
-    path: "/configuration/alarms",
-    name: "Alarms",
-    component: Alarms,
+    path: "/command",
+    name: "Command",
+    component: Command,
     props: true,
     meta: {}
   },
-  {
-    path: "/modbus",
-    name: "Modbus",
-    component: Modbus,
-    props: true,
-    meta: {}
-  },
+ 
+ 
+  
+ 
   {
     path: "/:catchAll(.*)",
     component: PageNotFound
