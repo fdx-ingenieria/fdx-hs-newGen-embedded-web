@@ -1,13 +1,12 @@
 <template>
   <div class="row">
-    <BNavbar toggleable="sm" type="light" variant="light">
-      <BNavbarToggle target="nav-text-collapse" />
+    <BNavbar toggleable="sm" type="light" variant="light" style="height: 60px;">
 
-      <BNavbarBrand>
-        <img src="logo.svg" alt="" style="width: 100px;">
+      <BNavbarBrand >
+        <img src="logo.svg" alt="" height="50px" style="width: 50px; height: 50px;">
       </BNavbarBrand>
 
-      <BCollapse id="nav-text-collapse" is-nav>
+      <!-- <BCollapse id="nav-text-collapse" is-nav>
         <BNavbarNav>
           <BNavItem>
             <router-link to="/#" class="menu-link">Temperatures</router-link>
@@ -31,7 +30,7 @@
             <BDropdownItem>Modbus</BDropdownItem>
           </BNavItemDropdown>
         </BNavbarNav>
-      </BCollapse>
+      </BCollapse> -->
      <connection/>
     </BNavbar>
   </div>
@@ -56,7 +55,7 @@ export default {
 .menu-link {
   text-decoration: none;
   color: #333;
-  padding: 10px;
+  padding: 1px;
 }
 
 .menu-link:hover {

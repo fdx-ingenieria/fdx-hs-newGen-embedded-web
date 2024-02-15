@@ -15,7 +15,7 @@
 <script>
 
 import CustomMenu from './components/menu.vue';
-// import compLabel from './views/label_configView.vue';
+//import compLabel from './views/label_configView.vue';
 export default {
   components: { CustomMenu },
   data() {

@@ -1,5 +1,5 @@
 <template>
- <div> {{ status }}</div>
+<div :class="{ 'red': status === 'Disconnected', 'green': status === 'Connected' }">{{ status }}</div>
 </template>
 
 <script>
@@ -49,15 +49,13 @@ export default {
       this.status=websocketStore.getStatus();
 
      switch (this.status) {
-      case "disconnected":
+      case "Disconnected":
         this.connectWebSocket();
          break;
-      case "connected":
-         break;
-      case "error":
-         this.connectWebSocket();
+      case "Connected":
          break;
       default:
+          this.connectWebSocket();
           break;
 
 }
@@ -74,5 +72,31 @@ export default {
       websocketStore.send(message);
     },
   }
+
 };
 </script>
+
+<style scoped>
+
+.red {
+    color: rgb(0, 0, 0); /* Change the text color to red for disconnected */
+    padding-right:  50px;
+    padding-left:  50px;
+    margin-right: 100px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    background-color: rgb(255, 0, 0);
+}
+
+.green {
+    color: rgb(0, 0, 0); /* Change the text color to green for connected */
+    padding-right:  50px;
+    padding-left:  50px;
+    margin-right: 100px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    background-color: rgb(0, 255, 55);
+
+
+}
+</style>

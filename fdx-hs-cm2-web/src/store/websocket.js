@@ -5,7 +5,7 @@ export const useWebSocketStore = defineStore({
   state: () => ({
     socket: null,
     messageReceived: null,
-    status: 'disconnected', // New status property to track WebSocket status
+    status: 'Disconnected', // New status property to track WebSocket status
 
   }),
   actions: {
@@ -15,20 +15,20 @@ export const useWebSocketStore = defineStore({
       socket.onopen = () => {
         console.log('WebSocket connected');
         this.$state.socket = socket;
-        this.$state.status = "connected";
+        this.$state.status = "Connected";
 
       };
 
       socket.onclose = () => {
         console.log('WebSocket disconnected');
         this.$state.socket = null;
-        this.$state.status = "disconnected";
+        this.$state.status = "Disconnected";
       };
 
       socket.onerror = (error) => {
         console.error('WebSocket error:', error);
         this.$state.socket = null;
-        this.$state.status = "error";
+        this.$state.status = "Disconnected";
       };
 
       // Set up the message event handler to update messageReceived
@@ -44,7 +44,7 @@ export const useWebSocketStore = defineStore({
     close() {
       if (this.$state.socket) {
         this.$state.socket.close();
-        this.$state.status = "disconnected";
+        this.$state.status = "Disconnected";
       }
     },
 
@@ -53,7 +53,7 @@ export const useWebSocketStore = defineStore({
         this.$state.socket.send(JSON.stringify(message));
       } else {
         console.error('WebSocket not connected');
-        this.$state.status = "disconnected";
+        this.$state.status = "Disconnected";
       }
     },
   },

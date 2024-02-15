@@ -12,6 +12,7 @@
         Received:
         <div v-if="messageReceived" class="message-container">
           <pre> {{ formattedMessage }}</pre>
+          <button @click="editMessage">Edit & send</button>
         </div>
       </div>
     </div>
@@ -52,6 +53,19 @@ export default {
     },
   },
   methods: {
+
+    editMessage(){
+
+        try {
+          var customMessage= JSON.stringify(this.messageReceived);
+          this.customMessage= JSON.stringify(JSON.parse(customMessage), null, 2);
+        } catch (error) {
+          this.customMessage= this.messageReceived; // Display the original message if JSON parsing fails
+        }
+        //this.customMessage= this.formattedMessage;
+
+    },
+
     sendMessage() {
       try {
         const message = this.customMessage; // Use the customMessage property as the message
