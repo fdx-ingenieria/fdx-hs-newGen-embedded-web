@@ -62,7 +62,7 @@ export default {
    
     },
     connectWebSocket() {
-      const url = 'ws://'+this.fileContent.server+':'+this.fileContent.port; // Replace with your WebSocket server URL
+      const url = this.fileContent.uri; // Replace with your WebSocket server URL
       const websocketStore = useWebSocketStore();
       websocketStore.connect(url);
     },
