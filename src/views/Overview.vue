@@ -22,7 +22,7 @@
     getAlarmsData,
   } = storeToRefs(globalStore)
   const loading = ref(true)
-  const activeTab = ref('alarms')
+  const activeTab = ref('sensors')
   const localAlarms = ref([] as IAlarm[])
 
   watch(
@@ -58,7 +58,7 @@
       if (element.state) {
         alarms.set(element.id.toString(16), element)
         element.sensors.forEach(sensor => {
-          sensors.set(sensor.EPC, sensor)
+          sensors.set(sensor.id, sensor)
         });
       }
     });
@@ -119,7 +119,7 @@
           <h3 class="text-sm tracking-wider font-semibold">Lower Temperature</h3>
           <p class="text-xl flex items-center" title="Lower">
             {{  temperatures.min?.temp }} <small class="ml-1 font-bold">°C</small>
-            <small class="absolute bottom-0 right-2">{{  temperatures.min?.EPC }}</small>
+            <small class="absolute bottom-0 right-2">{{  temperatures.min?.EPC_HEX }}</small>
           </p>
         </div>
       </div>
@@ -132,7 +132,7 @@
           <h3 class="text-sm tracking-wider font-semibold">Higher Temperature</h3>
           <p class="text-xl flex items-center" title="Higher">
             {{  temperatures.max?.temp }} <small class="ml-1 font-bold">°C</small>
-            <small class="absolute bottom-0 right-2">{{  temperatures.max?.EPC }}</small>
+            <small class="absolute bottom-0 right-2">{{  temperatures.max?.EPC_HEX }}</small>
           </p>
         </div>
       </div>
@@ -144,16 +144,18 @@
           <ul class="flex flex-wrap -mb-px">
             <li class="mr-2">
               <a
-                class="inline-block p-4 border-b-2 rounded-t-lg cursor-pointer"
-                :class="getTabClass('alarms')"
-                @click="activeTab = 'alarms'">Alarms</a>
-            </li>
-            <li class="mr-2">
-              <a
               class="inline-block p-4 border-b-2 rounded-t-lg cursor-pointer"
               :class="getTabClass('sensors')"
                 @click="activeTab = 'sensors'">Sensors</a>
             </li>
+
+            <li class="mr-2">
+              <a
+                class="inline-block p-4 border-b-2 rounded-t-lg cursor-pointer"
+                :class="getTabClass('alarms')"
+                @click="activeTab = 'alarms'">Alarms</a>
+            </li>
+           
           </ul>
         </div>
         <transition-group name="slide-down-fade" appear tag="div" class="overflow-x-auto">
