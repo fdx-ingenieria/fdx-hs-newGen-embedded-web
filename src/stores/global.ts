@@ -83,6 +83,15 @@ export const useGlobalStore = defineStore('global', () => {
       return
     }
     if (cmd === SocketCommands.SENSOR_CONFIG && arg === 'get_all') {
+
+
+      data.forEach((item: ISensorData) => {
+        item.EPC_HEX=item.id.toString(16);
+        item.EPC_ASCII=hexToString( item.EPC_HEX);
+       
+
+      })
+
       availableSensors.value = data
       return
     }
@@ -108,6 +117,16 @@ export const useGlobalStore = defineStore('global', () => {
     }
     if (cmd === SocketCommands.MODBUS_TABLE && arg === 'get') {
       console.log('New modbus table data received:', data)
+      data[2].columns[0]="ID ASCII (EPC)";
+      data[2].columns.unshift("ID HEX (EPC)");
+      data[2].autoincrementColumn=5;
+      data[2].values.forEach((item: any) => {
+        var EPC_DEC=item[0];
+        item.unshift(EPC_DEC.toString(16))
+        item[1]=hexToString(item[0]);
+       
+
+      })
       modbusTable.value = data
       return
     }
@@ -126,8 +145,31 @@ export const useGlobalStore = defineStore('global', () => {
     alarmsData.value = data
   }
 
+  function hexToString (hex: string){
+  let string = '';
+    for (let i = 0; i < hex.length; i += 2) {
+        const hexPair = hex.substr(i, 2);
+        const decimalValue = parseInt(hexPair, 16);
+
+        // Check if the conversion is valid
+        if (isNaN(decimalValue)) {
+            return 'Non-ASCII';
+        }
+
+        const char = String.fromCharCode(decimalValue);
+
+        // Check if the character is not printable
+        if (!/[ -~]/.test(char)) {
+            return 'Non-ASCII';
+        }
+
+        string += char;
+    }
+    return string;
+}
+
   function updateSensorsData(data: ISensorData[]) {
-    const availableSensorsEPCs = availableSensors.value.map((item: ISensor) => item.EPC)
+    const availableSensorsEPCs = availableSensors.value.map((item: ISensor) => item.id)
 
     // Check if there are new sensors and update existing ones
     data.forEach((item: ISensorData) => {
@@ -136,10 +178,15 @@ export const useGlobalStore = defineStore('global', () => {
       item.std_dev = parseFloat(item.std_dev.toFixed(1))
       item.rssi = Math.round(item.rssi)
 
-      if (!availableSensorsEPCs.includes(item.EPC)) {
+      item.EPC_HEX = item.id.toString(16)
+      item.EPC_ASCII = hexToString(item.id.toString(16))
+
+      if (!availableSensorsEPCs.includes(item.id)) {
         addNewSensor({
           id: item.id,
-          EPC: item.EPC,
+          EPC_HEX : item.EPC_HEX,
+          EPC_ASCII: item.EPC_ASCII,
+         // EPC: item.EPC,
           config: {
             equipment: 0,
             position: 0,
@@ -242,7 +289,7 @@ export const useGlobalStore = defineStore('global', () => {
 
   function updateSensorData(sensorData: ISensorData): void {
     availableSensors.value = availableSensors.value.map((sensor) => {
-      if (sensor.EPC === sensorData.EPC) {
+      if (sensor.id === sensorData.id) {
         return {
           ...sensor,
           data: sensorData,
