@@ -18,7 +18,7 @@
     },
     showlabels: {
       type: Boolean,
-      default: false
+      default: true
     },
     showreset: {
       type: Boolean,

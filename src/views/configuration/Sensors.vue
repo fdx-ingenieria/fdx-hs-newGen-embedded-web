@@ -206,7 +206,7 @@
         <div class="flex justify-between bg-fdx-dark text-white items-center py-2 px-4">
           <div class="flex">
             <ListIcon class="h-6 hidden md:inline-flex mt-1 mr-2" />
-            <h3 class="text-xl font-semibold">Unconfigured sensors</h3>
+            <!-- <h3 class="text-xl font-semibold">Unconfigured sensors</h3> -->
           </div>
           <div class="flex space-x-1 -mx-2">
             <button type="button"
@@ -256,10 +256,10 @@
               @click="showUnconfiguredTable = !showUnconfiguredTable" />
           </div>
         </div>
-        <template v-if="showUnconfiguredTable">
+        <!-- <template v-if="showUnconfiguredTable">
           <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-4" />
           <SensorTable v-else :availableSensors="unconfiguredSensors" :discovery="globalStore.getDiscoveryModeOn" @edit="editSensor" />
-        </template>
+        </template> -->
       </div>
       <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden mt-8">
         <div class="flex bg-fdx-dark text-white items-center py-2 px-4">

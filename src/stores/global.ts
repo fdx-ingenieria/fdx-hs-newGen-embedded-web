@@ -33,6 +33,7 @@ export const useGlobalStore = defineStore('global', () => {
   const getModbusTable = computed(() => modbusTable.value)
   const getSensorsData = computed(() => sensorsData.value)
   const getConfiguredSensors = computed(() => availableSensors.value.filter(sensor => !!sensor.config.equipment))
+  //const getConfiguredSensors = computed(() => availableSensors.value)
   const getAvailableAlarms = computed(() => availableAlarms.value)
   const getConfiguredAlarms = computed(() => availableAlarms.value.filter(alarm => !!alarm.alarm_type))
   const getAlarmsData = computed(() => alarmsData.value)
@@ -172,6 +173,26 @@ export const useGlobalStore = defineStore('global', () => {
     const availableSensorsEPCs = availableSensors.value.map((item: ISensor) => item.id)
 
     // Check if there are new sensors and update existing ones
+
+    var newSensorAvailableSensor=0;
+
+    data.forEach((item: ISensorData) => {
+      if (!availableSensorsEPCs.includes(item.id)) {
+        newSensorAvailableSensor=1   
+      }
+
+    })
+
+    // forzing a refresh of the sensors configuration if there is a least a sensor new or the len of
+    //data available and new are diferents.
+    if((newSensorAvailableSensor===1) || (availableSensorsEPCs.length != data.length)){
+      loadSensors(); 
+    }
+
+    
+
+    
+
     data.forEach((item: ISensorData) => {
       // Round decimals
       item.avg_temp = parseFloat(item.avg_temp.toFixed(1))
@@ -194,10 +215,17 @@ export const useGlobalStore = defineStore('global', () => {
           },
           data: item,
         })
+
       } else {
         updateSensorData(item)
       }
     })
+    
+
+    // if(data.length===availableSensorsEPCs.length ){
+    //   loadSensors(); 
+    // }  
+
     sensorsData.value = data
   }
 
