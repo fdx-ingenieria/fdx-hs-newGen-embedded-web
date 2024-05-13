@@ -605,7 +605,7 @@ async def handle_websocket(websocket, path):
         print('WebSocket connection closed.')
 
 async def main():
-    async with websockets.serve(handle_websocket, "localhost", 8000):
+    async with websockets.serve(handle_websocket, "localhost", 80):
         await asyncio.Future()  # run forever
 
 if __name__ == "__main__":

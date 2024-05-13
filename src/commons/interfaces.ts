@@ -35,7 +35,9 @@ export interface ISensorConfig {
 
 export interface ISensor {
   id: number;
-  EPC: string;
+  EPC_HEX: string;
+  //EPC: string;
+  EPC_ASCII: string;
   config: ISensorConfig;
   data?: ISensorData;
   alarmed?: boolean
@@ -43,7 +45,9 @@ export interface ISensor {
 
 export interface ISensorData {
   id: number;
-  EPC: string;
+  EPC_HEX: string;
+  EPC_ASCII: string;
+ // EPC: string;
   avg_temp: number;
   temp: number;
   std_dev: number;
@@ -72,7 +76,9 @@ export interface IAlarmField {
 
 export interface ISensorState {
   id: number; // long int
-  EPC: string;
+  EPC_HEX: string;
+  EPC_ASCII: string;
+ // EPC: string;
   state: boolean;
 }
 export interface IAlarmData {
