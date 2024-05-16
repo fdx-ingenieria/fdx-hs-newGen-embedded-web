@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ref, Ref, watch } from 'vue';
-  import { AlarmType, IAlarm, IAlarmField, ReleFlag } from '@/commons';
+  import { AlarmType, IAlarm, IAlarmField, isValidInteger, ReleFlag } from '@/commons';
   import { useGlobalStore } from '@/stores/global';
   import { PlusIcon, RemoveIcon } from '../icons';
 
@@ -17,7 +17,8 @@
   watch(props, () => localValue.value = JSON.parse(JSON.stringify(props.alarm)))
 
   const validSetPoint = (value: number): boolean => {
-    return value >= 0 && value <= 140
+    if (!isValidInteger(value)) return false
+    return value >= -40 && value <= 120
   }
 
   const validFields = (fields: IAlarmField[]): boolean => {
@@ -51,10 +52,10 @@
 
 <template>
   <div class="overflow-x-auto">
-    <h3 class="text-lg font-semibold text-gray-900 mb-8 border-b">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b">
       Edit alarm
     </h3>
-    <div class="grid gap-4 mb-4">
+    <div class="grid gap-4 mb-4 p-1">
       <div>
         <label class="block mb-2 text-sm font-semibold text-gray-900">ID</label>
         <input type="text" :value="alarm.id"
@@ -82,12 +83,14 @@
       </div>
       <div>
         <label class="block mb-2 text-sm font-semibold text-gray-900">Set Point</label>
-        <input type="number"
-          min="0" max="140"
+        <input class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+          type="number"
+          min="-40"
+          max="120"
+          step="1"
           v-model.number="localValue.set_point"
-          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5">
-
-          <p v-show="!validSetPoint(localValue.set_point)" class="mt-2 text-sm text-red-600"><span class="font-semibold">Oops!</span> This value should be between 0 and 140.</p>
+          placeholder="Set point value">
+          <p v-show="!validSetPoint(localValue.set_point)" class="mt-2 text-sm text-red-600"><span class="font-semibold">Oops!</span> This value should be between -40 and 120.</p>
       </div>
       <div>
         <label class="block mb-2 text-sm font-semibold text-gray-900">Rele</label>
