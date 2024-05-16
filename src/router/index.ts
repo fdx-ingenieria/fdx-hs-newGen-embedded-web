@@ -2,6 +2,7 @@ import { createWebHistory, createRouter, RouteRecordRaw } from "vue-router"
 import PageNotFound from '@/views/PageNotFound.vue'
 import Overview from '@/views/Overview.vue'
 import System from '@/views/configuration/System.vue'
+import ReaderConfig from '@/views/configuration/ReaderConfig.vue'
 import Labels from '@/views/configuration/Labels.vue'
 import Sensors from '@/views/configuration/Sensors.vue'
 import Alarms from '@/views/configuration/Alarms.vue'
@@ -23,6 +24,13 @@ const routes: Array<RouteRecordRaw > = [
     path: "/configuration/system",
     name: "System",
     component: System,
+    props: true,
+    meta: {}
+  },
+  {
+    path: "/configuration/readerConfig",
+    name: "ReaderConfig",
+    component: ReaderConfig,
     props: true,
     meta: {}
   },

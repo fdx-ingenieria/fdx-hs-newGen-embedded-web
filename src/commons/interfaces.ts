@@ -34,7 +34,7 @@ export interface ISensorConfig {
 }
 
 export interface ISensor {
-  id: number;
+  id: string;
   EPC: string;
   config: ISensorConfig;
   data?: ISensorData;
@@ -42,7 +42,7 @@ export interface ISensor {
 }
 
 export interface ISensorData {
-  id: number;
+  id: string;
   EPC: string;
   avg_temp: number;
   temp: number;
@@ -75,6 +75,7 @@ export interface ISensorState {
   EPC: string;
   state: boolean;
 }
+
 export interface IAlarmData {
   id: number; //int
   state: boolean;
@@ -89,11 +90,13 @@ export interface ISystem {
   baud_rate: number;
   bit_parity: number; 
 }
+
 // Menu & Sidebars
 export interface IMenuItem {
   label: string;
   route?: string;
 }
+
 // Modbus table
 export interface IModbusTableEntry {
   name: string;
@@ -101,4 +104,16 @@ export interface IModbusTableEntry {
   values: Array<Array<string | number>>;
   autoincrementColumn?: number;
   commonRows?: Array<string | number>;
+}
+
+// RFID Config
+export interface IReaderConfig {
+  region: number;
+  tag_encoding: number;
+  read_power: number; // cdBm 0 to 3300
+  write_power: number; // cdBm 0 to 3300
+  t_reader_on: number; // ms 0 to 10_000
+  t_reader_off: number; // ms 0 to 300_000
+  processing_interval: number; // ms 0 to 600_000
+  password?: string;
 }

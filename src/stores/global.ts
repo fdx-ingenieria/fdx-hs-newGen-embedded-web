@@ -1,4 +1,4 @@
-import { SocketStatus, SocketCommands, ILabelData, ISensor, LabelType, ISystem, ISensorData, IRequest, IAlarm, IAlarmData, IRequestQueue, IModbusTableEntry } from '@/commons'
+import { SocketStatus, SocketCommands, ILabelData, ISensor, LabelType, ISystem, ISensorData, IRequest, IAlarm, IAlarmData, IRequestQueue, IModbusTableEntry, IReaderConfig } from '@/commons'
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
 import * as JSONBigInt from 'json-bigint'
@@ -16,9 +16,10 @@ export const useGlobalStore = defineStore('global', () => {
   const alarmsData: Ref<IAlarmData[]> = ref([])
   const sensorsData: Ref<ISensorData[]> = ref([])
   const systeamData: Ref<ISystem> = ref({} as ISystem)
+  const readerConfigData: Ref<IReaderConfig> = ref({} as IReaderConfig)
   const modbusTable: Ref<Array<IModbusTableEntry>> = ref([])
   const requestQueue: Array<IRequestQueue> = [];
-  const boardTemp: Ref<number> = ref(0)
+  const boardTemp: Ref<number | string> = ref('N/A')
   let isProcessing: boolean = false;
 
   const sleep = async(ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -30,6 +31,7 @@ export const useGlobalStore = defineStore('global', () => {
   const getDiscoveryModeOn = computed(() => discoveryModeOn.value)
   const getNormaModeOn = computed(() => normalModeOn.value)
   const getSystemData = computed(() => systeamData.value)
+  const getReaderConfigData = computed(() => readerConfigData.value)
   const getModbusTable = computed(() => modbusTable.value)
   const getSensorsData = computed(() => sensorsData.value)
   const getConfiguredSensors = computed(() => availableSensors.value.filter(sensor => !!sensor.config.equipment))
@@ -114,6 +116,11 @@ export const useGlobalStore = defineStore('global', () => {
     if (cmd === SocketCommands.READER_TEMP && arg === 'get') {
       console.log('New board temp data received:', data)
       boardTemp.value = data
+      return
+    }
+    if (cmd === SocketCommands.READER_CONFIG && arg === 'get') {
+      console.log('New reader config data received:', data)
+      readerConfigData.value = data
       return
     }
   }
@@ -281,9 +288,18 @@ export const useGlobalStore = defineStore('global', () => {
     return addToRequestQueue({ cmd: SocketCommands.HS_CONFIG, arg: "get", data: '' })
   }
 
+  async function loadReaderConfigData(): Promise<void> {
+    return addToRequestQueue({ cmd: SocketCommands.READER_CONFIG, arg: "get", data: '' })
+  }
+
   async function updateSystemData(data: ISystem): Promise<void> {
     return addToRequestQueue({ cmd: SocketCommands.HS_CONFIG, arg: "set", data })
       .then(() => loadSystemData())
+  }
+
+  async function updateReaderConfigData(data: IReaderConfig): Promise<void> {
+    return addToRequestQueue({ cmd: SocketCommands.READER_CONFIG, arg: "set", data })
+      .then(() => loadReaderConfigData())
   }
 
   async function loadModbusTable(): Promise<void> {
@@ -325,6 +341,9 @@ export const useGlobalStore = defineStore('global', () => {
     getSystemData,
     loadSystemData,
     updateSystemData,
+    getReaderConfigData,
+    loadReaderConfigData,
+    updateReaderConfigData,
     loadModbusTable,
     getModbusTable,
     startNormalMode,

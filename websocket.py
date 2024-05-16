@@ -64,6 +64,16 @@ system_stored_data = {
     'bit_parity': 0,
 }
 
+region_config_data = {
+    "region": 1,
+    "tag_encoding": 0,
+    "read_power": 2000,
+    "write_power": 2000,
+    "t_reader_on": 1000,
+    "t_reader_off": 4000,
+    "processing_interval": 10000
+}
+
 alarm_stored_data = {
     'data': [
         {
@@ -386,6 +396,52 @@ async def handle_websocket(websocket, path):
                             'cmd': 'label',
                             'arg': 'set',
                             'data': system_stored_data,
+                            'status': 'ok',
+                        }
+
+                        response = json.dumps(response_data)
+                        await asyncio.sleep(2)
+                        await websocket.send(response)
+                    else:
+                        # If "data" field is missing in the received message, send an error response
+                        response_data = {
+                            'status': 'error',
+                            'message': 'Invalid command: "data" field is missing',
+                        }
+                        response = json.dumps(response_data)
+                        await websocket.send(response)
+                else:
+                    # If the received "arg" is neither "get" nor "set", send an error response
+                    response_data = {
+                        'status': 'error',
+                        'message': 'Invalid argument',
+                    }
+                    response = json.dumps(response_data)
+                    await websocket.send(response)
+            if "cmd" in received_data and received_data["cmd"] == "reader_config":
+                if "arg" in received_data and received_data["arg"] == "get":
+                    # Prepare the JSON response with the stored data
+                    response_data = {
+                        'cmd': 'reader_config',
+                        'arg': 'get',
+                        'data': region_config_data,
+                        'status': 'ok',
+                    }
+                    # Convert the response to JSON and send it back to the client
+                    response = json.dumps(response_data)
+                    await websocket.send(response)
+
+                elif "arg" in received_data and received_data["arg"] == "set":
+                    # Check if the "data" field is present in the received message
+                    if "data" in received_data:
+                        # Update the labels_stored_data with the new value from "data"
+                        region_config_data.update(received_data["data"])
+
+                        # Send a success response back to the client
+                        response_data = {
+                            'cmd': 'label',
+                            'arg': 'set',
+                            'data': region_config_data,
                             'status': 'ok',
                         }
 

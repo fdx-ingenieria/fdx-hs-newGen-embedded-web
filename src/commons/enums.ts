@@ -17,6 +17,7 @@ export enum SocketCommands {
   CLEAR_SENSORS_RAM = 'clean_sensors_RAM',
   ALARM_DATA = 'alarm_data',
   HS_CONFIG = 'hs_config',
+  READER_CONFIG = 'reader_config',
   READER_TEMP = 'reader_temp'
 }
 
@@ -60,3 +61,15 @@ export const ReleFlag = [
   'Rele 1',
   'Rele 2',
 ]
+
+export const TagEncoding = [
+  { label: 'FM0', value: 0},
+  { label: 'MILLER 2', value: 1},
+  { label: 'MILLER 4', value: 2},
+  { label: 'MILLER 8', value: 3},
+];
+
+export const Region = [
+  { label: 'Europe', value: 8},
+  { label: 'North America', value: 1},
+];

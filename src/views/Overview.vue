@@ -116,7 +116,7 @@
         </div>
         <LoadingIcon v-if="loading" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto" />
         <div v-else class="px-4 text-gray-700">
-          <h3 class="text-sm tracking-wider font-semibold">Lower Temperature</h3>
+          <h3 class="text-sm tracking-wider font-semibold">Lowest Temperature</h3>
           <p class="text-xl flex items-center" title="Lower">
             {{  temperatures.min?.temp }} <small class="ml-1 font-bold">°C</small>
             <small class="absolute bottom-0 right-2">{{  temperatures.min?.EPC }}</small>
@@ -129,7 +129,7 @@
         </div>
         <LoadingIcon v-if="loading" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto" />
         <div v-else class="px-4 text-gray-700">
-          <h3 class="text-sm tracking-wider font-semibold">Higher Temperature</h3>
+          <h3 class="text-sm tracking-wider font-semibold">Highest Temperature</h3>
           <p class="text-xl flex items-center" title="Higher">
             {{  temperatures.max?.temp }} <small class="ml-1 font-bold">°C</small>
             <small class="absolute bottom-0 right-2">{{  temperatures.max?.EPC }}</small>

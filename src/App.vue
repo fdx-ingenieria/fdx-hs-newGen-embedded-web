@@ -16,7 +16,7 @@
 <template>
   <div class="antialiased bg-gray-50 h-screen">
     <NavBar :show="showSideBar" @toggleSideBar="showSideBar = !showSideBar" />
-    <LeftSideBar :show="showSideBar" />
+    <LeftSideBar :show="showSideBar" @toggleSideBar="showSideBar = !showSideBar" />
     <main class="p-4 md:ml-64 h-auto pt-20">
       <Breadcrumb />
       <router-view v-slot="{ Component }">
