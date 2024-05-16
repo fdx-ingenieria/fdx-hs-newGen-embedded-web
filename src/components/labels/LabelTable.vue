@@ -37,7 +37,13 @@
         v-for="(item,index) in availableLabels" :key="index">
         <th scope="row" class="text-center">{{ index }}</th>
         <th scope="row" class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
-          <input v-if="index" @input="(e) => change(e, labelType, index)" :value="item" type="text" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Your label name">
+          <input class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+            v-if="index"
+            type="text"
+            maxlength="20"
+            @input="(e) => change(e, labelType, index)"
+            :value="item"
+            placeholder="Your label name">
           <span v-else>{{ item }}</span>
         </th>
       </tr>

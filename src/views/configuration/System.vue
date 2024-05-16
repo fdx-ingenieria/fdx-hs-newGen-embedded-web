@@ -62,7 +62,11 @@
             <template v-else>
               <div>
                 <label class="block mb-2 text-sm font-semibold text-blue-900">Serial</label>
-                <input type="text" v-model="editable.serial_num" class="bg-gray-50 border border-blue-300 text-blue-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 disabled:opacity-50" placeholder="Serial value">
+                <input class="bg-gray-50 border border-blue-300 text-blue-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 disabled:opacity-50"
+                  type="text"
+                  maxlength="8"
+                  v-model="editable.serial_num"
+                  placeholder="Serial value">
               </div>
               <div>
                 <label class="block mb-2 text-sm font-semibold text-blue-900">Password</label>
