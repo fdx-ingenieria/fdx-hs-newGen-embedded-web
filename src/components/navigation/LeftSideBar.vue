@@ -38,13 +38,13 @@
   }>()
 </script>
 <template>
+  <div class="fixed md:hidden top-0 left-0 right-0 z-10 w-full bg-gray-800 opacity-50 h-full"
+    v-if="show"
+    @click="emit('toggle-side-bar')">
+  </div>
   <aside class="fixed top-0 left-0 z-40 w-64 h-screen pt-16 transition-transform bg-white border-r border-gray-200 md:translate-x-0 print:hidden"
     :class="{'translate-x-0': show, '-translate-x-full': !show}"
     aria-label="Sidenav">
-    <div class="fixed md:hidden top-0 left-0 right-0 z-10 w-full bg-gray-800 opacity-50 h-full"
-      v-if="show"
-      @click="emit('toggle-side-bar')">
-    </div>
     <div class="overflow-y-auto py-3 px-3 h-full bg-white">
       <ul class="space-y-2">
         <LeftSideBarItem label="Overview" route="Overview" :matched="route.matched">
