@@ -1,7 +1,8 @@
 <script setup lang="ts">
   import { PieIcon, CogIcon, ModbusIcon } from '@/components/icons';
   import LeftSideBarItem from './LeftSideBarItem.vue';
-  import { useRoute } from 'vue-router';
+  import { useRoute, useRouter } from 'vue-router';
+  import { onMounted } from 'vue';
 
   defineProps({
     show: {
@@ -10,6 +11,7 @@
     },
   })
   const route = useRoute();
+  const router = useRouter();
   const options = [
   {
       label: 'System',
@@ -36,9 +38,15 @@
   const emit = defineEmits<{
     (e: 'toggle-side-bar'): void
   }>()
+
+  onMounted(() => {
+    router.afterEach((_to, _from) => {
+      emit('toggle-side-bar');
+    });
+  });
 </script>
 <template>
-  <div class="fixed md:hidden top-0 left-0 right-0 z-10 w-full bg-gray-800 opacity-50 h-full"
+  <div class="fixed md:hidden top-0 left-0 right-0 z-10 w-full bg-gray-800 opacity-50 h-full print:hidden"
     v-if="show"
     @click="emit('toggle-side-bar')">
   </div>
