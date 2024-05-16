@@ -8,7 +8,6 @@
   const globalStore = useGlobalStore()
   const editable: Ref<IReaderConfig> = ref({} as IReaderConfig)
   const savingData = ref(false)
-  const loadingData = ref(true)
   const { getReaderConfigData } = storeToRefs(globalStore)
   const adminMode = ref(false)
 
@@ -64,7 +63,6 @@
 
   onMounted(() => {
     globalStore.loadReaderConfigData()
-     .finally(() => loadingData.value = false)
   })
 </script>
 
@@ -72,7 +70,7 @@
   <section class="antialiased bg-gray-50">
     <div class="mx-auto">
       <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden py-4 px-4 md:px-6">
-        <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-12" />
+        <LoadingIcon v-if="!editable.region" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-12" />
         <template  v-else >
           <div class="grid gap-4 mb-4">
             <div v-if="!adminMode">

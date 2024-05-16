@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ISystem, ModbusBitParity, BaudRate } from '@/commons';
+  import { ISystem, ModbusBitParity, BaudRate, isValidInteger } from '@/commons';
   import { AlertIcon, LoadingIcon, SendIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global'
   import { storeToRefs } from 'pinia';
@@ -8,7 +8,6 @@
   const globalStore = useGlobalStore()
   const editable: Ref<ISystem> = ref({} as ISystem)
   const savingData = ref(false)
-  const loadingData = ref(true)
   const { getSystemData } = storeToRefs(globalStore)
   const adminMode = ref(false)
 
@@ -24,7 +23,8 @@
   }
 
   const validDirModbus = (value: number): boolean => {
-    return value > 0 && value < 248
+    if (!isValidInteger(value)) return false
+    return value >= 1 && value <= 247
   }
 
   const isComplete = (): boolean => {
@@ -38,7 +38,6 @@
 
   onMounted(() => {
     globalStore.loadSystemData()
-     .then(() => loadingData.value = false)
   })
 </script>
 
@@ -47,7 +46,7 @@
     <div class="mx-auto">
       
       <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden py-4 px-4 md:px-6">
-        <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-12" />
+        <LoadingIcon v-if="!editable.serial_num" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-12" />
         <template  v-else >
           <div class="grid gap-4 mb-4">
             <div v-if="!adminMode">
@@ -75,7 +74,13 @@
             </template>
             <div>
               <label class="block mb-2 text-sm font-semibold text-gray-900">Modbus address</label>
-              <input type="number" min="1" max="247" v-model="editable.modbus_address" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Modbus direction value">
+              <input class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                type="number"
+                min="1"
+                max="247"
+                step="1"
+                v-model="editable.modbus_address"
+                placeholder="Modbus direction value">
               <p v-show="!validDirModbus(editable.modbus_address)" class="mt-2 text-sm text-red-600"><span class="font-semibold">Oops!</span> This value should be between 1 and 247.</p>
             </div>
             <div>
