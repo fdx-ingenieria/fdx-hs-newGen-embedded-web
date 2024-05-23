@@ -1,5 +1,3 @@
-import exp from 'constants'
-
 export { default as AlertIcon } from './AlertIcon.vue'
 export { default as AlarmIcon } from './AlarmIcon.vue'
 export { default as ChevronUpIcon } from './ChevronUpIcon.vue'
