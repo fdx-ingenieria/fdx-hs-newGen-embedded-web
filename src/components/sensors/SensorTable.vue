@@ -46,7 +46,7 @@
 
   watch(() => props.availableSensors, () => {
     props.availableSensors.forEach(item => {
-      elapsed_times.value[item.EPC] = item.data?.elapsed_time || 0;
+      elapsed_times.value[item.id] = item.data?.elapsed_time || 0;
     });
     filter()
   })
@@ -57,16 +57,16 @@
 
     localAvailableSensors.value = props.availableSensors.filter(
       sensor => {
-        return sensor.EPC.toUpperCase().includes(str)
+        return sensor.id.toUpperCase().includes(str)
       }
     ).sort((a, b) =>
-      a.EPC.toUpperCase().localeCompare(b.EPC.toUpperCase(), 'en', { sensitivity: 'base' })
+      a.id.toUpperCase().localeCompare(b.id.toUpperCase(), 'en', { sensitivity: 'base' })
     )
   }
 
   const emit = defineEmits<{
-    edit: [EPC: string],
-    reset: [EPC: string]
+    edit: [id: string],
+    reset: [id: string]
   }>()
 
   const getQualityClass = (quality: SensorQuality | undefined): string => {
@@ -122,6 +122,7 @@
     <table class="w-full text-sm text-left text-gray-500 whitespace-nowrap">
       <thead class="text-xs text-gray-700 uppercase bg-gray-50">
         <tr>
+          <th scope="col" class="px-4 py-3">ID</th>
           <th scope="col" class="px-4 py-3">EPC</th>
           <th v-if="showlabels" scope="col" class="px-4 py-3">{{ LabelType.EQUIPMENT }}</th>
           <th v-if="showlabels" scope="col" class="px-4 py-3">{{ LabelType.POSITION }}</th>
@@ -133,9 +134,10 @@
         </tr>
       </thead>
       <transition-group name="list" tag="tbody">
-        <tr @click="emit('edit', item.EPC)" v-for="item in localAvailableSensors"
+        <tr @click="emit('edit', item.id)" v-for="item in localAvailableSensors"
           class="border-b hover:bg-gray-100" :key="`${item.id}`"
           :class="{'cursor-pointer': !readonly, 'bg-red-200 hover:bg-red-300': item?.alarmed}">
+          <th scope="row" class="px-4 py-3 font-medium text-gray-900" v-html="searcHighlight(item.id)"></th>
           <th scope="row" class="px-4 py-3 font-medium text-gray-900" v-html="searcHighlight(item.EPC)"></th>
           <td v-if="showlabels" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.EQUIPMENT, item.config.equipment) }}</td>
           <td v-if="showlabels" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.POSITION, item.config.position) }}</td>
@@ -157,21 +159,19 @@
           <td v-if="showdata" scope="col" class="px-4 py-3">
             <small title="Number of readings" class="text-xs flex items-center"><FlagIcon class="w-4 h-4 mr-1" />{{ item.data?.n_readings }}</small>
             <small title='Last update' class="flex items-center"><ClockIcon class="w-3 h-3 mr-1" />
-              {{ elapsed_times[item.EPC] }}s
+              {{ elapsed_times[item.id] }}s
             </small>
           </td>
           <td v-show="!readonly" class="px-4 py-3 text-center hidden md:table-cell">
               <button type="button"
-                @click="emit('edit', item.EPC)"
-                @click.stop
+                @click="emit('edit', item.id)"
                 class="text-white border border-blue-500 bg-blue-500 font-medium rounded-lg text-sm p-0.5 text-center inline items-center mr-2">
                 <EditIcon class="w-4" />
                 <span class="sr-only">Edit</span>
               </button>
               <button type="button"
                 v-if="showreset"
-                @click="emit('reset', item.EPC)"
-                @click.stop
+                @click="emit('reset', item.id)"
                 class="text-white border border-red-500 bg-red-500 font-medium rounded-lg text-sm p-0.5 text-center inline-flex items-center mr-2">
                 <RefreshIcon class="w-4" />
                 <span class="sr-only">Reset</span>

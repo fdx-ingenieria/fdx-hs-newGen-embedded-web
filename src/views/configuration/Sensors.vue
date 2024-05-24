@@ -13,7 +13,7 @@
   const loadingData = ref(true)
   const loadingDiscoveryMode = ref(false)
   const savingData = ref(false)
-  const editableSensor: Ref<ISensor> = ref({ id: 0, EPC: '', config: { equipment: 0, position: 0, location: 0 }})
+  const editableSensor: Ref<ISensor> = ref({ id: '', EPC: '', config: { equipment: 0, position: 0, location: 0 }})
   const configuredSensors: Ref<ISensor[]> = ref([])
   const unconfiguredSensors: Ref<ISensor[]> = ref([])
   const showUnconfiguredTable = ref(true)
@@ -35,8 +35,8 @@
     return getAvailableSensors.value.length >= 50;
   });
 
-  const editSensor = (EPC: string) => {
-    let sensor = getAvailableSensors.value.find((item: ISensor) => item.EPC === EPC)
+  const editSensor = (id: string) => {
+    let sensor = getAvailableSensors.value.find((item: ISensor) => item.id === id)
 
     if (!sensor) return
 
@@ -64,8 +64,8 @@
       .finally(() => savingData.value = false)
   }
 
-  const resetSensor = (EPC: string) => {
-    let sensor = getAvailableSensors.value.find((item: ISensor) => item.EPC === EPC)
+  const resetSensor = (id: string) => {
+    let sensor = getAvailableSensors.value.find((item: ISensor) => item.id === id)
 
     if (!sensor) return
 
@@ -97,7 +97,7 @@
   const checkDuplicate = (editableSensor: ISensor): boolean => {
     const { equipment, position, location } = editableSensor.config
     return !!getAvailableSensors.value.filter(sensor =>
-      sensor.EPC !== editableSensor.EPC
+      sensor.id !== editableSensor.id
         && sensor.config.equipment === equipment
         && sensor.config.position === position
         && sensor.config.location === location
@@ -131,7 +131,7 @@
       <div class="grid gap-4 mb-4">
         <div>
           <label class="block mb-2 text-sm font-semibold text-gray-900">id</label>
-          <input type="text" :value="editableSensor.id.toString(16).toLocaleUpperCase()" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" disabled>
+          <input type="text" :value="editableSensor.id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" disabled>
         </div>
         <div>
           <label class="block mb-2 text-sm font-semibold text-gray-900">epc</label>
@@ -186,7 +186,7 @@
           </template>
         </button>
         <button class="text-white flex disabled:opacity-50 bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2 focus:outline-none"
-          @click="resetSensor(editableSensor.EPC)"
+          @click="resetSensor(editableSensor.id)"
           :disabled="savingData"
           type="button" >
           <RefreshIcon class="w-5 mr-1" />
