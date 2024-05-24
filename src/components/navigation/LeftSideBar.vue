@@ -46,11 +46,11 @@
   });
 </script>
 <template>
-  <div class="fixed md:hidden top-0 left-0 right-0 z-10 w-full bg-gray-800 opacity-50 h-full print:hidden"
+  <div class="fixed lg:hidden top-0 left-0 right-0 z-10 w-full bg-gray-800 opacity-50 h-full print:hidden"
     v-if="show"
     @click="emit('toggle-side-bar')">
   </div>
-  <aside class="fixed top-0 left-0 z-40 w-64 h-screen pt-16 transition-transform bg-white border-r border-gray-200 md:translate-x-0 print:hidden"
+  <aside class="fixed top-0 left-0 z-40 w-64 h-screen pt-16 transition-transform bg-white border-r border-gray-200 lg:translate-x-0 print:hidden"
     :class="{'translate-x-0': show, '-translate-x-full': !show}"
     aria-label="Sidenav">
     <div class="overflow-y-auto py-3 px-3 h-full bg-white">
@@ -68,7 +68,7 @@
     </div>
 
     <div class="absolute bottom-0 left-0 justify-left p-4 space-x-4 w-full lg:flex bg-white z-20">
-      <small>Version: 0.0.2</small>
+      <small>Version: 0.0.3</small>
     </div>
   </aside>
 </template>
