@@ -20,6 +20,7 @@ export const useGlobalStore = defineStore('global', () => {
   const modbusTable: Ref<Array<IModbusTableEntry>> = ref([])
   const requestQueue: Array<IRequestQueue> = [];
   const boardTemp: Ref<number | string> = ref('N/A')
+  const showSideBar = ref(false);
   let isProcessing: boolean = false;
 
   const sleep = async(ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -319,6 +320,7 @@ export const useGlobalStore = defineStore('global', () => {
   return {
     status,
     boardTemp,
+    showSideBar,
     getStatus,
     getAvailableLabels,
     updateLabels,
@@ -353,5 +355,13 @@ export const useGlobalStore = defineStore('global', () => {
     addNewSensor,
     updateSensorData,
     connect
+  }
+},
+{
+  persist: {
+    key: 'global',
+    paths: ['showSideBar'],
+    beforeRestore: (_ctx) => {},
+    afterRestore: (_ctx) => {},
   }
 })

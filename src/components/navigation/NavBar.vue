@@ -3,26 +3,16 @@
   import { MenuCloseIcon, MenuOpenIcon, ThermometerIcon } from '../icons';
   import SocketStatus from './SocketStatus.vue';
 
-  defineProps({
-    show: {
-      type: Boolean,
-      required: true
-    },
-  })
-
   const globalStore = useGlobalStore();
-  const emit = defineEmits<{
-    (e: 'toggle-side-bar'): void
-  }>()
 </script>
 
 <template>
   <nav class="bg-white border-b border-gray-200 px-4 py-2.5 fixed left-0 right-0 top-0 z-50 print:absolute">
     <div class="flex flex-wrap justify-between items-center">
       <button aria-expanded="true" aria-controls="sidebar"
-        @click="emit('toggle-side-bar')"
-        class="md:hidden p-1 mr-3 text-gray-600 rounded cursor-pointer hover:text-gray-900 hover:bg-gray-100 print:hidden">
-        <MenuOpenIcon v-if="!show" class="w-8" />
+        @click="globalStore.showSideBar = !globalStore.showSideBar"
+        class="p-1 mr-3 text-gray-600 rounded cursor-pointer hover:text-gray-900 hover:bg-gray-100 print:hidden">
+        <MenuOpenIcon v-if="!globalStore.showSideBar" class="w-8" />
         <template v-else>
           <MenuCloseIcon class="w-8" />
         </template>

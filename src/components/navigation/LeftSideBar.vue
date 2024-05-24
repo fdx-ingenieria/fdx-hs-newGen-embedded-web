@@ -2,16 +2,13 @@
   import { PieIcon, CogIcon, ModbusIcon } from '@/components/icons';
   import LeftSideBarItem from './LeftSideBarItem.vue';
   import { useRoute, useRouter } from 'vue-router';
-  import { onMounted } from 'vue';
+  import { useGlobalStore } from '@/stores/global';
+  import { onMounted, onUnmounted, ref } from 'vue';
 
-  defineProps({
-    show: {
-      type: Boolean,
-      required: true
-    },
-  })
   const route = useRoute();
   const router = useRouter();
+  const globalStore = useGlobalStore();
+  const isSmallScreen = ref(window.innerWidth < 1024);
   const options = [
   {
       label: 'System',
@@ -35,23 +32,28 @@
     },
   ]
 
-  const emit = defineEmits<{
-    (e: 'toggle-side-bar'): void
-  }>()
+  const updateScreenSize = () => {
+    isSmallScreen.value = window.innerWidth < 1024;
+  };
 
   onMounted(() => {
+    window.addEventListener('resize', updateScreenSize)
     router.afterEach((_to, _from) => {
-      emit('toggle-side-bar');
+      if (isSmallScreen.value) globalStore.showSideBar = false;
     });
+  });
+
+  onUnmounted(() => {
+    window.removeEventListener('resize', updateScreenSize);
   });
 </script>
 <template>
   <div class="fixed lg:hidden top-0 left-0 right-0 z-10 w-full bg-gray-800 opacity-50 h-full print:hidden"
-    v-if="show"
-    @click="emit('toggle-side-bar')">
+    v-if="globalStore.showSideBar"
+    @click="globalStore.showSideBar = false">
   </div>
-  <aside class="fixed top-0 left-0 z-40 w-64 h-screen pt-16 transition-transform bg-white border-r border-gray-200 lg:translate-x-0 print:hidden"
-    :class="{'translate-x-0': show, '-translate-x-full': !show}"
+  <aside class="fixed top-0 left-0 z-40 w-64 h-screen pt-16 transition-transform bg-white border-r border-gray-200 print:hidden"
+    :class="{'translate-x-0': globalStore.showSideBar, '-translate-x-full': !globalStore.showSideBar}"
     aria-label="Sidenav">
     <div class="overflow-y-auto py-3 px-3 h-full bg-white">
       <ul class="space-y-2">
