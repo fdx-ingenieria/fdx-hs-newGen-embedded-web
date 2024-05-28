@@ -37,7 +37,7 @@ labels_stored_data = {
 sensors_stored_data = {
     'data': [
         {
-            'id': 10995384722910999987,
+            'id': '10995384722910999987',
             'EPC': hex(10995384722910999987),
             'config': {
                 'location': 1,
@@ -46,7 +46,7 @@ sensors_stored_data = {
             }
         },
         {
-            'id': 10995384722910999988,
+            'id': '10995384722910999988',
             'EPC': hex(10995384722910999988),
             'config': {
                 'location': 2,
@@ -202,10 +202,11 @@ async def discoveryMode(websocket):
             'data': [],
             'status': 'ok',
         }
+
         for i in sensors_stored_data['data']:
             response_data['data'].append({
                 'id': i['id'],
-                'EPC': hex(i['id']),
+                'EPC': hex(int(i['id'])),
                 'avg_temp': round(random.uniform(20, 30), 6),
                 'temp': round(random.uniform(20, 30), 6),
                 'std_dev': round(random.uniform(0, 5), 6),
@@ -219,7 +220,7 @@ async def discoveryMode(websocket):
             print('New sensor found... discovery mode')
             id = random.randint(10000000000000, 99999999999999)
             element = {
-                'id': id,
+                'id': str(id),
                 'EPC': hex(id),
                 'avg_temp': round(random.uniform(20, 30), 2),
                 'temp': round(random.uniform(20, 30), 2),
@@ -259,10 +260,11 @@ async def normalMode(websocket):
             'data': [],
             'status': 'ok',
         }
+        print('len', len(sensors_stored_data['data']))
         for i in sensors_stored_data['data']:
             response_data['data'].append({
                 'id': i['id'],
-                'EPC': hex(i['id']),
+                'EPC': hex(int(i['id'])),
                 'avg_temp': round(random.uniform(20, 30), 2),
                 'temp': round(random.uniform(20, 30), 2),
                 'std_dev': round(random.uniform(0, 5), 2),
@@ -289,18 +291,18 @@ async def normalMode(websocket):
         for i in alarm_stored_data['data']:
             sensors = [
                     {
-                        'id': 10995384722910999987,
+                        'id': '10995384722910999987',
                         'EPC': hex(10995384722910999987),
                         'state': random.choice([0, 1]),
                     },
                     {
-                        'id': 10995384722910999988,
+                        'id': '10995384722910999988',
                         'EPC': hex(10995384722910999988),
                         'state': random.choice([0, 1]),
                     }
                 ]
             randChoice = random.randint(1, 10)
-            print('choice', randChoice)
+
             if  randChoice < 2:
                 del sensors[0]
             if randChoice > 2 and randChoice < 7:

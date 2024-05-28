@@ -3,17 +3,27 @@
   import { AlertIcon, LoadingIcon, SendIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global'
   import { storeToRefs } from 'pinia';
-  import { Ref, onMounted, ref, watch } from 'vue'
+  import { Ref, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { onBeforeRouteLeave } from 'vue-router';
 
   const globalStore = useGlobalStore()
   const editable: Ref<ISystem> = ref({} as ISystem)
   const savingData = ref(false)
   const { getSystemData } = storeToRefs(globalStore)
   const adminMode = ref(false)
+  const hasUnsavedChanges = ref(false)
 
   watch(getSystemData, (newValue) => {
-    editable.value = newValue
+    editable.value = JSON.parse(JSON.stringify(newValue))
   })
+
+  watch(editable, () => {
+    hasUnsavedChanges.value = true
+    // deep compare
+    if (JSON.stringify(editable.value) === JSON.stringify(getSystemData.value)) {
+      hasUnsavedChanges.value = false
+    }
+  }, { deep: true })
 
   const save = () => {
     savingData.value = true
@@ -28,23 +38,41 @@
   }
 
   const isComplete = (): boolean => {
-    const { serial_num, modbus_address, baud_rate, bit_parity } = editable.value
+    const { serial_num, modbus_address, baud_rate, bit_parity, password } = editable.value
 
     return !!serial_num
       && validDirModbus(modbus_address)
       && !!baud_rate
       && !!bit_parity?.toString()
+      && (!adminMode.value || !!password)
   }
 
+  const preventUnsaved = (e: any) => {
+    if (!hasUnsavedChanges.value) return
+    e.preventDefault()
+    e.returnValue = ""
+  }
+
+  onBeforeRouteLeave((_to, _from, next) => {
+    if (hasUnsavedChanges.value && !window.confirm('Abandon ship without saving? Your changes might get lost at sea!')) {
+      return
+    }
+    next()
+  })
+
   onMounted(() => {
+    window.addEventListener("beforeunload", preventUnsaved)
     globalStore.loadSystemData()
+  })
+
+  onUnmounted(() => {
+    window.removeEventListener("beforeunload", preventUnsaved);
   })
 </script>
 
 <template>
   <section class="antialiased bg-gray-50">
     <div class="mx-auto">
-      
       <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden py-4 px-4 md:px-6">
         <LoadingIcon v-if="!editable.serial_num" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-12" />
         <template  v-else >

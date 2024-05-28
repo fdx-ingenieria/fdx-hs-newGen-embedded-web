@@ -58,6 +58,10 @@
     localAvailableSensors.value = props.availableSensors.filter(
       sensor => {
         return sensor.id.toUpperCase().includes(str)
+          || sensor.EPC.toUpperCase().includes(str)
+          || props.showlabels && globalStore.getLabelName(LabelType.EQUIPMENT, sensor.config.equipment).toUpperCase().includes(str)
+          || props.showlabels && globalStore.getLabelName(LabelType.POSITION, sensor.config.position).toUpperCase().includes(str)
+          || props.showlabels && globalStore.getLabelName(LabelType.LOCATION, sensor.config.location).toUpperCase().includes(str)
       }
     ).sort((a, b) =>
       a.id.toUpperCase().localeCompare(b.id.toUpperCase(), 'en', { sensitivity: 'base' })
@@ -139,9 +143,9 @@
           :class="{'cursor-pointer': !readonly, 'bg-red-200 hover:bg-red-300': item?.alarmed}">
           <th scope="row" class="px-4 py-3 font-medium text-gray-900" v-html="searcHighlight(item.id)"></th>
           <th scope="row" class="px-4 py-3 font-medium text-gray-900" v-html="searcHighlight(item.EPC)"></th>
-          <td v-if="showlabels" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.EQUIPMENT, item.config.equipment) }}</td>
-          <td v-if="showlabels" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.POSITION, item.config.position) }}</td>
-          <td v-if="showlabels" class="px-4 py-3">{{ globalStore.getLabelName(LabelType.LOCATION, item.config.location) }}</td>
+          <td v-if="showlabels" class="px-4 py-3" v-html="searcHighlight(globalStore.getLabelName(LabelType.EQUIPMENT, item.config.equipment))"></td>
+          <td v-if="showlabels" class="px-4 py-3" v-html="searcHighlight(globalStore.getLabelName(LabelType.POSITION, item.config.position))"></td>
+          <td v-if="showlabels" class="px-4 py-3" v-html="searcHighlight(globalStore.getLabelName(LabelType.LOCATION, item.config.location))"></td>
           <td v-if="showdata" class="px-4 py-3">
             <small title="Average temperature" class="text-xs flex items-center"><ThermometerIcon class="w- h-4 mr-1" />{{ item.data?.avg_temp }}</small>
             <small title='Standard deviation' class="flex items-center"><BellCurveIcon class="w-3 h-3 mx-1" />{{ item.data?.std_dev }}</small>

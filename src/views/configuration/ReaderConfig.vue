@@ -3,17 +3,27 @@
   import { CloseIcon, LoadingIcon, SendIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global'
   import { storeToRefs } from 'pinia';
-  import { Ref, computed, onMounted, ref, watch } from 'vue'
+  import { Ref, computed, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { onBeforeRouteLeave } from 'vue-router';
 
   const globalStore = useGlobalStore()
   const editable: Ref<IReaderConfig> = ref({} as IReaderConfig)
   const savingData = ref(false)
   const { getReaderConfigData } = storeToRefs(globalStore)
   const adminMode = ref(false)
+  const hasUnsavedChanges = ref(false)
 
   watch(getReaderConfigData, (newValue) => {
-    editable.value = newValue
+    editable.value = JSON.parse(JSON.stringify(newValue))
   })
+
+  watch(editable, () => {
+    hasUnsavedChanges.value = true
+    // deep compare
+    if (JSON.stringify(editable.value) === JSON.stringify(getReaderConfigData.value)) {
+      hasUnsavedChanges.value = false
+    }
+  }, { deep: true })
 
   const save = () => {
     savingData.value = true
@@ -61,14 +71,33 @@
     return Region.find(item => item.value === region)?.label
   })
 
+  const preventUnsaved = (e: any) => {
+    if (!hasUnsavedChanges.value) return
+    e.preventDefault()
+    e.returnValue = ""
+  }
+
+  onBeforeRouteLeave((_to, _from, next) => {
+    if (hasUnsavedChanges.value && !window.confirm('Abandon ship without saving? Your changes might get lost at sea!')) {
+      return
+    }
+    next()
+  })
+
   onMounted(() => {
+    window.addEventListener("beforeunload", preventUnsaved)
     globalStore.loadReaderConfigData()
+  })
+
+  onUnmounted(() => {
+    window.removeEventListener("beforeunload", preventUnsaved);
   })
 </script>
 
 <template>
   <section class="antialiased bg-gray-50">
     <div class="mx-auto">
+
       <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden py-4 px-4 md:px-6">
         <LoadingIcon v-if="!editable.region" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-12" />
         <template  v-else >

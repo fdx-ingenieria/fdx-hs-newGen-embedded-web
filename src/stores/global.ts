@@ -74,7 +74,7 @@ export const useGlobalStore = defineStore('global', () => {
 
   //TODO: refactor as dictionary
   function messageHandler(event: MessageEvent) {
-    const { cmd, arg, data } = JSONBigInt.parse(event.data)
+    const { cmd, arg, data } = JSON.parse(event.data)
 
     console.log(`Message received cmd: ${cmd}, arg: ${arg}`, data)
     if (!cmd || !arg) {
@@ -208,6 +208,7 @@ export const useGlobalStore = defineStore('global', () => {
       return
     }
     console.log('Sending message:', message)
+    // TODO: check if we need bigInt here.
     socketInstace?.send(JSONBigInt.stringify(message))
   }
 

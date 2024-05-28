@@ -54,7 +54,8 @@
 
     localAvailableAlarms.value = props.availableAlarms.filter(
       alarm => {
-        return alarm.name.toUpperCase().includes(str)
+        return !str
+          || alarm.name.toUpperCase().includes(str)
           || AlarmType[alarm.alarm_type].toUpperCase().includes(str)
           || ReleFlag[alarm.relay_flag].toUpperCase().includes(str)
       }
@@ -154,7 +155,7 @@
             </td>
           </tr>
           <tr v-show="showSensor === item.id" class="transition-all duration-700 ease-in-out">
-            <td class="bg-gray-700 text-white text-center"><div class="-rotate-90">Sensors</div></td>
+            <td class="bg-gray-700 text-white text-center w-1"><div class="-rotate-90">Sensors</div></td>
             <td colspan="100%" class="transition-all duration-700 ease-in-out">
               <SensorTable :availableSensors="alarmSensors(item.status?.sensors)" :readonly="true" :showfooter="false" />
             </td>

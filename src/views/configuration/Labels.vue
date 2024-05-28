@@ -69,7 +69,7 @@
   }
 
   onBeforeRouteLeave((_to, _from, next) => {
-    if (hasUnsavedChanges.value && !window.confirm('Abandon ship without saving? Your changes might get seasick!')) {
+    if (hasUnsavedChanges.value && !window.confirm('Abandon ship without saving? Your changes might get lost at sea!')) {
       return
     }
     next()

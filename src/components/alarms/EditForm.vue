@@ -2,7 +2,7 @@
   import { ref, Ref, watch } from 'vue';
   import { AlarmType, IAlarm, IAlarmField, isValidInteger, ReleFlag } from '@/commons';
   import { useGlobalStore } from '@/stores/global';
-  import { PlusIcon, RemoveIcon } from '../icons';
+  import { AlertIcon, PlusIcon, RemoveIcon } from '../icons';
 
   const props = defineProps({
     alarm: {
@@ -25,10 +25,17 @@
     return fields.every(item => !!item.equipment && !!item.location)
   }
 
+  const noRepeatedFields = (): boolean => {
+    const fields = localValue.value.fields
+    const unique = new Set(fields.map(item => `${item.equipment}-${item.location}`))
+    return fields.length === unique.size
+  }
+
   const isComplete = () => {
     return !!localValue.value.name
       && validSetPoint(localValue.value.set_point)
       && validFields(localValue.value.fields)
+      && noRepeatedFields()
   }
 
   const done = () => {
@@ -138,13 +145,28 @@
                 </td>
               </tr>
             </tbody>
+            <tfoot>
+              <tr v-if="!noRepeatedFields()" class="bg-red-200">
+                <td colspan="4" class="px-2 py-2">
+                  <div class="flex items-centr text-sm text-red-600">
+                    <AlertIcon class="w-4 mr-1" />
+                    Oops, duplicate fields! Please fix them before saving.
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="4" class="px-2 py-2">
+                  <button class="text-white flex items-center disabled:opacity-50 mx-auto bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-5 py-1.5 my-2 focus:outline-none"
+                    @click="addFieldRow()"
+                    :disabled="!noRepeatedFields()"
+                    type="button">
+                    <PlusIcon class="w-5 mr-1" />
+                    Add new row
+                  </button>
+                </td>
+              </tr>
+            </tfoot>
           </table>
-          <button class="text-white flex items-center disabled:opacity-50 mx-auto bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-5 py-1.5 my-2 focus:outline-none"
-            @click="addFieldRow()"
-            type="button">
-            <PlusIcon class="w-5 mr-1" />
-            Add new row
-          </button>
         </div>
       </div>
     </div>
