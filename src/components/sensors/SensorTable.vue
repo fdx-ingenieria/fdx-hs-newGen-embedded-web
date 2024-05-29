@@ -1,8 +1,9 @@
 <script setup lang="ts">
   import { PropType, onBeforeUnmount, watch, Ref, ref } from 'vue';
-  import { LabelType, ISensor, SensorQuality } from '@/commons';
+  import { LabelType, ISensor } from '@/commons';
   import { EditIcon, RefreshIcon, LoadingIcon, ClockIcon, FlagIcon, ThermometerIcon, BellCurveIcon, SearchIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global'
+  import SensorSignal from './SensorSignal.vue';
 
   const props = defineProps({
     availableSensors: {
@@ -73,20 +74,6 @@
     reset: [id: string]
   }>()
 
-  const getQualityClass = (quality: SensorQuality | undefined): string => {
-    const classMap: Record<SensorQuality, string> = {
-      [SensorQuality.OUT_OF_SERVICE]: 'bg-red-100 text-red-800',
-      [SensorQuality.BAD]: 'bg-yellow-100 text-yellow-800',
-      [SensorQuality.REGULAR]: 'bg-indigo-100 text-indigo-800',
-      [SensorQuality.GOOD]: 'bg-blue-100 text-blue-800',
-      [SensorQuality.EXCELLENT]: 'bg-green-100 text-green-800'
-    };
-
-    return quality
-      ? classMap[quality]
-      : '';
-  };
-
   const searcHighlight = (text: string): string => {
     if (!searchText.value) return text
 
@@ -128,9 +115,11 @@
         <tr>
           <th scope="col" class="px-4 py-3">ID</th>
           <th scope="col" class="px-4 py-3">EPC</th>
-          <th v-if="showlabels" scope="col" class="px-4 py-3">{{ LabelType.EQUIPMENT }}</th>
-          <th v-if="showlabels" scope="col" class="px-4 py-3">{{ LabelType.POSITION }}</th>
-          <th v-if="showlabels" scope="col" class="px-4 py-3">{{ LabelType.LOCATION }}</th>
+          <template v-if="showlabels">
+            <th scope="col" class="px-4 py-3">{{ LabelType.EQUIPMENT }}</th>
+            <th scope="col" class="px-4 py-3">{{ LabelType.LOCATION }}</th>
+            <th scope="col" class="px-4 py-3">{{ LabelType.POSITION }}</th>
+          </template>
           <th v-if="showdata" scope="col" class="px-4 py-3">Temp</th>
           <th v-if="showdata" scope="col" class="px-4 py-3 text-center">Signal</th>
           <th v-if="showdata" scope="col" class="px-4 py-3">Updated</th>
@@ -143,29 +132,31 @@
           :class="{'cursor-pointer': !readonly, 'bg-red-200 hover:bg-red-300': item?.alarmed}">
           <th scope="row" class="px-4 py-3 font-medium text-gray-900" v-html="searcHighlight(item.id)"></th>
           <th scope="row" class="px-4 py-3 font-medium text-gray-900" v-html="searcHighlight(item.EPC)"></th>
-          <td v-if="showlabels" class="px-4 py-3" v-html="searcHighlight(globalStore.getLabelName(LabelType.EQUIPMENT, item.config.equipment))"></td>
-          <td v-if="showlabels" class="px-4 py-3" v-html="searcHighlight(globalStore.getLabelName(LabelType.POSITION, item.config.position))"></td>
-          <td v-if="showlabels" class="px-4 py-3" v-html="searcHighlight(globalStore.getLabelName(LabelType.LOCATION, item.config.location))"></td>
-          <td v-if="showdata" class="px-4 py-3">
-            <small title="Average temperature" class="text-xs flex items-center"><ThermometerIcon class="w- h-4 mr-1" />{{ item.data?.avg_temp }}</small>
-            <small title='Standard deviation' class="flex items-center"><BellCurveIcon class="w-3 h-3 mx-1" />{{ item.data?.std_dev }}</small>
-          </td>
-          <td v-if="showdata" class="px-4 py-3 text-center">
-            <span class="text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full relative"
-              :class="getQualityClass(item.data?.quality)">
-              {{ item.data?.quality }}
-              <small class="absolute -top-3 -right-2 rounded-full px-1 py-0.5"
-                :class="getQualityClass(item.data?.quality)" title="RSSI">
-                {{ item.data?.rssi }}
-              </small>
-            </span>
-          </td>
-          <td v-if="showdata" scope="col" class="px-4 py-3">
-            <small title="Number of readings" class="text-xs flex items-center"><FlagIcon class="w-4 h-4 mr-1" />{{ item.data?.n_readings }}</small>
-            <small title='Last update' class="flex items-center"><ClockIcon class="w-3 h-3 mr-1" />
-              {{ elapsed_times[item.id] }}s
-            </small>
-          </td>
+          <template v-if="showlabels">
+            <td class="px-4 py-3" v-html="searcHighlight(globalStore.getLabelName(LabelType.EQUIPMENT, item.config.equipment))"></td>
+            <td class="px-4 py-3" v-html="searcHighlight(globalStore.getLabelName(LabelType.LOCATION, item.config.location))"></td>
+            <td class="px-4 py-3" v-html="searcHighlight(globalStore.getLabelName(LabelType.POSITION, item.config.position))"></td>
+          </template>
+          <template v-if="showdata">
+            <template v-if="item.data">
+              <td class="px-4 py-3">
+                <small title="Average temperature" class="text-xs flex items-center"><ThermometerIcon class="w- h-4 mr-1" />{{ item.data?.avg_temp }}</small>
+                <small title='Standard deviation' class="flex items-center"><BellCurveIcon class="w-3 h-3 mx-1" />{{ item.data?.std_dev }}</small>
+              </td>
+              <td class="px-4 py-3 text-center">
+                <SensorSignal v-if="item.data" :sensor-data="item.data" />
+              </td>
+              <td v-if="showdata" scope="col" class="px-4 py-3">
+                <small title="Number of readings" class="text-xs flex items-center"><FlagIcon class="w-4 h-4 mr-1" />{{ item.data?.n_readings }}</small>
+                <small title='Last update' class="flex items-center"><ClockIcon class="w-3 h-3 mr-1" />
+                  {{ elapsed_times[item.id] }}
+                </small>
+              </td>
+            </template>
+            <td v-else class="px-4 py-3" colspan="3">
+              <LoadingIcon class="animate-spin fill-transparent text-green-600 w-4 m-auto" />
+            </td>
+          </template>
           <td v-show="!readonly" class="px-4 py-3 text-center hidden md:table-cell">
               <button type="button"
                 @click="emit('edit', item.id)"

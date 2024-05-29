@@ -80,7 +80,7 @@
   const alarmSensors = (sensorsStates: ISensorState[] = []) => {
     const alarmSensors: ISensor[] = []
     globalStore.getConfiguredSensors.forEach(sensor => {
-      const sensorState = sensorsStates.find(state => state.EPC === sensor.EPC)
+      const sensorState = sensorsStates.find(state => state.id === sensor.id)
       if (sensorState) {
         // Copy sensor to avoid mutations
         const sensorCopy = { ...sensor }

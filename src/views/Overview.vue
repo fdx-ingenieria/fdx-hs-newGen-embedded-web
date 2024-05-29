@@ -21,7 +21,7 @@
     getAlarmsData,
   } = storeToRefs(globalStore)
   const loading = ref(true)
-  const activeTab = ref('alarms')
+  const activeTab = ref('sensors')
 
   const getTabClass = (type: string): string => {
     if (type === activeTab.value) {
@@ -56,7 +56,6 @@
         });
       }
     });
-    console.log({alarms, sensors})
     return { alarms, sensors }
   })
 
@@ -123,7 +122,7 @@
           <h3 class="text-sm tracking-wider font-semibold">Lowest Temperature</h3>
           <p class="text-xl flex items-center" title="Lower">
             {{  temperatures.min?.temp.toFixed(1) }} <small class="ml-1 font-bold">°C</small>
-            <small class="absolute bottom-0 right-2 text-xs" :title="`id: ${temperatures.min?.id}`">{{  temperatures.min?.EPC }}</small>
+            <small class="absolute bottom-0 right-2 text-xs" :title="`EPC: ${temperatures.min?.EPC}`">{{  temperatures.min?.id }}</small>
           </p>
         </div>
       </div>
@@ -136,7 +135,7 @@
           <h3 class="text-sm tracking-wider font-semibold">Highest Temperature</h3>
           <p class="text-xl flex items-center" title="Higher">
             {{  temperatures.max?.temp.toFixed(1) }} <small class="ml-1 font-bold">°C</small>
-            <small class="absolute bottom-0 right-2 text-xs" :title="`id: ${temperatures.max?.id}`">{{  temperatures.max?.EPC }}</small>
+            <small class="absolute bottom-0 right-2 text-xs" :title="`EPC: ${temperatures.max?.EPC}`">{{  temperatures.max?.id }}</small>
           </p>
         </div>
       </div>
@@ -147,15 +146,15 @@
           <ul class="flex flex-wrap -mb-px">
             <li class="mr-2">
               <a
-                class="inline-block p-4 border-b-2 rounded-t-lg cursor-pointer"
-                :class="getTabClass('alarms')"
-                @click="activeTab = 'alarms'">Alarms</a>
-            </li>
-            <li class="mr-2">
-              <a
               class="inline-block p-4 border-b-2 rounded-t-lg cursor-pointer"
               :class="getTabClass('sensors')"
                 @click="activeTab = 'sensors'">Sensors</a>
+            </li>
+            <li class="mr-2">
+              <a
+                class="inline-block p-4 border-b-2 rounded-t-lg cursor-pointer"
+                :class="getTabClass('alarms')"
+                @click="activeTab = 'alarms'">Alarms</a>
             </li>
           </ul>
         </div>

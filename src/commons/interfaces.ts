@@ -71,7 +71,7 @@ export interface IAlarmField {
 }
 
 export interface ISensorState {
-  id: number; // long int
+  id: string; // long int
   EPC: string;
   state: boolean;
 }

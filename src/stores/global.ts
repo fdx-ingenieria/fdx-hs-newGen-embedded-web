@@ -135,7 +135,7 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   function updateSensorsData(data: ISensorData[]) {
-    const availableSensorsEPCs = availableSensors.value.map((item: ISensor) => item.EPC)
+    const availableSensorsIds = availableSensors.value.map((item: ISensor) => item.id)
 
     // Check if there are new sensors and update existing ones
     data.forEach((item: ISensorData) => {
@@ -144,7 +144,7 @@ export const useGlobalStore = defineStore('global', () => {
       item.std_dev = parseFloat(item.std_dev.toFixed(1))
       item.rssi = Math.round(item.rssi)
 
-      if (!availableSensorsEPCs.includes(item.EPC)) {
+      if (!availableSensorsIds.includes(item.id)) {
         addNewSensor({
           id: item.id,
           EPC: item.EPC,
@@ -251,7 +251,7 @@ export const useGlobalStore = defineStore('global', () => {
 
   function updateSensorData(sensorData: ISensorData): void {
     availableSensors.value = availableSensors.value.map((sensor) => {
-      if (sensor.EPC === sensorData.EPC) {
+      if (sensor.id === sensorData.id) {
         return {
           ...sensor,
           data: sensorData,
