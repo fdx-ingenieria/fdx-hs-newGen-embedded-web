@@ -12,7 +12,7 @@
 </script>
 
 <template>
-  <div class="antialiased bg-gray-50 h-screen">
+  <div class="antialiased bg-gray-50 h-screen min-w-[320px]">
     <NavBar />
     <LeftSideBar />
     <main class="p-4 h-auto pt-20"

@@ -17,11 +17,12 @@
           <MenuCloseIcon class="w-8" />
         </template>
       </button>
-      <a class="flex mr-4 cursor-pointer">
-        <img src="@/assets/fdx_no_bg_lg.png" class="mr-3 h-12" alt="FDX Logo" />
+      <a class="flex">
+        <img src="@/assets/fdx_no_bg_lg.png" class="h-12 hidden xs:inline-flex" alt="FDX Logo" />
+        <img src="@/assets/fdx_no_bg_sm.png" class="h-12 inline-flex xs:hidden" alt="FDX Logo" />
       </a>
       <div class="flex print:hidden">
-        <div class="flex items-center hidden sm:inline-flex">
+        <div class="flex items-center inline-flex">
           <ThermometerIcon class="w-5 h-5 text-gray-600" />
           {{  globalStore.boardTemp }}
           <small class="ml-1">°C</small>

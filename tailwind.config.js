@@ -6,6 +6,9 @@ export default {
   ],
   theme: {
     extend: {
+      screens: {
+        'xs': '480px',
+      },
       colors: {
         'fdx-red': '#FF0000',
         'fdx-dark': '#161F28',
