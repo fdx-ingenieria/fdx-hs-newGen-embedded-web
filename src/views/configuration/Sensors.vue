@@ -17,6 +17,7 @@
   const configuredSensors: Ref<ISensor[]> = ref([])
   const unconfiguredSensors: Ref<ISensor[]> = ref([])
   const showUnconfiguredTable = ref(true)
+  const showResetButton = ref(false)
 
   watch(getAvailableSensors, (newData) => {
     configuredSensors.value = []
@@ -42,6 +43,7 @@
 
     // Deep copy prevents the reactivity of the original object
     editableSensor.value = JSON.parse(JSON.stringify(sensor))
+    showResetButton.value = !!sensor.config.equipment && !!sensor.config.position && !!sensor.config.location
     showRightSideBar.value = true
   }
 
@@ -95,6 +97,7 @@
   }
 
   const checkDuplicate = (editableSensor: ISensor): boolean => {
+    if (!isComplete(editableSensor)) return false
     const { equipment, position, location } = editableSensor.config
     return !!getAvailableSensors.value.filter(sensor =>
       sensor.id !== editableSensor.id
@@ -186,6 +189,7 @@
           </template>
         </button>
         <button class="text-white flex disabled:opacity-50 bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2 focus:outline-none"
+          v-if="showResetButton"
           @click="resetSensor(editableSensor.id)"
           :disabled="savingData"
           type="button" >
