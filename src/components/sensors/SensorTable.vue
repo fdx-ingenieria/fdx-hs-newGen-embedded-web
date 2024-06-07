@@ -123,7 +123,7 @@
           <th v-if="showdata" scope="col" class="px-4 py-3">Temp</th>
           <th v-if="showdata" scope="col" class="px-4 py-3 text-center">Signal</th>
           <th v-if="showdata" scope="col" class="px-4 py-3">Updated</th>
-          <th v-show="!readonly" scope="col" class="px-4 py-3 hidden md:table-cell"><span class="sr-only">Actions</span></th>
+          <th v-show="!readonly" scope="col" class="px-4 py-3"><span class="sr-only">Actions</span></th>
         </tr>
       </thead>
       <transition-group name="list" tag="tbody">
@@ -157,7 +157,7 @@
               <LoadingIcon class="animate-spin fill-transparent text-green-600 w-4 m-auto" />
             </td>
           </template>
-          <td v-show="!readonly" class="px-4 py-3 text-center hidden md:table-cell">
+          <td v-show="!readonly" class="px-4 py-3 text-center">
               <button type="button"
                 @click="emit('edit', item.id)"
                 class="text-white border border-blue-500 bg-blue-500 font-medium rounded-lg text-sm p-0.5 text-center inline items-center mr-2">
