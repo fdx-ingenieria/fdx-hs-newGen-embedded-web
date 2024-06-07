@@ -19,7 +19,7 @@
   const unconfiguredSensors: Ref<ISensor[]> = ref([])
   const showUnconfiguredTable = ref(true)
   const showResetButton = ref(false)
-  const MAX_CONFIGURED_SENSORS = 17
+  const MAX_CONFIGURED_SENSORS = 50
 
   watch(getAvailableSensors, (newData) => {
     configuredSensors.value = []
@@ -227,42 +227,42 @@
               v-if="unconfiguredSensors.length"
               @click="clearUnconfiguredSensors()"
               :disabled="loadingData || startingDiscoveryMode"
-              class="inline-flex items-center disabled:opacity-50 text-yellow-700 bg-white border border-gray-300 focus:outline-none hover:bg-yellow-700 hover:border-yellow-700 hover:text-white focus:ring-0 font-semibold rounded-md text-sm sm:text-md px-3 py-.5">
+              class="flex gap-1 items-center disabled:opacity-50 text-yellow-700 bg-white border border-gray-300 focus:outline-none hover:bg-yellow-700 hover:border-yellow-700 hover:text-white focus:ring-0 font-semibold rounded-md text-sm sm:text-md px-3 py-.5">
               <template v-if="loadingData">
-                <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto mr-1" />
-                Loading...
+                <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto" />
+                <span class="hidden xs:block">Loading...</span>
               </template>
               <template v-else>
-                <RefreshIcon class="h-5 mr-1"/>
-                Clear
+                <RefreshIcon class="h-5"/>
+                <span class="hidden xs:block">Clear</span>
               </template>
             </button>
             <button type="button"
               v-if="globalStore.getNormaModeOn || startingDiscoveryMode"
               @click="startDiscoveryMode"
               :disabled="loadingData || startingDiscoveryMode"
-              class="inline-flex items-center disabled:opacity-50 text-green-700 bg-white border border-gray-300 focus:outline-none hover:bg-green-700 hover:border-green-700 hover:text-white focus:ring-0 font-semibold rounded-md text-sm sm:text-md px-3 py-.5">
+              class="flex gap-1 items-center disabled:opacity-50 text-green-700 bg-white border border-gray-300 focus:outline-none hover:bg-green-700 hover:border-green-700 hover:text-white focus:ring-0 font-semibold rounded-md text-sm sm:text-md px-3 py-.5">
               <template v-if="startingDiscoveryMode">
-                <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto mr-1" />
-                Starting...
+                <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto" />
+                <span class="hidden xs:block">Starting...</span>
               </template>
               <template v-else>
-                <PlayIcon class="h-5 mr-1"/>
-                Start
+                <PlayIcon class="h-5"/>
+                <span class="hidden xs:block">Start</span>
               </template>
             </button>
             <button type="button"
               v-if="globalStore.getDiscoveryModeOn || stoppingDiscoveryMode"
               @click="stopDiscoveryMode"
               :disabled="loadingData || stoppingDiscoveryMode"
-              class="flex items-center text-red-700 bg-white border border-gray-300 focus:outline-none hover:bg-red-600 hover:border-red-600 hover:text-white focus:ring-0 font-semibold rounded-md text-md px-3 py-.5">
+              class="flex gap-1 items-center text-red-700 bg-white border border-gray-300 focus:outline-none hover:bg-red-600 hover:border-red-600 hover:text-white focus:ring-0 font-semibold rounded-md text-md px-3 py-.5">
               <template v-if="stoppingDiscoveryMode">
-                <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto mr-1" />
-                Stopping...
+                <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto" />
+                <span class="hidden xs:block">Stopping...</span>
               </template>
               <template v-else>
-                <StopIcon class="h-5 mr-1"/>
-                Stop
+                <StopIcon class="h-5"/>
+                <span class="hidden xs:block">Stop</span>
               </template>
             </button>
             <ChevronUpIcon class="h-6 w-6 scale-110 cursor-pointer hover:scale-125"
