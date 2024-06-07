@@ -156,6 +156,7 @@ modbus_table = {
             "name": "Sensors",
             "columns": [
                 "Sensor ID",
+                "EPC",
                 "Location",
                 "Equipment",
                 "Position",
@@ -164,8 +165,8 @@ modbus_table = {
                 "Options"
             ],
             "values": [
-                ["A51P","Sector 1","Motor 1","Cable entry 2",220],
-                ["A57P","Sector 1","Motor 2","Cable entry 4",230]
+                ["A51P","01230s12","Sector 1","Motor 1","Cable entry 2",220],
+                ["A57P","Non ASCII","Sector 1","Motor 2","Cable entry 4",230]
             ],
             "autoincrementColumn": 4,
             "commonRows": [
