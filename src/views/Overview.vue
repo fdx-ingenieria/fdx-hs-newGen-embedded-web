@@ -55,7 +55,7 @@
     let sensors =  new Map()
 
     getConfiguredAlarms.value.forEach(alarm => {
-      if (alarm.status) {
+      if (alarm.status?.state) {
         alarms.set(alarm.id, {...alarm})
         alarm._sensors.forEach(sensor => {
           if (sensor.alarmed) {
