@@ -79,7 +79,7 @@ alarm_stored_data = {
         {
             'id': 0,
             'name': 'alarm_1',
-            'set_point': random.randint(0, 140),
+            'set_point': random.randint(-40, 120),
             'alarm_type': random.randint(0, 3),
             'relay_flag' : random.randint(0, 2),
             'fields': [
@@ -87,12 +87,13 @@ alarm_stored_data = {
                     'location': 1,
                     'equipment': 2
                 }
-            ]
+            ],
+            'sensors': ["10995384722910999988"]
         },
         {
             'id': 1,
             'name': 'alarm_2',
-            'set_point': random.randint(0, 140),
+            'set_point': random.randint(-40, 120),
             'alarm_type': random.randint(0, 3),
             'relay_flag' : random.randint(0, 2),
             'fields': [
@@ -104,7 +105,8 @@ alarm_stored_data = {
                     'location': 4,
                     'equipment': 5
                 }
-            ]
+            ],
+            'sensors': ["10995384722910999987"]
         },
         {
             'id': 2,
@@ -112,7 +114,8 @@ alarm_stored_data = {
             'set_point': 0,
             'alarm_type': 0,
             'relay_flag' : 0,
-            'fields': []
+            'fields': [],
+            'sensors': ["10995384722910999987", "10995384722910999988"]
         },
     ]
 }
@@ -261,7 +264,6 @@ async def normalMode(websocket):
             'data': [],
             'status': 'ok',
         }
-        print('len', len(sensors_stored_data['data']))
         for i in sensors_stored_data['data']:
             response_data['data'].append({
                 'id': i['id'],
@@ -289,34 +291,34 @@ async def normalMode(websocket):
             'status': 'ok',
         }
 
-        for i in alarm_stored_data['data']:
-            sensors = [
+        for alarm in alarm_stored_data['data']:
+            print('Processing alarm:', alarm['name'])
+            sensors = []
+            for sensor in alarm['sensors']:
+                print('Processing sensor:', sensor)
+                sensors.append(
                     {
-                        'id': '10995384722910999987',
-                        'EPC': hex(10995384722910999987),
-                        'state': random.choice([0, 1]),
-                    },
-                    {
-                        'id': '10995384722910999988',
-                        'EPC': hex(10995384722910999988),
+                        'id': sensor,
+                        'EPC': sensor,
                         'state': random.choice([0, 1]),
                     }
-                ]
-            randChoice = random.randint(1, 10)
-
-            if  randChoice < 2:
-                del sensors[0]
-            if randChoice > 2 and randChoice < 7:
-                del sensors[1]
+                )
+            # randChoice = random.randint(1, 10)
+            print('Sensors:', sensors)
+            # if  randChoice < 2:
+            #     del sensors[0]
+            # if randChoice > 2 and randChoice < 7:
+            #     del sensors[1]
 
             # Verificar si alguno de los elementos es 1
             is_alarmed = any(ele['state'] == 1 for ele in sensors)
+            print('Alarm state:', is_alarmed)
             response_data['data'].append({
-                'id': i['id'],
+                'id': alarm['id'],
                 'state': is_alarmed,
                 'sensors': sensors,
             })
-
+        print('Alarms data:', response_data)
         # Convert the response to JSON and send it back to the client
         response = json.dumps(response_data)
         await websocket.send(response)
@@ -664,7 +666,7 @@ async def handle_websocket(websocket, path):
         print('WebSocket connection closed.')
 
 async def main():
-    async with websockets.serve(handle_websocket, "localhost", 8000):
+    async with websockets.serve(handle_websocket, "localhost", 8001):
         await asyncio.Future()  # run forever
 
 if __name__ == "__main__":
