@@ -175,7 +175,7 @@
         </tr>
       </transition-group>
     </table>
-    <div v-if="!availableSensors.length"
+    <div v-if="!availableSensors?.length"
       class="p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 mx-auto text-center" role="alert">
       <span class="font-medium">Nothing found.</span> It seems the data is on a coffee break.
     </div>

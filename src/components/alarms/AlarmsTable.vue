@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { PropType, onMounted, ref, watch } from 'vue';
-  import { IAlarm, LabelType, AlarmType, ReleFlag, ISensorState, ISensor } from '@/commons';
+  import { IAlarm, LabelType, AlarmType, ReleFlag } from '@/commons';
   import { EditIcon, SearchIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global';
   import SensorTable from '../sensors/SensorTable.vue';
@@ -77,22 +77,6 @@
     }
   }
 
-  const alarmSensors = (sensorsStates: ISensorState[] = []) => {
-    const alarmSensors: ISensor[] = []
-    globalStore.getConfiguredSensors.forEach(sensor => {
-      const sensorState = sensorsStates.find(state => state.id === sensor.id)
-      if (sensorState) {
-        // Copy sensor to avoid mutations
-        const sensorCopy = { ...sensor }
-        sensorCopy.alarmed = sensorState.state
-        alarmSensors.push(sensorCopy)
-      }
-    })
-
-    return alarmSensors
-  }
-
-
   const emit = defineEmits<{
     edit: [index: number],
   }>()
@@ -157,7 +141,7 @@
           <tr v-show="showSensor === item.id" class="transition-all duration-700 ease-in-out">
             <td class="bg-gray-700 text-white text-center w-1"><div class="-rotate-90">Sensors</div></td>
             <td colspan="100%" class="transition-all duration-700 ease-in-out">
-              <SensorTable :availableSensors="alarmSensors(item.status?.sensors)" :readonly="true" :showfooter="false" />
+              <SensorTable :availableSensors="item._sensors" :readonly="true" :showfooter="false" />
             </td>
           </tr>
         </template>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { ISensorData } from '@/commons';
   import AlarmsTable from '@/components/alarms/AlarmsTable.vue';
   import {
     AlarmIcon,
@@ -17,8 +18,6 @@
   const {
     getConfiguredAlarms,
     getConfiguredSensors,
-    getSensorsData,
-    getAlarmsData,
   } = storeToRefs(globalStore)
   const loading = ref(true)
   const activeTab = ref('sensors')
@@ -32,25 +31,34 @@
 
   const temperatures = computed(() => {
     // Order by temperature
-    const ordered = [...getSensorsData.value].sort((a, b) => {
+    const to_order: ISensorData[] = []
+    getConfiguredAlarms.value.forEach(alarm => {
+      alarm._sensors.forEach(sensor => {
+        if (sensor.data) {
+          to_order.push(sensor.data)
+        }
+      });
+    });
+
+    const ordered = to_order.sort((a, b) => {
       if (a.temp && b.temp) {
         return a.temp - b.temp
       }
       return 0
     })
+
     return { min: ordered.shift() , max: ordered.pop() }
   })
 
   const alarmed = computed(() => {
     let alarms = new Map()
     let sensors =  new Map()
-    const configuredAlarmsIds = getConfiguredAlarms.value.map(alarm => alarm.id)
 
-    getAlarmsData.value.forEach(element => {
-      if (element.state && configuredAlarmsIds.includes(element.id)) {
-        alarms.set(element.id, {...element})
-        element.sensors.forEach(sensor => {
-          if (sensor.state) {
+    getConfiguredAlarms.value.forEach(alarm => {
+      if (alarm.status) {
+        alarms.set(alarm.id, {...alarm})
+        alarm._sensors.forEach(sensor => {
+          if (sensor.alarmed) {
             sensors.set(sensor.id, {...sensor})
           }
         });
@@ -59,22 +67,13 @@
     return { alarms, sensors }
   })
 
-  const sensorsWhitAlarms = computed(() => {
-    return [...getConfiguredSensors.value].map(sensor => {
-      if (alarmed.value.sensors.has(sensor.id)) {
-        return { ...sensor, alarmed: true }
-      }
-      return sensor
-    })
-  })
-
   onMounted(async () => {
     loading.value = true
     await Promise.all([
-      globalStore.startNormalMode(),
       globalStore.loadLabels(),
       globalStore.loadSensors(),
-      globalStore.loadAlarms()
+      globalStore.loadAlarms(),
+      globalStore.startNormalMode()
     ]).finally(() => loading.value = false)
   })
 
@@ -117,7 +116,7 @@
         <div class="p-4 bg-blue-500">
           <ThermometerLowIcon class="w-10 h-10 text-white" />
         </div>
-        <LoadingIcon v-if="loading" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto" />
+        <LoadingIcon v-if="!temperatures.min" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto" />
         <div v-else class="px-4 text-gray-700">
           <h3 class="text-sm tracking-wider font-semibold">Lowest Temperature</h3>
           <p class="text-xl flex items-center" title="Lower">
@@ -130,7 +129,7 @@
         <div class="p-4 bg-red-500">
           <ThermometerHighIcon class="w-10 h-10 text-white" />
         </div>
-        <LoadingIcon v-if="loading" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto" />
+        <LoadingIcon v-if="!temperatures.max" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto" />
         <div v-else class="px-4 text-gray-700">
           <h3 class="text-sm tracking-wider font-semibold">Highest Temperature</h3>
           <p class="text-xl flex items-center" title="Higher">
@@ -159,7 +158,7 @@
           </ul>
         </div>
         <AlarmsTable v-show="activeTab === 'alarms'" :availableAlarms="getConfiguredAlarms" :readonly="true" :max="20" />
-        <SensorTable v-show="activeTab === 'sensors'" :availableSensors="sensorsWhitAlarms" :readonly="true" :showlabels="true" :max="50" />
+        <SensorTable v-show="activeTab === 'sensors'" :availableSensors="getConfiguredSensors" :readonly="true" :showlabels="true" :max="50" />
       </div>
     </div>
   </div>

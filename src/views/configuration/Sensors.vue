@@ -32,7 +32,7 @@
       }
     })
     unconfiguredSensors.value.sort((a: ISensor, b: ISensor) => (a.data?.rssi || 0) - (b.data?.rssi || 0))
-  })
+  }, { immediate: true, deep: true })
 
   const isLimitReached = computed(() => {
     return configuredSensors.value.length >= MAX_CONFIGURED_SENSORS;

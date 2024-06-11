@@ -63,6 +63,8 @@ export interface IAlarm {
   relay_flag: number;
   fields: IAlarmField[];
   status?: IAlarmData;
+  sensors: string[]; // sensors ids
+  _sensors: ISensor[]; // sensors
 }
 
 export interface IAlarmField {
