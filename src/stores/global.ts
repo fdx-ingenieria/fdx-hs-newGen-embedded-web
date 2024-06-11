@@ -1,8 +1,16 @@
-import { SocketStatus, SocketCommands, ILabelData, ISensor, LabelType, ISystem, ISensorData, IRequest, IAlarm, IAlarmData, IRequestQueue, IModbusTableEntry, IReaderConfig } from '@/commons'
+import { SocketStatus, SocketCommands, ILabelData, ISensor, LabelType, ISystem, ISensorData, IRequest, IAlarm, IAlarmData, IRequestQueue, IModbusTableEntry, IReaderConfig, customLog } from '@/commons'
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
-import * as JSONBigInt from 'json-bigint'
 
+/**
+ * This Pinia store manages the global state of the application.
+ * Pay close attention to the variables 'availableSensors' and 'availableAlarms',
+ * which are updated in response to the 'NEW_SENSOR_DATA' and 'ALARM_DATA' events, respectively.
+ * The reactivity of these variables is crucial as they reflect important changes
+ * in several views of the application. Any updates to sensor data or alarm information
+ * must be immediately reflected to ensure a consistent and accurate user experience
+ * throughout the application.
+ */
 export const useGlobalStore = defineStore('global', () => {
   const maxRetries = parseInt(import.meta.env.VITE_MAX_RETRIES) || 150
   const timeBetweenRequests = parseInt(import.meta.env.VITE_TIME_BETWEEN_REQUESTS) || 500
@@ -13,8 +21,6 @@ export const useGlobalStore = defineStore('global', () => {
   const availableLabels: Ref<ILabelData> = ref({} as ILabelData)
   const availableSensors: Ref<ISensor[]> = ref([])
   const availableAlarms: Ref<IAlarm[]> = ref([])
-  const alarmsData: Ref<IAlarmData[]> = ref([])
-  const sensorsData: Ref<ISensorData[]> = ref([])
   const systeamData: Ref<ISystem> = ref({} as ISystem)
   const readerConfigData: Ref<IReaderConfig> = ref({} as IReaderConfig)
   const modbusTable: Ref<Array<IModbusTableEntry>> = ref([])
@@ -34,11 +40,9 @@ export const useGlobalStore = defineStore('global', () => {
   const getSystemData = computed(() => systeamData.value)
   const getReaderConfigData = computed(() => readerConfigData.value)
   const getModbusTable = computed(() => modbusTable.value)
-  const getSensorsData = computed(() => sensorsData.value)
   const getConfiguredSensors = computed(() => availableSensors.value.filter(sensor => !!sensor.config.equipment))
   const getAvailableAlarms = computed(() => availableAlarms.value)
   const getConfiguredAlarms = computed(() => availableAlarms.value.filter(alarm => !!alarm.alarm_type))
-  const getAlarmsData = computed(() => alarmsData.value)
 
   // Actions
   async function connect(url = import.meta.env.VITE_WS_URL as string): Promise<void> {
@@ -51,7 +55,7 @@ export const useGlobalStore = defineStore('global', () => {
     };
 
     socket.onclose = (e) => {
-      console.log('WebSocket disconnected. Reconnection attempt in 10 seconds.', e)
+      console.warn('WebSocket disconnected. Reconnection attempt in 10 seconds.', e)
       socketInstace = null
       setTimeout(connect, 10000)
       status.value = SocketStatus.CLOSED
@@ -76,62 +80,81 @@ export const useGlobalStore = defineStore('global', () => {
   function messageHandler(event: MessageEvent) {
     const { cmd, arg, data } = JSON.parse(event.data)
 
-    console.log(`Message received cmd: ${cmd}, arg: ${arg}`, data)
     if (!cmd || !arg) {
       console.error('Invalid message received:', event.data)
       return
     }
     if (cmd === SocketCommands.LABEL && arg === 'get_all') {
+      customLog('New label data received:', data)
       availableLabels.value = data
       return
     }
     if (cmd === SocketCommands.SENSOR_CONFIG && arg === 'get_all') {
+      customLog('New sensor config received:', data)
       availableSensors.value = data
       return
     }
     if (cmd === SocketCommands.ALARM_CONFIG && arg === 'get_all') {
-      console.log('New alarm data received:', data)
+      customLog('New alarm config received:', data)
+      data.forEach((alarm: IAlarm) => {
+        if (!alarm.sensors.length) alarm._sensors = []
+        alarm.sensors?.forEach(sensorId => {
+          const sensors = availableSensors.value.filter(sensor => sensor.id === sensorId)
+          if (sensors) {
+            alarm._sensors = sensors
+          } else {
+            alarm._sensors = []
+          }
+        })
+      })
+
       availableAlarms.value = data
+
       return
     }
     if (cmd === SocketCommands.NEW_SENSOR_DATA && arg === 'get_all') {
-      console.log('New sensor data received:', data)
+      customLog('New sensor data received:', data)
       updateSensorsData(data)
       return
     }
     if (cmd === SocketCommands.ALARM_DATA && arg === 'get_all') {
-      console.log('New alarms data received', data)
+      customLog('New alarms data received', data)
       updateAlarmsData(data)
       return
     }
     if (cmd === SocketCommands.HS_CONFIG && arg === 'get') {
-      console.log('New sytem data received:', data)
+      customLog('New sytem data received:', data)
       systeamData.value = data
       return
     }
     if (cmd === SocketCommands.MODBUS_TABLE && arg === 'get') {
-      console.log('New modbus table data received:', data)
+      customLog('New modbus table data received:', data)
       modbusTable.value = data
       return
     }
     if (cmd === SocketCommands.READER_TEMP && arg === 'get') {
-      console.log('New board temp data received:', data)
+      customLog('New board temp data received:', data)
       boardTemp.value = data
       return
     }
     if (cmd === SocketCommands.READER_CONFIG && arg === 'get') {
-      console.log('New reader config data received:', data)
+      customLog('New reader config data received:', data)
       readerConfigData.value = data
       return
     }
+
+    console.warn(`Unknow message received cmd: ${cmd}, arg: ${arg}`, data)
   }
 
   function updateAlarmsData(data: IAlarmData[]) {
-    availableAlarms.value.forEach(alarm => {
+    getConfiguredAlarms.value.forEach(alarm => {
       const status = data.find(item => item.id === alarm.id)
       alarm.status = status || undefined
+      alarm._sensors?.forEach(sensor => {
+        const sensorData = status?.sensors.find(item => item.id === sensor.id)
+        sensor.alarmed = sensorData?.state || false
+      })
     })
-    alarmsData.value = data
   }
 
   function updateSensorsData(data: ISensorData[]) {
@@ -159,7 +182,6 @@ export const useGlobalStore = defineStore('global', () => {
         updateSensorData(item)
       }
     })
-    sensorsData.value = data
   }
 
   function processRequests(): void {
@@ -170,7 +192,6 @@ export const useGlobalStore = defineStore('global', () => {
 
       send(nextRequest.request)
         .then(() => {
-          console.log('Request processed:', nextRequest)
           nextRequest.resolve(true)
         })
         .catch(() => {
@@ -202,14 +223,12 @@ export const useGlobalStore = defineStore('global', () => {
         throw new Error("Socket is not connected");
       }
       console.error(`Socket is not connected. Cmd: ${message.cmd} Attempt ${attempt} of ${maxRetries}.`)
-      await sleep(1000)
-        .then(() => sleep(1000))
+      await sleep(5000)
         .then(() => send(message, attempt + 1))
       return
     }
-    console.log('Sending message:', message)
-    // TODO: check if we need bigInt here.
-    socketInstace?.send(JSONBigInt.stringify(message))
+    customLog('Sending message:', message)
+    socketInstace?.send(JSON.stringify(message))
   }
 
   async function loadLabels(): Promise<void> {
@@ -246,19 +265,14 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   function addNewSensor(newSensor: ISensor): void {
-    availableSensors.value = [...availableSensors.value, newSensor]
+    availableSensors.value.push(newSensor)
   }
 
   function updateSensorData(sensorData: ISensorData): void {
-    availableSensors.value = availableSensors.value.map((sensor) => {
-      if (sensor.id === sensorData.id) {
-        return {
-          ...sensor,
-          data: sensorData,
-        }
-      }
-      return sensor
-    })
+    const sensor = availableSensors.value.find((sensor) => sensor.id === sensorData.id)
+
+    if (!sensor) return
+    sensor.data = sensorData
   }
 
   async function clearUnconfiguredSensors(): Promise<void> {
@@ -334,7 +348,6 @@ export const useGlobalStore = defineStore('global', () => {
     clearUnconfiguredSensors,
     getAvailableAlarms,
     getConfiguredAlarms,
-    getAlarmsData,
     loadAlarms,
     updateAlarms,
     getDiscoveryModeOn,
@@ -351,7 +364,6 @@ export const useGlobalStore = defineStore('global', () => {
     getModbusTable,
     startNormalMode,
     stopNormalMode,
-    getSensorsData,
     getConfiguredSensors,
     addNewSensor,
     updateSensorData,
