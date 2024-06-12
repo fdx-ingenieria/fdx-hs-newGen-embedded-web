@@ -98,7 +98,7 @@ export const useGlobalStore = defineStore('global', () => {
     if (cmd === SocketCommands.ALARM_CONFIG && arg === 'get_all') {
       customLog('New alarm config received:', data)
       data.forEach((alarm: IAlarm) => {
-        if (!alarm.sensors.length) alarm._sensors = []
+        alarm._sensors = []
         alarm.sensors?.forEach(sensorId => {
           console.log('################# START #################')
           console.log('Searching for sensor:', sensorId, 'in:', availableSensors.value)
