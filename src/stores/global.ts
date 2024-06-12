@@ -48,10 +48,12 @@ export const useGlobalStore = defineStore('global', () => {
   async function connect(url = import.meta.env.VITE_WS_URL as string): Promise<void> {
     const socket = new WebSocket(url)
     status.value = SocketStatus.CONNECTING
+    isProcessing = true
 
-    socket.onopen = () => {
+    socket.onopen = async () => {
       socketInstace = socket
       status.value = SocketStatus.OPEN
+      isProcessing = false
     };
 
     socket.onclose = (e) => {
@@ -99,7 +101,11 @@ export const useGlobalStore = defineStore('global', () => {
       data.forEach((alarm: IAlarm) => {
         if (!alarm.sensors.length) alarm._sensors = []
         alarm.sensors?.forEach(sensorId => {
+          console.log('################# START #################')
+          console.log('Searching for sensor:', sensorId, 'in:', availableSensors.value)
           const sensors = availableSensors.value.filter(sensor => sensor.id === sensorId)
+          console.log('Found sensors:', sensors)
+          console.log('################# END #################')
           if (sensors) {
             alarm._sensors = sensors
           } else {
