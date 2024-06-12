@@ -102,14 +102,11 @@ export const useGlobalStore = defineStore('global', () => {
         alarm.sensors?.forEach(sensorId => {
           console.log('################# START #################')
           console.log('Searching for sensor:', sensorId, 'in:', availableSensors.value)
-          const sensors = availableSensors.value.filter(sensor => sensor.id === sensorId)
-          console.log('Found sensors:', sensors)
+          const sensor = availableSensors.value.find(sensor => sensor.id === sensorId)
+          console.log('Found sensors:', sensor)
           console.log('################# END #################')
-          if (sensors) {
-            alarm._sensors = sensors
-          } else {
-            alarm._sensors = []
-          }
+          if (sensor) {
+            alarm._sensors.push(sensor)
         })
       })
 
