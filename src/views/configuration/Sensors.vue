@@ -121,10 +121,9 @@
   }
 
   onMounted(async () => {
-    await Promise.all([
-      globalStore.loadLabels(),
-      globalStore.loadSensors()
-    ])
+    // Important, we need to load the labels before sensors
+    await globalStore.loadLabels()
+    await globalStore.loadSensors()
     .then(() => globalStore.startNormalMode())
     .then(() => loadingData.value = false)
   })
