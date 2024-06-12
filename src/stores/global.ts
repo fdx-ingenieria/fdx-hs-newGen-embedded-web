@@ -1,4 +1,5 @@
 import { SocketStatus, SocketCommands, ILabelData, ISensor, LabelType, ISystem, ISensorData, IRequest, IAlarm, IAlarmData, IRequestQueue, IModbusTableEntry, IReaderConfig, customLog } from '@/commons'
+import { sl } from 'date-fns/locale'
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
 
@@ -48,12 +49,11 @@ export const useGlobalStore = defineStore('global', () => {
   async function connect(url = import.meta.env.VITE_WS_URL as string): Promise<void> {
     const socket = new WebSocket(url)
     status.value = SocketStatus.CONNECTING
-    isProcessing = true
 
     socket.onopen = async () => {
       socketInstace = socket
+      await sleep(1000)
       status.value = SocketStatus.OPEN
-      isProcessing = false
     };
 
     socket.onclose = (e) => {
