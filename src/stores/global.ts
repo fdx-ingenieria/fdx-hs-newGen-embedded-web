@@ -1,5 +1,4 @@
 import { SocketStatus, SocketCommands, ILabelData, ISensor, LabelType, ISystem, ISensorData, IRequest, IAlarm, IAlarmData, IRequestQueue, IModbusTableEntry, IReaderConfig, customLog } from '@/commons'
-import { sl } from 'date-fns/locale'
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
 
