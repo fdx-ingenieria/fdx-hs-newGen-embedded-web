@@ -107,6 +107,7 @@ export const useGlobalStore = defineStore('global', () => {
           console.log('################# END #################')
           if (sensor) {
             alarm._sensors.push(sensor)
+          }
         })
       })
 
