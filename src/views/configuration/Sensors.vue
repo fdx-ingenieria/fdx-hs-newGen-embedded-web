@@ -122,10 +122,11 @@
 
   onMounted(async () => {
     // Important, we need to load the labels before sensors
+    await globalStore.startNormalMode()
     await globalStore.loadLabels()
     await globalStore.loadSensors()
-    .then(() => globalStore.startNormalMode())
-    .then(() => loadingData.value = false)
+
+    loadingData.value = false
   })
 
   onUnmounted(() => {

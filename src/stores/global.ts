@@ -13,7 +13,7 @@ import { Ref, computed, ref } from 'vue'
  */
 export const useGlobalStore = defineStore('global', () => {
   const maxRetries = parseInt(import.meta.env.VITE_MAX_RETRIES) || 150
-  const timeBetweenRequests = parseInt(import.meta.env.VITE_TIME_BETWEEN_REQUESTS) || 500
+  const timeBetweenRequests = parseInt(import.meta.env.VITE_TIME_BETWEEN_REQUESTS) || 800
   let socketInstace: WebSocket | null = null
   const status: Ref<SocketStatus> = ref(SocketStatus.CLOSED)
   const discoveryModeOn: Ref<boolean> = ref(false)
@@ -51,7 +51,6 @@ export const useGlobalStore = defineStore('global', () => {
 
     socket.onopen = async () => {
       socketInstace = socket
-      await sleep(1000)
       status.value = SocketStatus.OPEN
     };
 
@@ -71,7 +70,6 @@ export const useGlobalStore = defineStore('global', () => {
 
     setTimeout(() => {
       if (socket.readyState !== 1) {
-        console.warn('Connection attempt timed out. Retrying...')
         socket.close(3506, 'Connection attempt timed out')
       }
     }, 5000)
@@ -100,11 +98,7 @@ export const useGlobalStore = defineStore('global', () => {
       data.forEach((alarm: IAlarm) => {
         alarm._sensors = []
         alarm.sensors?.forEach(sensorId => {
-          console.log('################# START #################')
-          console.log('Searching for sensor:', sensorId, 'in:', availableSensors.value)
           const sensor = availableSensors.value.find(sensor => sensor.id === sensorId)
-          console.log('Found sensors:', sensor)
-          console.log('################# END #################')
           if (sensor) {
             alarm._sensors.push(sensor)
           }
@@ -246,6 +240,8 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   function getLabelName(type: LabelType, index: number | undefined) {
+    if (!getAvailableLabels.value[type]) return 'Not found'
+
     return index
       ? getAvailableLabels.value[type][index] || 'Not found'
       : 'Not found'
