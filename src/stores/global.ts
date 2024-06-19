@@ -75,6 +75,13 @@ export const useGlobalStore = defineStore('global', () => {
     }, 5000)
   }
 
+  async function disconnect(): Promise<void> {
+    if (socketInstace) {
+      customLog('Disconnecting socket')
+      socketInstace.close()
+    }
+  }
+
   //TODO: refactor as dictionary
   function messageHandler(event: MessageEvent) {
     const { cmd, arg, data } = JSON.parse(event.data)
@@ -333,6 +340,7 @@ export const useGlobalStore = defineStore('global', () => {
 
   return {
     status,
+    disconnect,
     boardTemp,
     showSideBar,
     getStatus,
