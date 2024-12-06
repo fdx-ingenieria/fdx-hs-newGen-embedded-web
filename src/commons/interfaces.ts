@@ -52,6 +52,7 @@ export interface ISensorData {
   rssi: number;
   elapsed_time: number; // seconds since last reading
   timestamp: number; // seconds since epoch unused
+  config: ISensorConfig;
 }
 
 // Alarms

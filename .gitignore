@@ -23,6 +23,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
 # Vite
 .env
+node_modules/*
+src/commons/interfaces.ts
