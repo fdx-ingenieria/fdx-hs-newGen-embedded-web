@@ -119,5 +119,6 @@ export interface IReaderConfig {
   t_reader_on: number; // ms 0 to 10_000
   t_reader_off: number; // ms 0 to 300_000
   processing_interval: number; // ms 0 to 600_000
+  mv_avg_window_size: number; // 1 to 20
   password?: string;
 }

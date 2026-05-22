@@ -53,8 +53,13 @@
     return value >= 0 && value <= 600_000
   }
 
+  const validMvAvgWindowSize = (value: number): boolean => {
+    if (!isValidInteger(value)) return false
+    return value >= 1 && value <= 20
+  }
+
   const isComplete = (): boolean => {
-    const { region, password, tag_encoding, read_power, write_power, t_reader_on, t_reader_off, processing_interval } = editable.value
+    const { region, password, tag_encoding, read_power, write_power, t_reader_on, t_reader_off, processing_interval, mv_avg_window_size } = editable.value
 
     return !!region
       && TagEncoding.some(item => item.value === tag_encoding)
@@ -63,6 +68,7 @@
       && validReaderOnValue(t_reader_on)
       && validReaderOffValue(t_reader_off)
       && validProcessingIntervalValue(processing_interval)
+      && validMvAvgWindowSize(mv_avg_window_size)
       && !!password
   }
 
@@ -183,6 +189,18 @@
                   placeholder="Processing interval value in ms">
                 <p class="mt-2 text-sm text-gray-600">This value should be between 0 and 600000 ms.</p>
                 <p v-show="!validProcessingIntervalValue(editable.processing_interval)" class="mt-2 text-sm text-red-600"><span class="font-semibold">Oops!</span> This value is out of range.</p>
+              </div>
+              <div>
+                <label class="block mb-2 text-sm font-semibold text-gray-900">Moving avg window size</label>
+                <input class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                  type="number"
+                  step="1"
+                  min="1"
+                  max="20"
+                  v-model.number="editable.mv_avg_window_size"
+                  placeholder="Moving average window size">
+                <p class="mt-2 text-sm text-gray-600">Number of processing cycles to average. Lower = faster response, higher = smoother. Range: 1–20.</p>
+                <p v-show="!validMvAvgWindowSize(editable.mv_avg_window_size)" class="mt-2 text-sm text-red-600"><span class="font-semibold">Oops!</span> This value should be between 1 and 20.</p>
               </div>
               <div>
                 <label class="block mb-2 text-sm font-semibold text-blue-900">Password</label>
