@@ -60,6 +60,7 @@ export interface IAlarm {
   id: number;
   name: string;
   set_point: number;
+  reset_point: number;
   alarm_type: number;
   relay_flag: number;
   fields: IAlarmField[];

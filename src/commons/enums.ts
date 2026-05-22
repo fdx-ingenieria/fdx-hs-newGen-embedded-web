@@ -55,6 +55,7 @@ export const AlarmType = [
   'Absolute',
   'Unbalance',
   'Dispersion',
+  'Hysteresis',
 ]
 
 export const ReleFlag = [

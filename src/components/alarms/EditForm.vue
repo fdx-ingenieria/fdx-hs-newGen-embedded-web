@@ -16,9 +16,17 @@
   const localValue: Ref<IAlarm> = ref(JSON.parse(JSON.stringify(props.alarm)))
   watch(props, () => localValue.value = JSON.parse(JSON.stringify(props.alarm)))
 
+  const HYSTERESIS_TYPE = 4
+
   const validSetPoint = (value: number): boolean => {
     if (!isValidInteger(value)) return false
     return value >= -40 && value <= 120
+  }
+
+  const validResetPoint = (resetPoint: number, setPoint: number): boolean => {
+    if (!isValidInteger(resetPoint)) return false
+    if (resetPoint < -40 || resetPoint > 120) return false
+    return resetPoint < setPoint
   }
 
   const validFields = (fields: IAlarmField[]): boolean => {
@@ -32,19 +40,23 @@
   }
 
   const isComplete = () => {
+    const hysteresisOk = localValue.value.alarm_type !== HYSTERESIS_TYPE
+      || validResetPoint(localValue.value.reset_point, localValue.value.set_point)
     return !!localValue.value.name
       && validSetPoint(localValue.value.set_point)
+      && hysteresisOk
       && validFields(localValue.value.fields)
       && noRepeatedFields()
   }
 
   const done = () => {
-    const { name, alarm_type, fields, relay_flag, set_point } = localValue.value
+    const { name, alarm_type, fields, relay_flag, set_point, reset_point } = localValue.value
     props.alarm.name = name
     props.alarm.alarm_type = alarm_type
     props.alarm.fields = fields
     props.alarm.relay_flag = relay_flag
     props.alarm.set_point = set_point
+    props.alarm.reset_point = alarm_type === HYSTERESIS_TYPE ? reset_point : 0
 
     emit('close')
   }

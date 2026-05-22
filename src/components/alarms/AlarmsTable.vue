@@ -119,7 +119,10 @@
             <th scope="row" class="px-4 py-3 font-medium text-gray-900 ">{{ item.id }}</th>
             <td class="px-4 py-3" v-html="searcHighlight(item.name)"></td>
             <td class="px-4 py-3" v-html="searcHighlight(AlarmType[item.alarm_type])"></td>
-            <td class="px-4 py-3">{{ item.set_point }}</td>
+            <td class="px-4 py-3">
+              {{ item.set_point }}
+              <span v-if="item.alarm_type === 4" class="text-gray-400"> / {{ item.reset_point }}</span>
+            </td>
             <td class="px-4 py-3" v-html="searcHighlight(ReleFlag[item.relay_flag])"></td>
             <td class="px-4 py-3 flex flex-wrap gap-1 justify-center">
               <span v-for="field in item.fields" class="text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full"
