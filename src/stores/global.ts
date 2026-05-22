@@ -26,12 +26,14 @@ export const useGlobalStore = defineStore('global', () => {
   const modbusTable: Ref<Array<IModbusTableEntry>> = ref([])
   const requestQueue: Array<IRequestQueue> = [];
   const boardTemp: Ref<number | string> = ref('N/A')
+  const firmwareVersion: Ref<string> = ref('')
   const showSideBar = ref(false);
   let isProcessing: boolean = false;
 
   const sleep = async(ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
   // Getters
+  const getFirmwareVersion = computed(() => firmwareVersion.value)
   const getStatus = computed(() => status.value)
   const getAvailableLabels = computed(() => availableLabels.value)
   const getAvailableSensors = computed(() => availableSensors.value)
@@ -144,6 +146,11 @@ export const useGlobalStore = defineStore('global', () => {
     if (cmd === SocketCommands.READER_CONFIG && arg === 'get') {
       customLog('New reader config data received:', data)
       readerConfigData.value = data
+      return
+    }
+    if (cmd === SocketCommands.FIRMWARE_VERSION && arg === 'get') {
+      customLog('New firmware version received:', data)
+      firmwareVersion.value = data.version
       return
     }
 
@@ -358,6 +365,10 @@ export const useGlobalStore = defineStore('global', () => {
       .then(() => { normalModeOn.value = false })
   }
 
+  async function loadFirmwareVersion(): Promise<void> {
+    return addToRequestQueue({ cmd: SocketCommands.FIRMWARE_VERSION, arg: "get", data: '' })
+  }
+
   return {
     status,
     disconnect,
@@ -394,7 +405,10 @@ export const useGlobalStore = defineStore('global', () => {
     getConfiguredSensors,
     addNewSensor,
     updateSensorData,
-    connect
+    connect,
+    firmwareVersion,
+    getFirmwareVersion,
+    loadFirmwareVersion
   }
 },
 {

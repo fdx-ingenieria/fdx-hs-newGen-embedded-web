@@ -41,6 +41,7 @@
     router.afterEach((_to, _from) => {
       if (isSmallScreen.value) globalStore.showSideBar = false;
     });
+    globalStore.loadFirmwareVersion();
   });
 
   onUnmounted(() => {
@@ -70,7 +71,7 @@
     </div>
 
     <div class="absolute bottom-0 left-0 justify-left p-4 space-x-4 w-full lg:flex bg-white z-20">
-      <small>Version: 0.1.0</small>
+      <small>FW: {{ globalStore.getFirmwareVersion || 'N/A' }}</small>
     </div>
   </aside>
 </template>

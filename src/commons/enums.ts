@@ -18,7 +18,8 @@ export enum SocketCommands {
   ALARM_DATA = 'alarm_data',
   HS_CONFIG = 'hs_config',
   READER_CONFIG = 'reader_config',
-  READER_TEMP = 'reader_temp'
+  READER_TEMP = 'reader_temp',
+  FIRMWARE_VERSION = 'firmware_version'
 }
 
 export enum SensorQuality {
