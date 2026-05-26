@@ -26,12 +26,14 @@ export const useGlobalStore = defineStore('global', () => {
   const modbusTable: Ref<Array<IModbusTableEntry>> = ref([])
   const requestQueue: Array<IRequestQueue> = [];
   const boardTemp: Ref<number | string> = ref('N/A')
+  const firmwareVersion: Ref<string> = ref('')
   const showSideBar = ref(false);
   let isProcessing: boolean = false;
 
   const sleep = async(ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
   // Getters
+  const getFirmwareVersion = computed(() => firmwareVersion.value)
   const getStatus = computed(() => status.value)
   const getAvailableLabels = computed(() => availableLabels.value)
   const getAvailableSensors = computed(() => availableSensors.value)
@@ -146,6 +148,11 @@ export const useGlobalStore = defineStore('global', () => {
       readerConfigData.value = data
       return
     }
+    if (cmd === SocketCommands.FIRMWARE_VERSION && arg === 'get') {
+      customLog('New firmware version received:', data)
+      firmwareVersion.value = data.version
+      return
+    }
 
     console.warn(`Unknow message received cmd: ${cmd}, arg: ${arg}`, data)
   }
@@ -162,7 +169,24 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   function updateSensorsData(data: ISensorData[]) {
-    const availableSensorsIds = availableSensors.value.map((item: ISensor) => item.id)
+    const availableSensorsIds = availableSensors.value.map((item: ISensor) => item.id);
+    const dataIDs = data.map(sensor => sensor.id);
+  
+    // Filter out elements that don't exist in dataIDs
+    availableSensors.value = availableSensors.value.filter((item: ISensor) => {
+      if (!dataIDs.includes(item.id)) {
+        customLog("No existe sensor ", item.id);
+        return false; // Exclude this item
+      }
+      return true; // Keep this item
+    });
+  
+    // Update availableSensorsIds
+    const updatedAvailableSensorsIds = availableSensors.value.map((item: ISensor) => item.id);
+  
+    // Replace the original availableSensorsIds (if needed)
+    // You may need to update this in the relevant context or store
+    console.log("Updated availableSensorsIds:", updatedAvailableSensorsIds);
 
     // Check if there are new sensors and update existing ones
     data.forEach((item: ISensorData) => {
@@ -175,11 +199,12 @@ export const useGlobalStore = defineStore('global', () => {
         addNewSensor({
           id: item.id,
           EPC: item.EPC,
-          config: {
-            equipment: 0,
-            position: 0,
-            location: 0
-          },
+          config: item.config,
+          // config: {
+          //   equipment: 0,
+          //   position: 0,
+          //   location: 0
+          // },
           data: item,
         })
       } else {
@@ -277,7 +302,9 @@ export const useGlobalStore = defineStore('global', () => {
   function updateSensorData(sensorData: ISensorData): void {
     const sensor = availableSensors.value.find((sensor) => sensor.id === sensorData.id)
 
-    if (!sensor) return
+    if (!sensor){
+      return
+    } 
     sensor.data = sensorData
   }
 
@@ -338,6 +365,10 @@ export const useGlobalStore = defineStore('global', () => {
       .then(() => { normalModeOn.value = false })
   }
 
+  async function loadFirmwareVersion(): Promise<void> {
+    return addToRequestQueue({ cmd: SocketCommands.FIRMWARE_VERSION, arg: "get", data: '' })
+  }
+
   return {
     status,
     disconnect,
@@ -374,7 +405,10 @@ export const useGlobalStore = defineStore('global', () => {
     getConfiguredSensors,
     addNewSensor,
     updateSensorData,
-    connect
+    connect,
+    firmwareVersion,
+    getFirmwareVersion,
+    loadFirmwareVersion
   }
 },
 {

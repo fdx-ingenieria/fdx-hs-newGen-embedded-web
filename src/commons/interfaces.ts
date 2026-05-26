@@ -52,6 +52,7 @@ export interface ISensorData {
   rssi: number;
   elapsed_time: number; // seconds since last reading
   timestamp: number; // seconds since epoch unused
+  config: ISensorConfig;
 }
 
 // Alarms
@@ -59,6 +60,7 @@ export interface IAlarm {
   id: number;
   name: string;
   set_point: number;
+  reset_point: number;
   alarm_type: number;
   relay_flag: number;
   fields: IAlarmField[];
@@ -117,5 +119,6 @@ export interface IReaderConfig {
   t_reader_on: number; // ms 0 to 10_000
   t_reader_off: number; // ms 0 to 300_000
   processing_interval: number; // ms 0 to 600_000
+  mv_avg_window_size: number; // 1 to 20
   password?: string;
 }

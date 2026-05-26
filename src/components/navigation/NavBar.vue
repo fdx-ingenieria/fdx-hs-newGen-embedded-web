@@ -18,8 +18,9 @@
         </template>
       </button>
       <a class="flex">
-        <img src="@/assets/fdx_no_bg_lg.png" class="h-12 hidden xs:inline-flex" alt="FDX Logo" />
+        <img src="@/assets/fdx_no_bg_sm.png" class="h-12 hidden xs:inline-flex" alt="FDX Logo" />
         <img src="@/assets/fdx_no_bg_sm.png" class="h-12 inline-flex xs:hidden" alt="FDX Logo" />
+        <!-- <img src="@/assets/fdx_no_bg_sm.png" class="h-12 inline-flex xs:hidden" alt="FDX Logo" /> -->
       </a>
       <div class="flex print:hidden">
         <div class="flex items-center inline-flex">

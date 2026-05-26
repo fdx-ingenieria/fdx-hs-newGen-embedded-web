@@ -48,7 +48,11 @@
           <template v-for="row, rowIndex in data.values">
             <tr v-for="commonRow, commonRowIndex in data.commonRows" class="border-b hover:bg-gray-100" :key="`row_${rowIndex}`">
               <template v-for="colValue, colIndex in row" :key="`col_${rowIndex}`">
-                <td v-if="colIndex === data.autoincrementColumn" class="px-4 py-3">{{ colValue as number + commonRowIndex }}</td>
+                <!-- <td v-if="colIndex === data.autoincrementColumn" class="px-4 py-3">{{ colValue as number + commonRowIndex }}</td> -->
+                <td v-if="data?.autoincrementColumn !== undefined && (colIndex === (data.name === 'Sensors' ? data.autoincrementColumn + 1 : data.autoincrementColumn))" class="px-4 py-3">
+                  {{ colValue as number + commonRowIndex }}
+                </td>
+
                 <td v-else class="px-4 py-3">{{ colValue }}</td>
               </template>
               <td v-for="commonColValue, commonColIndex in commonRow" class="px-4 py-3" :key="`ccol_${commonColIndex}`">{{ commonColValue }}</td>
