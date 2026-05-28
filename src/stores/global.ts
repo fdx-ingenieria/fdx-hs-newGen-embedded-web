@@ -54,6 +54,7 @@ export const useGlobalStore = defineStore('global', () => {
     socket.onopen = async () => {
       socketInstace = socket
       status.value = SocketStatus.OPEN
+      loadFirmwareVersion()
     };
 
     socket.onclose = (e) => {

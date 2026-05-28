@@ -42,7 +42,6 @@
     router.afterEach((_to, _from) => {
       if (isSmallScreen.value) globalStore.showSideBar = false;
     });
-    globalStore.loadFirmwareVersion();
   });
 
   onUnmounted(() => {
