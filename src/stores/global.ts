@@ -310,9 +310,10 @@ export const useGlobalStore = defineStore('global', () => {
     readerConfigData.value = await apiFetch<IReaderConfig>('/api/config/reader')
   }
 
-  async function updateReaderConfigData(data: IReaderConfig): Promise<void> {
-    await apiFetch('/api/config/reader', { method: 'POST', body: JSON.stringify(data) })
+  async function updateReaderConfigData(data: IReaderConfig): Promise<{ advanced_updated: boolean }> {
+    const result = await apiFetch<{ status: string; advanced_updated: boolean }>('/api/config/reader', { method: 'POST', body: JSON.stringify(data) })
     await loadReaderConfigData()
+    return result
   }
 
   async function loadModbusTable(): Promise<void> {

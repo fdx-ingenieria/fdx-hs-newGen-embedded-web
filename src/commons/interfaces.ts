@@ -100,13 +100,15 @@ export interface IModbusTableEntry {
 
 // RFID Config
 export interface IReaderConfig {
-  region: number;
-  tag_encoding: number;
-  read_power: number; // cdBm 0 to 3300
-  write_power: number; // cdBm 0 to 3300
-  t_reader_on: number; // ms 0 to 10_000
-  t_reader_off: number; // ms 0 to 300_000
-  processing_interval: number; // ms 0 to 600_000
-  mv_avg_window_size: number; // 1 to 20
+  region: string;
+  read_pwr: number;  // cdBm 0 to 3300
+  write_pwr: number; // cdBm 0 to 3300
+  ants: string;      // active antennas, comma-separated e.g. "0,1,2,3"
+  t_reader_on: number;   // ms 0 to 10_000
+  t_reader_off: number;  // ms 0 to 300_000
+  q: string;         // Q-value algorithm: "AUTO", "Q0"–"Q15"
+  session: string;   // inventory session: "S0"–"S3"
+  tag_encoding: string;  // "FM0", "M2", "M4", "M8"
+  target: string;    // session target: "A" or "B"
   password?: string;
 }

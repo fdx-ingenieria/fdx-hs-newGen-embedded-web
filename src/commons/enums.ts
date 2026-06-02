@@ -41,13 +41,17 @@ export const ReleFlag = [
 ]
 
 export const TagEncoding = [
-  { label: 'FM0', value: 0},
-  { label: 'MILLER 2', value: 1},
-  { label: 'MILLER 4', value: 2},
-  { label: 'MILLER 8', value: 3},
+  { label: 'FM0',      value: 'FM0' },
+  { label: 'Miller 2', value: 'M2'  },
+  { label: 'Miller 4', value: 'M4'  },
+  { label: 'Miller 8', value: 'M8'  },
 ];
 
 export const Region = [
-  { label: 'Europe', value: 8},
-  { label: 'North America', value: 1},
+  { label: 'North America', value: 'NA' },
+  { label: 'Europe',        value: 'EU' },
 ];
+
+export const ReaderQ       = ['AUTO', 'Q0', 'Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6', 'Q7', 'Q8', 'Q9', 'Q10', 'Q11', 'Q12', 'Q13', 'Q14', 'Q15'];
+export const ReaderSession = ['S0', 'S1', 'S2', 'S3'];
+export const ReaderTarget  = ['A', 'B'];
