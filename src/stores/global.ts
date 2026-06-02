@@ -1,6 +1,31 @@
-import { SocketStatus, SocketCommands, ILabelData, ISensor, LabelType, ISystem, ISensorData, IRequest, IAlarm, IAlarmData, IRequestQueue, IModbusTableEntry, IReaderConfig, customLog } from '@/commons'
+import { SocketStatus, SocketCommands, ILabelData, ISensor, LabelType, ISystem, ISensorData, IRequest, IAlarm, IAlarmData, IRequestQueue, IModbusTableEntry, IReaderConfig, SensorQuality, customLog } from '@/commons'
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
+
+/* ---------------------------------------------------------------------------
+ * Mapeos entre el formato del backend (fdx-hs-newGen, rama feat/webserver) y
+ * el modelo interno del frontend.
+ *
+ *  - Quality: el backend manda un int 0-4; el enum SensorQuality usa strings.
+ *  - Alarm type / relay: el backend manda strings ("absolute", "relay_1"); las
+ *    vistas usan índices numéricos contra los arrays AlarmType / ReleFlag.
+ * ------------------------------------------------------------------------- */
+const QUALITY_BY_INDEX: SensorQuality[] = [
+  SensorQuality.OUT_OF_SERVICE,
+  SensorQuality.BAD,
+  SensorQuality.REGULAR,
+  SensorQuality.GOOD,
+  SensorQuality.EXCELLENT,
+]
+
+const ALARM_TYPE_TO_INDEX: Record<string, number> = { absolute: 1, unbalance: 2, dispersion: 3 }
+const ALARM_INDEX_TO_TYPE: Record<number, string> = { 1: 'absolute', 2: 'unbalance', 3: 'dispersion' }
+const RELAY_TO_INDEX: Record<string, number> = { none: 0, relay_1: 1, relay_2: 2 }
+const RELAY_INDEX_TO_STR: Record<number, string> = { 0: 'none', 1: 'relay_1', 2: 'relay_2' }
+
+// Modbus parity: backend usa char ('N'/'O'/'E'); el front usa índice en ModbusBitParity = ['none','odd','even'].
+const PARITY_CHAR_TO_INDEX: Record<string, number> = { N: 0, O: 1, E: 2 }
+const PARITY_INDEX_TO_CHAR: Record<number, string> = { 0: 'N', 1: 'O', 2: 'E' }
 
 /**
  * This Pinia store manages the global state of the application.
