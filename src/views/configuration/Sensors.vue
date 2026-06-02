@@ -133,7 +133,7 @@
     if (globalStore.getDiscoveryModeOn) {
       globalStore.stopDiscoveryMode()
     } else {
-      if (globalStore.getNormaModeOn) globalStore.stopNormalMode()
+      if (globalStore.getNormalModeOn) globalStore.stopNormalMode()
     }
   })
 </script>
@@ -238,7 +238,7 @@
               </template>
             </button>
             <button type="button"
-              v-if="globalStore.getNormaModeOn || startingDiscoveryMode"
+              v-if="globalStore.getNormalModeOn || startingDiscoveryMode"
               @click="startDiscoveryMode"
               :disabled="loadingData || startingDiscoveryMode"
               class="flex gap-1 items-center disabled:opacity-50 text-green-700 bg-white border border-gray-300 focus:outline-none hover:bg-green-700 hover:border-green-700 hover:text-white focus:ring-0 font-semibold rounded-md text-sm sm:text-md px-3 py-.5">

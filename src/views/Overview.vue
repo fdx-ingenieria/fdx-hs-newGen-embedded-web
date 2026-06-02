@@ -78,7 +78,7 @@
   })
 
   onUnmounted(() => {
-    if (globalStore.getNormaModeOn) globalStore.stopNormalMode()
+    if (globalStore.getNormalModeOn) globalStore.stopNormalMode()
   })
 </script>
 <template>

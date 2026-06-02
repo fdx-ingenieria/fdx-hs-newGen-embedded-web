@@ -56,7 +56,7 @@ export const useGlobalStore = defineStore('global', () => {
   const getAvailableLabels = computed(() => availableLabels.value)
   const getAvailableSensors = computed(() => availableSensors.value)
   const getDiscoveryModeOn = computed(() => discoveryModeOn.value)
-  const getNormaModeOn = computed(() => normalModeOn.value)
+  const getNormalModeOn = computed(() => normalModeOn.value)
   const getSystemData = computed(() => systeamData.value)
   const getReaderConfigData = computed(() => readerConfigData.value)
   const getModbusTable = computed(() => modbusTable.value)
@@ -365,7 +365,7 @@ export const useGlobalStore = defineStore('global', () => {
     loadAlarms,
     updateAlarms,
     getDiscoveryModeOn,
-    getNormaModeOn,
+    getNormalModeOn: getNormalModeOn,
     startDiscoveryMode,
     stopDiscoveryMode,
     getSystemData,
