@@ -13,7 +13,7 @@ import { Ref, computed, ref } from 'vue'
  */
 export const useGlobalStore = defineStore('global', () => {
   const maxRetries = parseInt(import.meta.env.VITE_MAX_RETRIES) || 150
-  const timeBetweenRequests = parseInt(import.meta.env.VITE_TIME_BETWEEN_REQUESTS) || 800
+  const timeBetweenRequests = 800
   let socketInstace: WebSocket | null = null
   const status: Ref<SocketStatus> = ref(SocketStatus.CLOSED)
   const discoveryModeOn: Ref<boolean> = ref(false)
@@ -47,7 +47,7 @@ export const useGlobalStore = defineStore('global', () => {
   const getConfiguredAlarms = computed(() => availableAlarms.value.filter(alarm => !!alarm.alarm_type))
 
   // Actions
-  async function connect(url = import.meta.env.VITE_WS_URL as string): Promise<void> {
+  async function connect(url = ''): Promise<void> {
     const socket = new WebSocket(url)
     status.value = SocketStatus.CONNECTING
 
