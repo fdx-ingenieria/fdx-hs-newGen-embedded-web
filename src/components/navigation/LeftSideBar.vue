@@ -70,9 +70,9 @@
       </ul>
     </div>
 
-    <div class="absolute bottom-0 left-0 justify-left p-4 space-x-4 w-full lg:flex bg-white z-20">
-      <small>FW: {{ globalStore.getFirmwareVersion || 'N/A' }}</small>
-      <small>APP: {{ version }}</small>
+    <div class="absolute bottom-0 left-0 p-4 w-full lg:block bg-white z-20">
+      <small class="block">FW: {{ globalStore.getFirmwareVersion || 'N/A' }}</small>
+      <small class="block">WA: v{{ version }}</small>
     </div>
   </aside>
 </template>
