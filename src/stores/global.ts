@@ -2,6 +2,11 @@ import { ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ISensorData, IA
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
 
+export interface Notification {
+  id: number
+  message: string
+}
+
 /* ---------------------------------------------------------------------------
  * Mapeos entre el formato del backend (fdx-hs-newGen, rama feat/webserver) y
  * el modelo interno del frontend.
@@ -50,6 +55,19 @@ export const useGlobalStore = defineStore('global', () => {
   const boardTemp: Ref<number | string> = ref('N/A')
   const firmwareVersion: Ref<string> = ref('')
   const showSideBar = ref(false)
+  const notifications: Ref<Notification[]> = ref([])
+  let _notifId = 0
+
+  function notify(message: string): void {
+    const id = ++_notifId
+    notifications.value.push({ id, message })
+    setTimeout(() => dismissNotification(id), 5000)
+  }
+
+  function dismissNotification(id: number): void {
+    const idx = notifications.value.findIndex(n => n.id === id)
+    if (idx !== -1) notifications.value.splice(idx, 1)
+  }
 
   // Getters
   const getFirmwareVersion = computed(() => firmwareVersion.value)
@@ -70,7 +88,16 @@ export const useGlobalStore = defineStore('global', () => {
       ...options,
     })
     if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${path}`)
+      let detail = ''
+      try {
+        const body = await res.json()
+        detail = body.error ?? body.message ?? ''
+      } catch { /* body not JSON */ }
+      const message = detail
+        ? `[${res.status}] ${detail} — ${path}`
+        : `[${res.status}] Error at ${path}`
+      notify(message)
+      throw new Error(message)
     }
     return res.json()
   }
@@ -351,6 +378,8 @@ export const useGlobalStore = defineStore('global', () => {
     connected,
     boardTemp,
     showSideBar,
+    notifications,
+    dismissNotification,
     startMonitoring,
     stopMonitoring,
     getAvailableLabels,
