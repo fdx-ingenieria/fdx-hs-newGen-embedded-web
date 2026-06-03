@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { PropType, onBeforeUnmount, watch, Ref, ref } from 'vue';
+  import { PropType, onBeforeUnmount, watch, ref } from 'vue';
   import { LabelType, ISensor } from '@/commons';
   import { EditIcon, RefreshIcon, LoadingIcon, ClockIcon, FlagIcon, ThermometerIcon, BellCurveIcon, SearchIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global'
@@ -41,16 +41,11 @@
   })
 
   const globalStore = useGlobalStore()
-  const elapsed_times: Ref<Record<string, number>> = ref({})
+  const now = ref(Math.floor(Date.now() / 1000))
   const searchText = ref('')
   const localAvailableSensors = ref(props.availableSensors)
 
-  watch(() => props.availableSensors, () => {
-    props.availableSensors.forEach(item => {
-      elapsed_times.value[item.id] = item.data?.elapsed_time || 0;
-    });
-    filter()
-  })
+  watch(() => props.availableSensors, () => { filter() })
   watch(searchText, () => filter())
 
   const filter = () => {
@@ -81,11 +76,8 @@
     return text.replace(regex, '<span class="text-red-500 font-bold">$1</span>');
   }
 
-  // Update the elapsed_time field every second
   const intervalId = setInterval(() => {
-    Object.keys(elapsed_times.value).forEach(key => {
-      elapsed_times.value[key] = elapsed_times.value[key] + 1;
-    });
+    now.value = Math.floor(Date.now() / 1000)
   }, 1000);
 
   // Remove the interval before unmounting the component
@@ -149,7 +141,7 @@
               <td v-if="showdata" scope="col" class="px-4 py-3">
                 <small title="Number of readings" class="text-xs flex items-center"><FlagIcon class="w-4 h-4 mr-1" />{{ item.data?.n_readings }}</small>
                 <small title='Last update' class="flex items-center"><ClockIcon class="w-3 h-3 mr-1" />
-                  {{ elapsed_times[item.id] }}
+                  {{ item.data?.timestamp ? Math.max(0, now - item.data.timestamp) : '–' }}
                 </small>
               </td>
             </template>

@@ -110,19 +110,26 @@ export const useGlobalStore = defineStore('global', () => {
     eventSource.onerror = () => { connected.value = false }
     eventSource.addEventListener('sensor_data', (event) => {
       const raw: Array<{ epc_id: string; avg_temp: number; std_dev: number; avg_rssi: number; n_readings: number; quality: number; timestamp: number }> = JSON.parse(event.data)
-      const sensors: ISensorData[] = raw.map(s => ({
-        id: s.epc_id,
-        EPC: s.epc_id,
-        avg_temp: s.avg_temp,
-        temp: s.avg_temp,
-        std_dev: s.std_dev,
-        rssi: s.avg_rssi,
-        n_readings: s.n_readings,
-        quality: QUALITY_BY_INDEX[s.quality] ?? SensorQuality.OUT_OF_SERVICE,
-        elapsed_time: 0,
-        timestamp: s.timestamp,
-        config: availableSensors.value.find(x => x.id === s.epc_id)?.config ?? { equipment: 0, location: 0, position: 0 },
-      }))
+      const sensors: ISensorData[] = raw.map(s => {
+        const quality = QUALITY_BY_INDEX[s.quality] ?? SensorQuality.OUT_OF_SERVICE
+        const prevData = availableSensors.value.find(x => x.id === s.epc_id)?.data
+        const n_readings = quality === SensorQuality.OUT_OF_SERVICE
+          ? (prevData?.n_readings ?? s.n_readings)
+          : s.n_readings
+        return {
+          id: s.epc_id,
+          EPC: s.epc_id,
+          avg_temp: s.avg_temp,
+          temp: s.avg_temp,
+          std_dev: s.std_dev,
+          rssi: s.avg_rssi,
+          n_readings,
+          quality,
+          timestamp: s.timestamp > 0 ? s.timestamp : (prevData?.timestamp ?? 0),
+          elapsed_time: 0,
+          config: availableSensors.value.find(x => x.id === s.epc_id)?.config ?? { equipment: 0, location: 0, position: 0 },
+        }
+      })
       updateSensorsData(sensors)
       connected.value = true
     })
