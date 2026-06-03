@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ISensor } from '@/commons';
-  import { RefreshIcon, SendIcon, ListIcon, PlayIcon, StopIcon, AlertIcon, LoadingIcon, ChevronUpIcon } from '@/components/icons';
+  import { RefreshIcon, SendIcon, ListIcon, PlayIcon, StopIcon, AlertIcon, LoadingIcon, ChevronUpIcon, RemoveIcon } from '@/components/icons';
   import SensorTable from '@/components/sensors/SensorTable.vue';
   import RightSideBar from '@/components/navigation/RightSideBar.vue';
   import { useGlobalStore } from '@/stores/global'
@@ -75,18 +75,11 @@
       .finally(() => savingData.value = false)
   }
 
-  const resetSensor = (id: string) => {
-    let sensor = getAvailableSensors.value.find((item: ISensor) => item.id === id)
-
-    if (!sensor) return
-
-    editableSensor.value =  {
-      id: sensor.id,
-      EPC: sensor.EPC,
-      config: { equipment: 0, position: 0, location: 0 }
-    }
-
-    save()
+  const deleteSensor = (id: string) => {
+    savingData.value = true
+    globalStore.deleteSensor(id)
+      .then(() => showRightSideBar.value = false)
+      .finally(() => savingData.value = false)
   }
 
   const stopDiscoveryMode = () => {
@@ -203,11 +196,11 @@
         </button>
         <button class="text-white flex disabled:opacity-50 bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2 focus:outline-none"
           v-if="showResetButton"
-          @click="resetSensor(editableSensor.id)"
+          @click="deleteSensor(editableSensor.id)"
           :disabled="savingData"
           type="button" >
-          <RefreshIcon class="w-5 mr-1" />
-          Reset
+          <RemoveIcon class="w-5 mr-1" />
+          Delete
         </button>
         <button class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2"
           @click="showRightSideBar = false"
@@ -281,7 +274,7 @@
           <h3 class="text-xl font-semibold">Configured sensors</h3>
         </div>
         <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-4" />
-        <SensorTable v-else :availableSensors="configuredSensors" :showlabels="true" @edit="editSensor" @reset="resetSensor" :max="MAX_CONFIGURED_SENSORS" />
+        <SensorTable v-else :availableSensors="configuredSensors" :showlabels="true" @edit="editSensor" @reset="deleteSensor" :max="MAX_CONFIGURED_SENSORS" />
       </div>
     </div>
   </section>

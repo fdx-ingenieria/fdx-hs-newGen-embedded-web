@@ -1,4 +1,4 @@
-import { ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ISensorData, IAlarm, IAlarmData, IModbusTableEntry, IReaderConfig, SensorQuality, customLog } from '@/commons'
+import { ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ISensorData, IAlarm, IAlarmData, IModbusTableEntry, IReaderConfig, SensorQuality } from '@/commons'
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
 
@@ -158,18 +158,6 @@ export const useGlobalStore = defineStore('global', () => {
 
   function updateSensorsData(data: ISensorData[]) {
     const availableSensorsIds = availableSensors.value.map((item: ISensor) => item.id)
-    const dataIDs = data.map(sensor => sensor.id)
-
-    availableSensors.value = availableSensors.value.filter((item: ISensor) => {
-      if (!dataIDs.includes(item.id)) {
-        customLog("No existe sensor ", item.id)
-        return false
-      }
-      return true
-    })
-
-    const updatedAvailableSensorsIds = availableSensors.value.map((item: ISensor) => item.id)
-    console.log("Updated availableSensorsIds:", updatedAvailableSensorsIds)
 
     data.forEach((item: ISensorData) => {
       item.avg_temp = parseFloat(item.avg_temp.toFixed(1))
@@ -230,14 +218,19 @@ export const useGlobalStore = defineStore('global', () => {
     await loadSensors()
   }
 
+  async function deleteSensor(id: string): Promise<void> {
+    await apiFetch(`/api/config/sensors/${id}`, { method: 'DELETE' })
+    await loadSensors()
+  }
+
   function addNewSensor(newSensor: ISensor): void {
     availableSensors.value.push(newSensor)
   }
 
   function updateSensorData(sensorData: ISensorData): void {
-    const sensor = availableSensors.value.find((sensor) => sensor.id === sensorData.id)
-    if (!sensor) return
-    sensor.data = sensorData
+    const idx = availableSensors.value.findIndex((sensor) => sensor.id === sensorData.id)
+    if (idx === -1) return
+    availableSensors.value[idx] = { ...availableSensors.value[idx], data: sensorData }
   }
 
   async function clearUnconfiguredSensors(): Promise<void> {
@@ -390,6 +383,7 @@ export const useGlobalStore = defineStore('global', () => {
     loadSensors,
     updateSensor,
     updateSensors,
+    deleteSensor,
     clearUnconfiguredSensors,
     getAvailableAlarms,
     getConfiguredAlarms,
