@@ -2,7 +2,7 @@
   import { ref, Ref, watch } from 'vue';
   import { AlarmType, IAlarm, IAlarmField, isValidInteger, ReleFlag } from '@/commons';
   import { useGlobalStore } from '@/stores/global';
-  import { AlertIcon, PlusIcon, RemoveIcon } from '../icons';
+  import { AlertIcon, LoadingIcon, PlusIcon, RemoveIcon } from '../icons';
 
   const props = defineProps({
     alarm: {
@@ -14,7 +14,9 @@
   const globalStore = useGlobalStore()
   // force deep copy
   const localValue: Ref<IAlarm> = ref(JSON.parse(JSON.stringify(props.alarm)))
-  watch(props, () => localValue.value = JSON.parse(JSON.stringify(props.alarm)))
+  // Solo re-inicializar al cambiar de slot. props.alarm es el objeto vivo del store y el
+  // SSE le muta status/_sensors en in-place; sin esto cada evento pisaría lo que escribís.
+  watch(() => props.alarm.id, () => localValue.value = JSON.parse(JSON.stringify(props.alarm)))
 
   const HYSTERESIS_TYPE = 4
 
@@ -49,15 +51,19 @@
       && noRepeatedFields()
   }
 
-  const done = () => {
-    const { name, alarm_type, fields, relay_flag, set_point, reset_point } = localValue.value
-    props.alarm.name = name
-    props.alarm.alarm_type = alarm_type
-    props.alarm.fields = fields
-    props.alarm.relay_flag = relay_flag
-    props.alarm.set_point = set_point
-    props.alarm.reset_point = alarm_type === HYSTERESIS_TYPE ? reset_point : 0
+  const saving = ref(false)
+  const saveSlot = async () => {
+    saving.value = true
+    await globalStore.updateAlarm(localValue.value.id, localValue.value)
+    saving.value = false
+    emit('close')
+  }
 
+  const resetting = ref(false)
+  const resetSlot = async () => {
+    resetting.value = true
+    await globalStore.resetAlarm(localValue.value.id)
+    resetting.value = false
     emit('close')
   }
 
@@ -232,14 +238,23 @@
     </div>
     <div class="flex items-center space-x-4">
       <button class="text-white flex items-center disabled:opacity-50 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2 focus:outline-none"
-        @click="done()"
-        :disabled="!isComplete()"
+        @click="saveSlot()"
+        :disabled="!isComplete() || saving"
         type="button">
-          Done
+        <LoadingIcon v-if="saving" class="w-4 h-4 animate-spin fill-transparent mr-1" />
+        Save
       </button>
       <button class="text-gray-900 bg-white border disabled:opacity-50 border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2"
         @click="emit('close')"
         type="button">Cancel</button>
+      <button v-if="localValue.alarm_type !== 0"
+        class="text-white flex items-center disabled:opacity-50 bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-300 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2 focus:outline-none ml-auto"
+        @click="resetSlot()"
+        :disabled="resetting"
+        type="button">
+        <LoadingIcon v-if="resetting" class="w-4 h-4 animate-spin fill-transparent mr-1" />
+        Reset slot
+      </button>
     </div>
   </div>
 </template>

@@ -291,19 +291,24 @@ export const useGlobalStore = defineStore('global', () => {
     })
   }
 
-  async function updateAlarms(data: IAlarm[]): Promise<void> {
-    const payload = data.map(a => ({
-      slot: a.id,
-      config: {
-        active: !!a.alarm_type,
-        name: a.name,
-        set_point: a.set_point,
-        type: ALARM_INDEX_TO_TYPE[a.alarm_type] ?? 'unknown',
-        relay: RELAY_INDEX_TO_STR[a.relay_flag] ?? 'none',
-        field_pairs: a.fields.map(f => ({ location: f.location, equipment: f.equipment })),
-      },
-    }))
-    await apiFetch('/api/config/alarms', { method: 'POST', body: JSON.stringify(payload) })
+  async function updateAlarm(slot: number, data: IAlarm): Promise<void> {
+    await apiFetch(`/api/config/alarms/${slot}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        active: !!data.alarm_type,
+        name: data.name,
+        set_point: data.set_point,
+        type: ALARM_INDEX_TO_TYPE[data.alarm_type] ?? 'unknown',
+        relay: RELAY_INDEX_TO_STR[data.relay_flag] ?? 'none',
+        field_pairs: data.fields.map(f => ({ location: f.location, equipment: f.equipment })),
+      }),
+    })
+    // backend = fuente de verdad: re-leemos para reflejar lo realmente persistido
+    await loadAlarms()
+  }
+
+  async function resetAlarm(slot: number): Promise<void> {
+    await apiFetch(`/api/config/alarms/${slot}`, { method: 'DELETE' })
     await loadAlarms()
   }
 
@@ -406,7 +411,8 @@ export const useGlobalStore = defineStore('global', () => {
     getAvailableAlarms,
     getConfiguredAlarms,
     loadAlarms,
-    updateAlarms,
+    updateAlarm,
+    resetAlarm,
     getDiscoveryModeOn,
     getNormalModeOn: getNormalModeOn,
     startDiscoveryMode,
