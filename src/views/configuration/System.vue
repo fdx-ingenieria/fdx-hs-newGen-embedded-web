@@ -12,10 +12,11 @@
   const { getSystemData } = storeToRefs(globalStore)
   const adminMode = ref(false)
   const hasUnsavedChanges = ref(false)
+  const serialUpdated: Ref<boolean | null> = ref(null)
 
   watch(getSystemData, (newValue) => {
     editable.value = JSON.parse(JSON.stringify(newValue))
-  })
+  }, { immediate: true })
 
   watch(editable, () => {
     hasUnsavedChanges.value = true
@@ -26,9 +27,14 @@
   }, { deep: true })
 
   const save = () => {
+    const wasInAdminMode = adminMode.value
+    serialUpdated.value = null
     savingData.value = true
     adminMode.value = false
     globalStore.updateSystemData(editable.value)
+      .then(result => {
+        if (wasInAdminMode) serialUpdated.value = result.serial_updated
+      })
       .finally(() => savingData.value = false)
   }
 
@@ -39,12 +45,9 @@
 
   const isComplete = (): boolean => {
     const { serial_num, modbus_address, baud_rate, bit_parity, password } = editable.value
-
-    return !!serial_num
-      && validDirModbus(modbus_address)
-      && !!baud_rate
-      && !!bit_parity?.toString()
-      && (!adminMode.value || !!password)
+    const modbusValid = validDirModbus(modbus_address) && !!baud_rate && bit_parity !== undefined
+    if (adminMode.value) return modbusValid && !!serial_num && !!password
+    return modbusValid
   }
 
   const preventUnsaved = (e: any) => {
@@ -74,7 +77,7 @@
   <section class="antialiased bg-gray-50">
     <div class="mx-auto">
       <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden py-4 px-4 md:px-6">
-        <LoadingIcon v-if="!editable.serial_num" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-12" />
+        <LoadingIcon v-if="editable.baud_rate === undefined" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-12" />
         <template  v-else >
           <div class="grid gap-4 mb-4">
             <div v-if="!adminMode">
@@ -107,7 +110,7 @@
                 min="1"
                 max="247"
                 step="1"
-                v-model="editable.modbus_address"
+                v-model.number="editable.modbus_address"
                 placeholder="Modbus direction value">
               <p v-show="!validDirModbus(editable.modbus_address)" class="mt-2 text-sm text-red-600"><span class="font-semibold">Oops!</span> This value should be between 1 and 247.</p>
             </div>
@@ -131,8 +134,8 @@
               </div>
             </div>
           </div>
-          <div class="flex justify-end items-center space-x-4">
-            <button @click="save()" :disabled="savingData || !isComplete()" type="button" class="text-white flex items-center disabled:opacity-50 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-5 py-1.5 mb-2 focus:outline-none">
+          <div class="flex flex-col items-end gap-2">
+            <button @click="save()" :disabled="savingData || !isComplete()" type="button" class="text-white flex items-center disabled:opacity-50 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-5 py-1.5 focus:outline-none">
               <template v-if="savingData">
                 <LoadingIcon class="animate-spin fill-transparent w-4 mr-1" />
                 Saving...
@@ -142,6 +145,8 @@
                 Save
               </template>
             </button>
+            <p v-if="serialUpdated === false" class="text-sm text-red-600"><span class="font-semibold">Wrong password:</span> serial number was not updated.</p>
+            <p v-else-if="serialUpdated === true" class="text-sm text-green-600">Serial number updated successfully.</p>
           </div>
         </template>
       </div>

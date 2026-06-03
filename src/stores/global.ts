@@ -272,20 +272,20 @@ export const useGlobalStore = defineStore('global', () => {
   async function loadSystemData(): Promise<void> {
     const [systemRes, modbusRes] = await Promise.all([
       apiFetch<{ serial_num: string; measure_period_ms: number }>('/api/config/system'),
-      apiFetch<{ address: number; baud_rate: number; parity: string; stop_bits: number }>('/api/config/modbus'),
+      apiFetch<{ address: number; baud_rate: number; parity: number; stop_bits: number }>('/api/config/modbus'),
     ])
     systeamData.value = {
       serial_num: Number(systemRes.serial_num),
       measure_period_ms: systemRes.measure_period_ms,
       modbus_address: modbusRes.address,
       baud_rate: modbusRes.baud_rate,
-      bit_parity: PARITY_CHAR_TO_INDEX[modbusRes.parity] ?? 0,
+      bit_parity: PARITY_CHAR_TO_INDEX[String.fromCharCode(modbusRes.parity)] ?? 0,
     }
   }
 
-  async function updateSystemData(data: ISystem): Promise<void> {
-    await Promise.all([
-      apiFetch('/api/config/system', {
+  async function updateSystemData(data: ISystem): Promise<{ serial_updated: boolean }> {
+    const [systemRes] = await Promise.all([
+      apiFetch<{ status: string; serial_updated: boolean }>('/api/config/system', {
         method: 'POST',
         body: JSON.stringify({
           serial_num: String(data.serial_num),
@@ -298,12 +298,13 @@ export const useGlobalStore = defineStore('global', () => {
         body: JSON.stringify({
           address: data.modbus_address,
           baud_rate: data.baud_rate,
-          parity: PARITY_INDEX_TO_CHAR[data.bit_parity] ?? 'N',
+          parity: (PARITY_INDEX_TO_CHAR[data.bit_parity] ?? 'N').charCodeAt(0),
           stop_bits: data.bit_parity === 0 ? 2 : 1,
         }),
       }),
     ])
     await loadSystemData()
+    return { serial_updated: systemRes.serial_updated }
   }
 
   async function loadReaderConfigData(): Promise<void> {
