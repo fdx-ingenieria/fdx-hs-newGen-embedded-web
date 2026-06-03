@@ -5,7 +5,7 @@
   import RightSideBar from '@/components/navigation/RightSideBar.vue';
   import { useGlobalStore } from '@/stores/global'
   import { storeToRefs } from 'pinia';
-  import { onMounted, watch, Ref, ref, onUnmounted, computed } from 'vue'
+  import { onMounted, Ref, ref, onUnmounted, computed } from 'vue'
 
   const globalStore = useGlobalStore()
   const { getAvailableSensors, getAvailableLabels } = storeToRefs(globalStore)
@@ -15,24 +15,19 @@
   const stoppingDiscoveryMode = ref(false)
   const savingData = ref(false)
   const editableSensor: Ref<ISensor> = ref({ id: '', EPC: '', config: { equipment: 0, position: 0, location: 0 }})
-  const configuredSensors: Ref<ISensor[]> = ref([])
-  const unconfiguredSensors: Ref<ISensor[]> = ref([])
   const showUnconfiguredTable = ref(true)
   const showResetButton = ref(false)
   const MAX_CONFIGURED_SENSORS = 50
 
-  watch(getAvailableSensors, (newData) => {
-    configuredSensors.value = []
-    unconfiguredSensors.value = []
-    newData.forEach((item: ISensor) => {
-      if (item.config.equipment && item.config.position && item.config.location) {
-        configuredSensors.value.push(item)
-      } else {
-        unconfiguredSensors.value.push(item)
-      }
-    })
-    unconfiguredSensors.value.sort((a: ISensor, b: ISensor) => (a.data?.rssi || 0) - (b.data?.rssi || 0))
-  }, { immediate: true, deep: true })
+  const configuredSensors = computed(() =>
+    getAvailableSensors.value.filter((s: ISensor) => s.config.equipment && s.config.position && s.config.location)
+  )
+
+  const unconfiguredSensors = computed(() =>
+    getAvailableSensors.value
+      .filter((s: ISensor) => !s.config.equipment || !s.config.position || !s.config.location)
+      .sort((a: ISensor, b: ISensor) => (a.data?.rssi || 0) - (b.data?.rssi || 0))
+  )
 
   const isLimitReached = computed(() => {
     return configuredSensors.value.length >= MAX_CONFIGURED_SENSORS;

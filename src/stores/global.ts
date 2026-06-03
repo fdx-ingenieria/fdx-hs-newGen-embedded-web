@@ -201,9 +201,19 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   async function loadSensors(): Promise<void> {
-    // Backend devuelve [{ epc_id, config }]; el frontend usa { id, EPC, config }.
+    // Backend devuelve solo sensores configurados; los descubiertos vía SSE no existen en el backend.
+    // Hacer merge para no perder los sensores sin configurar que viven solo en memoria.
     const raw = await apiFetch<Array<{ epc_id: string; config: ISensorConfig }>>('/api/config/sensors')
-    availableSensors.value = raw.map(s => ({ id: s.epc_id, EPC: s.epc_id, config: s.config }))
+    const fromBackend = raw.map(s => ({ id: s.epc_id, EPC: s.epc_id, config: s.config }))
+    const backendIds = new Set(fromBackend.map(s => s.id))
+    const unconfigured = availableSensors.value.filter(s => !backendIds.has(s.id) && !s.config.equipment)
+    availableSensors.value = [
+      ...fromBackend.map(bs => {
+        const existing = availableSensors.value.find(s => s.id === bs.id)
+        return existing ? { ...existing, config: bs.config } : bs
+      }),
+      ...unconfigured,
+    ]
   }
 
   async function updateSensors(data: ISensor[]): Promise<void> {
@@ -242,6 +252,7 @@ export const useGlobalStore = defineStore('global', () => {
 
   async function clearUnconfiguredSensors(): Promise<void> {
     await apiFetch('/api/action/sensors/clear', { method: 'POST' })
+    availableSensors.value = availableSensors.value.filter(s => !!s.config.equipment)
     await loadSensors()
   }
 

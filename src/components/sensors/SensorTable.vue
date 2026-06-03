@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { PropType, onBeforeUnmount, watch, ref } from 'vue';
+  import { PropType, onBeforeUnmount, computed, ref } from 'vue';
   import { LabelType, ISensor } from '@/commons';
   import { EditIcon, RefreshIcon, LoadingIcon, ClockIcon, FlagIcon, ThermometerIcon, BellCurveIcon, SearchIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global'
@@ -43,26 +43,20 @@
   const globalStore = useGlobalStore()
   const now = ref(Math.floor(Date.now() / 1000))
   const searchText = ref('')
-  const localAvailableSensors = ref(props.availableSensors)
 
-  watch(() => props.availableSensors, () => { filter() })
-  watch(searchText, () => filter())
-
-  const filter = () => {
+  const localAvailableSensors = computed(() => {
     const str = searchText.value.toUpperCase()
-
-    localAvailableSensors.value = props.availableSensors.filter(
-      sensor => {
-        return sensor.id.toUpperCase().includes(str)
+    return props.availableSensors
+      .filter(sensor =>
+        !str
+          || sensor.id.toUpperCase().includes(str)
           || sensor.EPC.toUpperCase().includes(str)
-          || props.showlabels && globalStore.getLabelName(LabelType.EQUIPMENT, sensor.config.equipment).toUpperCase().includes(str)
-          || props.showlabels && globalStore.getLabelName(LabelType.POSITION, sensor.config.position).toUpperCase().includes(str)
-          || props.showlabels && globalStore.getLabelName(LabelType.LOCATION, sensor.config.location).toUpperCase().includes(str)
-      }
-    ).sort((a, b) =>
-      a.id.toUpperCase().localeCompare(b.id.toUpperCase(), 'en', { sensitivity: 'base' })
-    )
-  }
+          || (props.showlabels && globalStore.getLabelName(LabelType.EQUIPMENT, sensor.config.equipment).toUpperCase().includes(str))
+          || (props.showlabels && globalStore.getLabelName(LabelType.POSITION, sensor.config.position).toUpperCase().includes(str))
+          || (props.showlabels && globalStore.getLabelName(LabelType.LOCATION, sensor.config.location).toUpperCase().includes(str))
+      )
+      .sort((a, b) => a.id.toUpperCase().localeCompare(b.id.toUpperCase(), 'en', { sensitivity: 'base' }))
+  })
 
   const emit = defineEmits<{
     edit: [id: string],
