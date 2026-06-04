@@ -1,18 +1,5 @@
 import { LabelType, SensorQuality } from "./enums";
 
-// Request
-export interface IRequestQueue {
-  request: IRequest;
-  resolve: (value: unknown) => void;
-  reject: (value: unknown) => void;
-}
-
-export interface IRequest {
-  cmd: string;
-  arg: string;
-  data: any;
-}
-
 // Labels
 export interface ILabelData {
   equipment: string[];
