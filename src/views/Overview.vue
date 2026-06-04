@@ -30,24 +30,28 @@
   }
 
   const temperatures = computed(() => {
-    // Order by temperature
-    const to_order: ISensorData[] = []
-    getConfiguredAlarms.value.forEach(alarm => {
-      alarm._sensors.forEach(sensor => {
-        if (sensor.data) {
-          to_order.push(sensor.data)
-        }
-      });
+    // Min/max sobre TODOS los sensores configurados (mismo set que la tabla), no
+    // solo los que pertenecen a una alarma. Fail-safe: un sensor fuera de servicio
+    // que tuvo lectura real SIGUE contando (si se calienta hasta perder señal no
+    // debe desaparecer de "Highest"). Solo se excluyen los que nunca leyeron.
+    const readings: ISensorData[] = []
+    getConfiguredSensors.value.forEach(sensor => {
+      const data = sensor.data
+      if (!data) return
+      if (!data.n_readings) return
+      if (typeof data.temp !== 'number' || Number.isNaN(data.temp)) return
+      readings.push(data)
     });
 
-    const ordered = to_order.sort((a, b) => {
-      if (a.temp && b.temp) {
-        return a.temp - b.temp
-      }
-      return 0
-    })
+    if (readings.length === 0) return { min: undefined, max: undefined }
 
-    return { min: ordered.shift() , max: ordered.pop() }
+    let min = readings[0]
+    let max = readings[0]
+    for (const r of readings) {
+      if (r.temp < min.temp) min = r
+      if (r.temp > max.temp) max = r
+    }
+    return { min, max }
   })
 
   const alarmed = computed(() => {

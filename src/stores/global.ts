@@ -153,13 +153,16 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   function updateAlarmsData(data: IAlarmData[]) {
+    // El backend solo reporta is_alarmed por slot (no estado por-sensor): un sensor
+    // se considera alarmado si pertenece a alguna alarma activa. Reseteamos primero
+    // y luego hacemos OR sobre las alarmas (un sensor puede estar en varias).
+    availableSensors.value.forEach(sensor => { sensor.alarmed = false })
     getConfiguredAlarms.value.forEach(alarm => {
       const status = data.find(item => item.id === alarm.id)
       alarm.status = status || undefined
-      alarm._sensors?.forEach(sensor => {
-        const sensorData = status?.sensors.find(item => item.id === sensor.id)
-        sensor.alarmed = sensorData?.state || false
-      })
+      if (status?.state) {
+        alarm._sensors?.forEach(sensor => { sensor.alarmed = true })
+      }
     })
   }
 
@@ -247,7 +250,10 @@ export const useGlobalStore = defineStore('global', () => {
   function updateSensorData(sensorData: ISensorData): void {
     const idx = availableSensors.value.findIndex((sensor) => sensor.id === sensorData.id)
     if (idx === -1) return
-    availableSensors.value[idx] = { ...availableSensors.value[idx], data: sensorData }
+    // Mutar in-place (no reemplazar el objeto): así las referencias compartidas
+    // —p.ej. alarm._sensors, que apunta a los mismos sensores— ven el nuevo data.
+    // Si se reemplaza el objeto, las tarjetas min/max temp de Overview.vue quedan stale.
+    availableSensors.value[idx].data = sensorData
   }
 
   async function clearUnconfiguredSensors(): Promise<void> {
