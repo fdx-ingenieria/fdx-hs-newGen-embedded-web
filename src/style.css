@@ -2,43 +2,156 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Transitions */
-/* fade transition */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
+/* ===========================================================================
+ * Design tokens — "Instrument Panel"
+ * Channels are stored as "R G B" so Tailwind's <alpha-value> opacity works.
+ * Light = crisp/clinical · Dark = deep control-room slate.
+ * Theme is switched by toggling the `dark` class on <html> (see composables/theme.ts).
+ * ========================================================================= */
+:root {
+  --app: 240 243 247;
+  --panel: 255 255 255;
+  --panel-soft: 247 249 252;
+  --panel-strong: 237 241 246;
+
+  --ink: 17 24 39;
+  --ink-soft: 71 85 105;
+  --ink-faint: 130 143 161;
+
+  --line: 224 230 238;
+  --line-soft: 238 242 247;
+
+  --brand: 220 38 38;
+  --brand-soft: 254 226 226;
+
+  --accent: 37 99 235;
+  --accent-soft: 219 233 254;
+  --accent-fg: 255 255 255;
+
+  --ok: 21 128 61;
+  --ok-soft: 220 250 229;
+  --warn: 180 83 9;
+  --warn-soft: 254 243 199;
+  --crit: 190 24 24;
+  --crit-soft: 254 224 224;
+  --info: 3 105 161;
+  --info-soft: 224 242 254;
+  --idle: 100 116 139;
+  --idle-soft: 236 240 245;
+
+  --grid-line: 15 23 42;
+  --grid-alpha: 0.035;
 }
 
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+html.dark {
+  --app: 12 17 23;
+  --panel: 22 30 40;
+  --panel-soft: 16 23 31;
+  --panel-strong: 30 41 55;
+
+  --ink: 226 232 240;
+  --ink-soft: 156 170 189;
+  --ink-faint: 110 124 142;
+
+  --line: 38 50 65;
+  --line-soft: 30 41 55;
+
+  --brand: 248 113 113;
+  --brand-soft: 60 26 26;
+
+  --accent: 59 130 246;
+  --accent-soft: 30 52 88;
+  --accent-fg: 255 255 255;
+
+  --ok: 74 222 128;
+  --ok-soft: 18 48 33;
+  --warn: 251 191 36;
+  --warn-soft: 58 44 14;
+  --crit: 248 113 113;
+  --crit-soft: 62 26 26;
+  --info: 56 189 248;
+  --info-soft: 12 44 64;
+  --idle: 148 163 184;
+  --idle-soft: 30 41 55;
+
+  --grid-line: 226 232 240;
+  --grid-alpha: 0.03;
 }
 
-/* list */
-.list-enter-active, .list-leave-active {
-  transition: all .2s;
-}
-.list-enter, .list-leave-to {
-  opacity: 0;
-  transform: translateY(30px);
+@layer base {
+  html { color-scheme: light; }
+  html.dark { color-scheme: dark; }
+
+  body {
+    @apply bg-app text-ink font-sans antialiased;
+  }
+
+  /* Tabular figures everywhere for steady, instrument-like numeric columns. */
+  .font-mono { font-variant-numeric: tabular-nums; }
+
+  /* Themed scrollbars so dark mode doesn't show bright tracks. */
+  * { scrollbar-color: rgb(var(--line)) transparent; }
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--line));
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-track { background: transparent; }
 }
 
-/* Toast notifications */
-.toast-enter-active,
-.toast-leave-active {
-  transition: all 0.25s ease;
-}
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-  transform: translateX(1.5rem);
+@layer components {
+  /* Faint engineering grid for atmosphere — static, GPU-cheap. */
+  .app-grid {
+    background-image:
+      linear-gradient(to right, rgb(var(--grid-line) / var(--grid-alpha)) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(var(--grid-line) / var(--grid-alpha)) 1px, transparent 1px);
+    background-size: 34px 34px;
+  }
+
+  /* Instrument label: small, tracked-out, uppercase. */
+  .field-label {
+    @apply block mb-1.5 text-xs font-semibold uppercase tracking-wider text-ink-faint;
+  }
+
+  /* Form controls */
+  .input {
+    @apply w-full rounded-lg border border-line bg-panel-soft px-3 py-2.5 text-sm text-ink
+           shadow-sm placeholder:text-ink-faint
+           focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40
+           disabled:cursor-not-allowed disabled:opacity-60 read-only:opacity-70;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+           focus-visible:ring-offset-panel disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary { @apply btn bg-accent text-accent-fg hover:brightness-110 focus-visible:ring-accent; }
+  .btn-danger  { @apply btn bg-crit text-white hover:brightness-110 focus-visible:ring-crit; }
+  .btn-ghost   { @apply btn border border-line bg-panel text-ink hover:bg-panel-strong; }
+
+  /* Card / panel surface */
+  .card { @apply rounded-xl border border-line bg-panel shadow-sm; }
+
+  /* Panel header bar with a brand accent edge. */
+  .panel-head {
+    @apply flex items-center justify-between gap-2 border-b border-line bg-panel-strong px-4 py-2.5
+           border-l-4 border-l-brand rounded-t-xl;
+  }
+  .panel-head h3 { @apply text-base font-semibold tracking-wide text-ink; }
+
+  /* Status pill */
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold
+           ring-1 ring-inset;
+  }
 }
 
-/* Tabs: slide-down */
-.slide-down-fade-enter-from {
-  opacity: 0;
-  transform: translateX(-30px)
-}
-.slide-down-fade-enter-active {
-  transition: all 1s ease
-}
+/* Animaciones/transiciones deshabilitadas a propósito: la app corre en un
+ * embebido y se priorizó respuesta inmediata sin movimiento. Los <Transition>
+ * y <transition-group> que quedan en las vistas no tienen CSS asociado, así que
+ * aparecen/desaparecen al instante. Los spinners (animate-spin) se mantienen
+ * porque son feedback funcional de carga. */

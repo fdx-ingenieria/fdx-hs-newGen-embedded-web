@@ -18,7 +18,7 @@
 </script>
 
 <template>
-  <div class="antialiased bg-gray-50 h-screen min-w-[320px]">
+  <div class="app-grid antialiased bg-app text-ink min-h-screen min-w-[320px]">
     <NavBar />
     <LeftSideBar />
     <ToastNotifications />
@@ -26,9 +26,7 @@
       :class="{'lg:ml-64': globalStore.showSideBar}">
       <Breadcrumb />
       <router-view v-slot="{ Component }">
-        <Transition :name="'fade'" mode="out-in">
-          <component :is="Component" />
-        </Transition>
+        <component :is="Component" />
       </router-view>
     </main>
   </div>

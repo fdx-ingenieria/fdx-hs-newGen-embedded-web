@@ -3,34 +3,36 @@
   import { MenuCloseIcon, MenuOpenIcon, ThermometerIcon } from '../icons';
   import ConnectionStatus from './ConnectionStatus.vue';
   import ModeIndicator from './ModeIndicator.vue';
+  import ThemeToggle from './ThemeToggle.vue';
 
   const globalStore = useGlobalStore();
 </script>
 
 <template>
-  <nav class="bg-white border-b border-gray-200 px-4 py-2.5 fixed left-0 right-0 top-0 z-50 print:absolute">
-    <div class="flex flex-wrap justify-between items-center">
-      <button aria-expanded="true" aria-controls="sidebar"
-        @click="globalStore.showSideBar = !globalStore.showSideBar"
-        class="p-1 mr-3 text-gray-600 rounded cursor-pointer hover:text-gray-900 hover:bg-gray-100 print:hidden">
-        <MenuOpenIcon v-if="!globalStore.showSideBar" class="w-8" />
-        <template v-else>
-          <MenuCloseIcon class="w-8" />
-        </template>
-      </button>
-      <a class="flex">
-        <img src="@/assets/fdx_no_bg_sm.png" class="h-12 hidden xs:inline-flex" alt="FDX Logo" />
-        <img src="@/assets/fdx_no_bg_sm.png" class="h-12 inline-flex xs:hidden" alt="FDX Logo" />
-        <!-- <img src="@/assets/fdx_no_bg_sm.png" class="h-12 inline-flex xs:hidden" alt="FDX Logo" /> -->
-      </a>
-      <div class="flex print:hidden">
-        <div class="flex items-center inline-flex">
-          <ThermometerIcon class="w-5 h-5 text-gray-600" />
-          {{  globalStore.boardTemp }}
-          <small class="ml-1">°C</small>
+  <nav class="fixed left-0 right-0 top-0 z-50 border-b border-line bg-panel px-4 py-2 print:absolute">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center">
+        <button aria-expanded="true" aria-controls="sidebar"
+          @click="globalStore.showSideBar = !globalStore.showSideBar"
+          class="mr-2 rounded-lg p-1.5 text-ink-soft hover:bg-panel-strong hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent print:hidden">
+          <MenuOpenIcon v-if="!globalStore.showSideBar" class="w-7" />
+          <MenuCloseIcon v-else class="w-7" />
+        </button>
+        <a class="flex items-center">
+          <img src="@/assets/fdx_no_bg_sm.png" class="h-11" alt="FDX Logo" />
+        </a>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-3 print:hidden">
+        <div class="hidden items-center gap-1.5 rounded-lg border border-line bg-panel-soft px-2.5 py-1 xs:inline-flex"
+          title="Board temperature">
+          <ThermometerIcon class="h-5 w-5 text-ink-faint" />
+          <span class="font-mono text-sm font-semibold text-ink">{{ globalStore.boardTemp }}</span>
+          <small class="text-ink-faint">°C</small>
         </div>
-        <ModeIndicator class="ml-4" />
-        <ConnectionStatus class="ml-4" />
+        <ModeIndicator />
+        <ConnectionStatus />
+        <ThemeToggle />
       </div>
     </div>
   </nav>

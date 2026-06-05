@@ -49,28 +49,28 @@
   });
 </script>
 <template>
-  <div class="fixed lg:hidden top-0 left-0 right-0 z-10 w-full bg-gray-800 opacity-50 h-full print:hidden"
+  <div class="fixed lg:hidden top-0 left-0 right-0 z-10 w-full bg-slate-950/60 h-full print:hidden"
     v-if="globalStore.showSideBar"
     @click="globalStore.showSideBar = false">
   </div>
-  <aside class="fixed top-0 left-0 z-40 w-64 h-screen pt-16 transition-transform bg-white border-r border-gray-200 print:hidden"
+  <aside class="fixed top-0 left-0 z-40 w-64 h-screen pt-16 bg-panel border-r border-line print:hidden"
     :class="{'translate-x-0': globalStore.showSideBar, '-translate-x-full': !globalStore.showSideBar}"
     aria-label="Sidenav">
-    <div class="overflow-y-auto py-3 px-3 h-full bg-white">
-      <ul class="space-y-2">
+    <div class="overflow-y-auto py-4 px-3 h-full">
+      <ul class="space-y-1">
         <LeftSideBarItem label="Overview" route="Overview" :matched="route.matched">
-          <PieIcon class="w-7 text-gray-500 transition duration-75 group-hover:text-gray-900" />
+          <PieIcon class="w-6 text-ink-faint group-hover:text-ink" />
         </LeftSideBarItem>
         <LeftSideBarItem label="Configuration" :items="options" :matched="route.matched">
-          <CogIcon class="w-7 text-gray-500 transition duration-75 group-hover:text-gray-900" />
+          <CogIcon class="w-6 text-ink-faint group-hover:text-ink" />
         </LeftSideBarItem>
         <LeftSideBarItem label="Modbus" route="Modbus" :matched="route.matched">
-          <ModbusIcon class="w-7 text-gray-500 transition duration-75 group-hover:text-gray-900" />
+          <ModbusIcon class="w-6 text-ink-faint group-hover:text-ink" />
         </LeftSideBarItem>
       </ul>
     </div>
 
-    <div class="absolute bottom-0 left-0 p-4 w-full lg:block bg-white z-20">
+    <div class="absolute bottom-0 left-0 z-20 w-full border-t border-line bg-panel px-4 py-3 font-mono text-xs text-ink-faint lg:block">
       <small class="block">FW: {{ globalStore.getFirmwareVersion || 'N/A' }}</small>
       <small class="block">WA: v{{ version }}</small>
     </div>

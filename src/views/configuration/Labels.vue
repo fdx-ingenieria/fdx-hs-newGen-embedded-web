@@ -53,9 +53,9 @@
 
   const getTabClass = (type: LabelType) => {
     if (type === activeTab.value) {
-      return 'border-fdx-red text-fdx-red active'
+      return 'border-brand text-brand active'
     }
-    return 'border-transparent hover:text-gray-600 hover:border-gray-300'
+    return 'border-transparent text-ink-faint hover:text-ink hover:border-line'
   }
 
   const handleMqlChange = (e: any) => {
@@ -92,10 +92,10 @@
 </script>
 
 <template>
-  <section class="antialiased bg-gray-50">
+  <section class="antialiased">
     <div class="mx-auto mb-12">
-      <div v-if="!isLargeScreen" class="bg-white relative shadow-md sm:rounded-lg overflow-hidden">
-        <div class="text-sm font-semibold text-center text-gray-500 border-b border-gray-200">
+      <div v-if="!isLargeScreen" class="card overflow-hidden">
+        <div class="text-sm font-semibold text-center text-ink-faint border-b border-line">
           <ul class="flex flex-wrap -mb-px">
             <li class="mr-2">
               <a class="inline-block p-4 border-b-2 rounded-t-lg cursor-pointer"
@@ -124,18 +124,20 @@
         </transition-group>
       </div>
       <div v-else class="grid grid-cols-2 xl:grid-cols-3 gap-6">
-        <div v-for="labelType in LabelType" class="bg-white relative shadow-md sm:rounded-lg overflow-hidden">
-          <div class="flex items-center bg-fdx-dark text-white py-2 px-4">
-            <ListIcon class="w-6 mt-1 mr-2" />
-            <h3 class="text-xl font-semibold">{{ labelType.toLocaleUpperCase() }}</h3>
+        <div v-for="labelType in LabelType" class="card overflow-hidden">
+          <div class="panel-head rounded-none">
+            <div class="flex items-center">
+              <ListIcon class="mr-2 w-6 text-ink-faint" />
+              <h3>{{ labelType.toLocaleUpperCase() }}</h3>
+            </div>
           </div>
           <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-4" />
           <LabelTable v-else :availableLabels="availableLabels[labelType]" :labelType="labelType" @edit="editLabel" />
         </div>
       </div>
       <div v-if="hasUnsavedChanges"
-        class="fixed bottom-0 w-full p-4 text-blue-800 border-t-4 border-blue-300 bg-blue-50"
-        :class="{'text-red-800 border-red-300 bg-red-50': hasAnyDuplicateLabel}">
+        class="fixed bottom-0 w-full p-4 text-info border-t-4 border-info/40 bg-info-soft"
+        :class="{'text-crit border-crit/40 bg-crit-soft': hasAnyDuplicateLabel}">
         <div class="ml-3 text-sm font-medium flex items-center">
           <template v-if="hasAnyDuplicateLabel">
             <AlertIcon class="w-4 mr-1" />
@@ -145,7 +147,7 @@
             <EditIcon class="w-4 mr-1" />
             Oops, unsaved changes alert! Time to save the day!
           </template>
-          <button class="text-white disabled:opacity-50 text-center inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-xs px-3 ml-3 py-1.5 focus:outline-none"
+          <button class="btn-primary !text-xs !px-3 ml-3"
             @click="saveLabel()"
             :disabled="savingData || hasAnyDuplicateLabel"
             type="button" >

@@ -34,17 +34,19 @@
 </script>
 
 <template>
-  <section class="antialiased bg-gray-50">
+  <section class="antialiased">
     <RightSideBar :show="showRightSideBar">
       <EditForm v-if="editingAlarm" :alarm="editingAlarm" @close="showRightSideBar = false"/>
     </RightSideBar>
     <div class="mx-auto">
-      <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden mt-8">
-        <div class="flex bg-fdx-dark text-white items-center py-2 px-4">
-          <ListIcon class="h-6 hidden md:inline-flex mt-1 mr-2" />
-          <h3 class="text-xl font-semibold">Alarms</h3>
+      <div class="card overflow-hidden mt-8">
+        <div class="panel-head rounded-none">
+          <div class="flex items-center">
+            <ListIcon class="mr-2 hidden h-6 text-ink-faint md:inline-flex" />
+            <h3>Alarms</h3>
+          </div>
         </div>
-        <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-4" />
+        <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-brand fill-transparent mx-auto my-4" />
         <AlarmsTable v-else :availableAlarms="getAvailableAlarms" @edit="editAlarm" :max="20" />
       </div>
     </div>

@@ -27,12 +27,12 @@
 
   const getFieldClass = (equipment: number | undefined): string => {
     const classMap: Record<number, string> = {
-      0: 'bg-red-100 text-red-800',
-      1: 'bg-yellow-100 text-yellow-800',
-      2: 'bg-indigo-100 text-indigo-800',
-      3: 'bg-blue-100 text-blue-800',
-      4: 'bg-green-100 text-green-800',
-      5: 'bg-orange-100 text-orange-800',
+      0: 'bg-crit-soft text-crit',
+      1: 'bg-warn-soft text-warn',
+      2: 'bg-idle-soft text-ink-soft',
+      3: 'bg-info-soft text-info',
+      4: 'bg-ok-soft text-ok',
+      5: 'bg-accent-soft text-accent',
     };
 
     return equipment
@@ -66,7 +66,7 @@
     if (!searchText.value) return text
 
     const regex = new RegExp(`(${searchText.value})`, "gi");
-    return text.replace(regex, '<span class="text-red-500 font-bold">$1</span>');
+    return text.replace(regex, '<span class="text-brand font-bold">$1</span>');
   }
 
   const toggleSensorsData = (alarmId: number) => {
@@ -92,15 +92,15 @@
           <label for="simple-search" class="sr-only">Search</label>
           <div class="relative w-full">
             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <SearchIcon class="w-5 h-5 text-gray-500" />
+              <SearchIcon class="w-5 h-5 text-ink-faint" />
             </div>
-            <input v-model="searchText" type="text" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2" placeholder="Search">
+            <input v-model="searchText" type="text" class="input pl-10" placeholder="Search">
           </div>
         </div>
       </div>
     </div>
-    <table class="w-full text-sm text-left text-gray-500 whitespace-nowrap">
-      <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+    <table class="w-full text-sm text-left text-ink-soft whitespace-nowrap">
+      <thead class="border-y border-line bg-panel-soft text-xs uppercase tracking-wider text-ink-faint">
         <tr>
           <th scope="col" class="px-4 py-3">Id</th>
           <th scope="col" class="px-4 py-3">Name</th>
@@ -114,18 +114,18 @@
       <transition-group name="fade" tag="tbody">
         <template v-for="item in localAvailableAlarms" :key="`${item.id}`" >
           <tr @click="!readonly ? emit('edit', item.id) : toggleSensorsData(item.id)"
-            class="border-b hover:bg-gray-100 cursor-pointer"
-            :class="{'bg-red-200 hover:bg-red-300': item.status?.state}">
-            <th scope="row" class="px-4 py-3 font-medium text-gray-900 ">{{ item.id }}</th>
-            <td class="px-4 py-3" v-html="searcHighlight(item.name)"></td>
+            class="cursor-pointer border-b border-line hover:bg-panel-strong"
+            :class="{'!bg-crit-soft hover:!brightness-95': item.status?.state}">
+            <th scope="row" class="px-4 py-3 font-mono font-medium text-ink">{{ item.id }}</th>
+            <td class="px-4 py-3 font-medium text-ink" v-html="searcHighlight(item.name)"></td>
             <td class="px-4 py-3" v-html="searcHighlight(AlarmType[item.alarm_type])"></td>
-            <td class="px-4 py-3">
+            <td class="px-4 py-3 font-mono">
               {{ item.set_point }}
-              <span v-if="item.alarm_type === 4" class="text-gray-400"> / {{ item.reset_point }}</span>
+              <span v-if="item.alarm_type === 4" class="text-ink-faint"> / {{ item.reset_point }}</span>
             </td>
             <td class="px-4 py-3" v-html="searcHighlight(ReleFlag[item.relay_flag])"></td>
             <td class="px-4 py-3 flex flex-wrap gap-1 justify-center">
-              <span v-for="field in item.fields" class="text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full"
+              <span v-for="field in item.fields" class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
                 :class="getFieldClass(field.equipment)">
                 {{ globalStore.getLabelName(LabelType.EQUIPMENT, field.equipment) }}/
                 {{ globalStore.getLabelName(LabelType.LOCATION, field.location) }}
@@ -135,15 +135,16 @@
                 <button type="button"
                   @click="emit('edit', item.id)"
                   @click.stop
-                  class="text-white border border-blue-500 bg-blue-500 font-medium rounded-lg text-sm p-0.5 text-center inline items-center mr-2">
+                  title="Edit"
+                  class="inline-flex items-center rounded-lg bg-accent p-1.5 text-accent-fg hover:brightness-110">
                   <EditIcon class="w-4" />
                   <span class="sr-only">Edit</span>
                 </button>
             </td>
           </tr>
-          <tr v-show="showSensor === item.id" class="transition-all duration-700 ease-in-out">
-            <td class="bg-gray-700 text-white text-center w-1"><div class="-rotate-90">Sensors</div></td>
-            <td colspan="100%" class="transition-all duration-700 ease-in-out">
+          <tr v-show="showSensor === item.id">
+            <td class="w-1 bg-brand text-center text-white"><div class="-rotate-90 text-xs font-semibold uppercase tracking-wider">Sensors</div></td>
+            <td colspan="100%" class="bg-panel-soft">
               <SensorTable :availableSensors="item._sensors" :readonly="true" :showfooter="false" />
             </td>
           </tr>
@@ -152,18 +153,18 @@
     </table>
     <div
       v-if="!localAvailableAlarms.length"
-      class="p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 mx-auto text-center" role="alert">
-      <span class="font-medium">Nothing found.</span> It seems the data is on a coffee break.
+      class="mx-auto m-4 rounded-lg border border-warn/30 bg-warn-soft p-4 text-center text-sm text-warn" role="alert">
+      <span class="font-semibold">Nothing found.</span> It seems the data is on a coffee break.
     </div>
     <nav class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0 p-4">
-      <span class="text-sm font-normal text-gray-500">
+      <span class="text-sm font-normal text-ink-faint">
         Showing
-        <span class="font-semibold text-gray-900">{{ localAvailableAlarms.length }}</span>
+        <span class="font-mono font-semibold text-ink">{{ localAvailableAlarms.length }}</span>
         of
-        <span class="font-semibold text-gray-900">{{ availableAlarms.length }}</span>
+        <span class="font-mono font-semibold text-ink">{{ availableAlarms.length }}</span>
         <template v-if="max" class="self-end">
           | max
-          <span class="font-semibold text-gray-900">{{ max }}</span>
+          <span class="font-mono font-semibold text-ink">{{ max }}</span>
         </template>
       </span>
     </nav>

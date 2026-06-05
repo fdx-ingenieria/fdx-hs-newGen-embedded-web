@@ -12,13 +12,13 @@ const store = useGlobalStore()
         <div
           v-for="n in store.notifications"
           :key="n.id"
-          class="text-white px-4 py-3 rounded-lg shadow-lg flex items-start gap-3 pointer-events-auto"
-          :class="n.type === 'success' ? 'bg-green-600' : 'bg-red-600'"
+          class="pointer-events-auto flex items-start gap-3 rounded-xl border px-4 py-3 shadow-lg"
+          :class="n.type === 'success' ? 'border-ok/30 bg-ok-soft text-ok' : 'border-crit/30 bg-crit-soft text-crit'"
         >
-          <span class="flex-1 text-sm break-words leading-snug">{{ n.message }}</span>
+          <span class="flex-1 text-sm font-medium break-words leading-snug">{{ n.message }}</span>
           <button
             @click="store.dismissNotification(n.id)"
-            class="shrink-0 opacity-70 hover:opacity-100 transition-opacity mt-0.5"
+            class="shrink-0 opacity-70 hover:opacity-100 mt-0.5"
           >
             <CloseIcon class="w-4 h-4" />
           </button>

@@ -24,9 +24,9 @@
 
   const getTabClass = (type: string): string => {
     if (type === activeTab.value) {
-      return 'border-fdx-red text-fdx-red active'
+      return 'border-brand text-brand active'
     }
-    return 'border-transparent hover:text-gray-600 hover:border-gray-300'
+    return 'border-transparent text-ink-faint hover:text-ink hover:border-line'
   }
 
   const temperatures = computed(() => {
@@ -86,84 +86,89 @@
   })
 </script>
 <template>
-  <div class="antialiased bg-gray-50">
+  <div>
     <div class="grid grid-cols-1 gap-4 my-4 mt-8 sm:grid-cols-2 xl:grid-cols-4">
-      <div class="relative flex items-center bg-white border rounded-sm overflow-hidden shadow">
-        <div class="p-4 bg-orange-400">
-          <AlarmIcon class="w-10 h-10 text-white" />
+      <!-- Active alarms -->
+      <div class="card flex items-center gap-4 p-4">
+        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-crit-soft text-crit">
+          <AlarmIcon class="h-8 w-8" />
         </div>
-        <LoadingIcon v-if="loading" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto" />
-        <div v-else class="px-4 text-gray-700">
-          <h3 class="text-sm tracking-wider font-semibold">Alarms</h3>
-          <p class="text-xl flex items-center">
-            <BellRingIcon class="w-5 h-5 mr-1" />
-            {{ alarmed.alarms.size }}
-            <small class="absolute bottom-0 right-2">{{ getConfiguredAlarms.length }} Total</small>
+        <LoadingIcon v-if="loading" class="mx-auto h-7 w-7 animate-spin fill-transparent text-brand" />
+        <div v-else class="min-w-0 flex-1">
+          <h3 class="field-label mb-0">Active alarms</h3>
+          <p class="flex items-baseline gap-2">
+            <span class="font-mono text-3xl font-bold leading-none text-ink">{{ alarmed.alarms.size }}</span>
+            <span class="text-xs text-ink-faint">/ {{ getConfiguredAlarms.length }} total</span>
+          </p>
+        </div>
+        <BellRingIcon v-if="!loading && alarmed.alarms.size" class="h-6 w-6 shrink-0 text-crit" />
+      </div>
+
+      <!-- Sensors in alarm -->
+      <div class="card flex items-center gap-4 p-4">
+        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-info-soft text-info">
+          <SensorIcon class="h-8 w-8" />
+        </div>
+        <LoadingIcon v-if="loading" class="mx-auto h-7 w-7 animate-spin fill-transparent text-brand" />
+        <div v-else class="min-w-0 flex-1">
+          <h3 class="field-label mb-0">Sensors in alarm</h3>
+          <p class="flex items-baseline gap-2">
+            <span class="font-mono text-3xl font-bold leading-none text-ink">{{ alarmed.sensors.size }}</span>
+            <span class="text-xs text-ink-faint">/ {{ getConfiguredSensors.length }} total</span>
           </p>
         </div>
       </div>
-      <div class="relative flex items-center bg-white border rounded-sm overflow-hidden shadow">
-        <div class="p-4 bg-green-500">
-          <SensorIcon class="w-10 h-10 text-white" />
+
+      <!-- Lowest temp -->
+      <div class="card flex items-center gap-4 p-4">
+        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-info-soft text-info">
+          <ThermometerLowIcon class="h-8 w-8" />
         </div>
-        <LoadingIcon v-if="loading" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto" />
-        <div v-else class="px-4 text-gray-700">
-          <h3 class="text-sm tracking-wider font-semibold">Sensors</h3>
-          <p class="text-xl flex items-center">
-            <BellRingIcon class="w-5 h-5 mr-1" />
-            {{ alarmed.sensors.size }}
-            <small class="absolute bottom-0 right-2">{{ getConfiguredSensors.length }} Total</small>
+        <LoadingIcon v-if="!temperatures.min" class="mx-auto h-7 w-7 animate-spin fill-transparent text-brand" />
+        <div v-else class="min-w-0 flex-1" title="Lowest">
+          <h3 class="field-label mb-0">Lowest temp</h3>
+          <p class="flex items-baseline gap-1">
+            <span class="font-mono text-3xl font-bold leading-none text-info">{{ temperatures.min?.temp.toFixed(1) }}</span>
+            <span class="text-sm font-semibold text-ink-faint">°C</span>
           </p>
+          <small class="block truncate font-mono text-xs text-ink-faint" :title="`EPC: ${temperatures.min?.EPC}`">{{ temperatures.min?.id }}</small>
         </div>
       </div>
-      <div class="relative flex items-center bg-white border rounded-sm overflow-hidden shadow">
-        <div class="p-4 bg-blue-500">
-          <ThermometerLowIcon class="w-10 h-10 text-white" />
+
+      <!-- Highest temp -->
+      <div class="card flex items-center gap-4 p-4">
+        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-crit-soft text-crit">
+          <ThermometerHighIcon class="h-8 w-8" />
         </div>
-        <LoadingIcon v-if="!temperatures.min" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto" />
-        <div v-else class="px-4 text-gray-700">
-          <h3 class="text-sm tracking-wider font-semibold">Lowest Temperature</h3>
-          <p class="text-xl flex items-center" title="Lower">
-            {{  temperatures.min?.temp.toFixed(1) }} <small class="ml-1 font-bold">°C</small>
-            <small class="absolute bottom-0 right-2 text-xs" :title="`EPC: ${temperatures.min?.EPC}`">{{  temperatures.min?.id }}</small>
+        <LoadingIcon v-if="!temperatures.max" class="mx-auto h-7 w-7 animate-spin fill-transparent text-brand" />
+        <div v-else class="min-w-0 flex-1" title="Highest">
+          <h3 class="field-label mb-0">Highest temp</h3>
+          <p class="flex items-baseline gap-1">
+            <span class="font-mono text-3xl font-bold leading-none text-crit">{{ temperatures.max?.temp.toFixed(1) }}</span>
+            <span class="text-sm font-semibold text-ink-faint">°C</span>
           </p>
-        </div>
-      </div>
-      <div class="relative flex items-center bg-white border rounded-sm overflow-hidden shadow">
-        <div class="p-4 bg-red-500">
-          <ThermometerHighIcon class="w-10 h-10 text-white" />
-        </div>
-        <LoadingIcon v-if="!temperatures.max" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto" />
-        <div v-else class="px-4 text-gray-700">
-          <h3 class="text-sm tracking-wider font-semibold">Highest Temperature</h3>
-          <p class="text-xl flex items-center" title="Higher">
-            {{  temperatures.max?.temp.toFixed(1) }} <small class="ml-1 font-bold">°C</small>
-            <small class="absolute bottom-0 right-2 text-xs" :title="`EPC: ${temperatures.max?.EPC}`">{{  temperatures.max?.id }}</small>
-          </p>
+          <small class="block truncate font-mono text-xs text-ink-faint" :title="`EPC: ${temperatures.max?.EPC}`">{{ temperatures.max?.id }}</small>
         </div>
       </div>
     </div>
-    <div class="border-1 rounded-lg border-gray-300 mb-4">
-      <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden">
-        <div class="text-sm font-semibold text-center text-gray-500 border-b border-gray-200">
-          <ul class="flex flex-wrap -mb-px">
-            <li class="mr-2">
-              <a
-              class="inline-block p-4 border-b-2 rounded-t-lg cursor-pointer"
+
+    <div class="card mb-4 overflow-hidden">
+      <div class="border-b border-line text-sm font-semibold text-ink-faint">
+        <ul class="flex flex-wrap px-2 -mb-px">
+          <li class="mr-2">
+            <a class="inline-block cursor-pointer rounded-t-lg border-b-2 px-4 py-3"
               :class="getTabClass('sensors')"
-                @click="activeTab = 'sensors'">Sensors</a>
-            </li>
-            <li class="mr-2">
-              <a
-                class="inline-block p-4 border-b-2 rounded-t-lg cursor-pointer"
-                :class="getTabClass('alarms')"
-                @click="activeTab = 'alarms'">Alarms</a>
-            </li>
-          </ul>
-        </div>
-        <AlarmsTable v-show="activeTab === 'alarms'" :availableAlarms="getConfiguredAlarms" :readonly="true" :max="20" />
-        <SensorTable v-show="activeTab === 'sensors'" :availableSensors="getConfiguredSensors" :readonly="true" :showlabels="true" :max="50" />
+              @click="activeTab = 'sensors'">Sensors</a>
+          </li>
+          <li class="mr-2">
+            <a class="inline-block cursor-pointer rounded-t-lg border-b-2 px-4 py-3"
+              :class="getTabClass('alarms')"
+              @click="activeTab = 'alarms'">Alarms</a>
+          </li>
+        </ul>
       </div>
+      <AlarmsTable v-show="activeTab === 'alarms'" :availableAlarms="getConfiguredAlarms" :readonly="true" :max="20" />
+      <SensorTable v-show="activeTab === 'sensors'" :availableSensors="getConfiguredSensors" :readonly="true" :showlabels="true" :max="50" />
     </div>
   </div>
 </template>

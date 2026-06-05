@@ -46,6 +46,10 @@ const PARITY_INDEX_TO_CHAR: Record<number, string> = { 0: 'N', 1: 'O', 2: 'E' }
  */
 export const useGlobalStore = defineStore('global', () => {
   let eventSource: EventSource | null = null
+  // Último timestamp (epoch del device) visto por sensor. Sirve solo para detectar
+  // cuándo llega una lectura NUEVA: el reloj del device puede estar desfasado del
+  // browser (sin NTP/RTC), así que no se usa su valor absoluto para medir antigüedad.
+  const lastDeviceTimestamp = new Map<string, number>()
   const connected = ref(false)
   const discoveryModeOn: Ref<boolean> = ref(false)
   const normalModeOn: Ref<boolean> = ref(false)
@@ -120,6 +124,14 @@ export const useGlobalStore = defineStore('global', () => {
         const n_readings = quality === SensorQuality.OUT_OF_SERVICE
           ? (prevData?.n_readings ?? s.n_readings)
           : s.n_readings
+        // El SSE reemite el mismo snapshot cada 1s; el timestamp del device solo cambia
+        // cuando hay una lectura nueva (cada measure_period). Cuando cambia, anclamos al
+        // reloj del CLIENTE para que `now - timestamp` mida bien la antigüedad sin
+        // depender de que el reloj del device esté sincronizado.
+        const isNewReading = s.timestamp > 0 && s.timestamp !== lastDeviceTimestamp.get(s.epc_id)
+        if (isNewReading) lastDeviceTimestamp.set(s.epc_id, s.timestamp)
+        const clientNow = Math.floor(Date.now() / 1000)
+        const timestamp = isNewReading ? clientNow : (prevData?.timestamp ?? clientNow)
         return {
           id: s.epc_id,
           EPC: s.epc_id,
@@ -129,7 +141,7 @@ export const useGlobalStore = defineStore('global', () => {
           rssi: s.avg_rssi,
           n_readings,
           quality,
-          timestamp: s.timestamp > 0 ? s.timestamp : (prevData?.timestamp ?? 0),
+          timestamp,
           elapsed_time: 0,
           config: availableSensors.value.find(x => x.id === s.epc_id)?.config ?? { equipment: 0, location: 0, position: 0 },
         }

@@ -7,15 +7,15 @@
 
   const statusClass = computed(() => {
     if (!globalStore.connected) {
-      return 'bg-red-100 text-red-700 ring-red-600/20';
+      return 'bg-crit-soft text-crit ring-crit/30';
     }
     if (globalStore.getNormalModeOn) {
-      return 'bg-green-200 text-green-700 ring-green-600/20';
+      return 'bg-ok-soft text-ok ring-ok/30';
     }
     if (globalStore.getDiscoveryModeOn) {
-      return 'bg-green-200 text-red-500 ring-green-600/20';
+      return 'bg-warn-soft text-warn ring-warn/30';
     }
-    return 'bg-green-200 text-gray-400 ring-green-600/20';
+    return 'bg-idle-soft text-ink-faint ring-line';
   });
 
   const socketMode = computed(() => {
@@ -30,7 +30,7 @@
 
 <template>
   <div
-    class="inline-flex rounded-md px-2 py-1 ring-1 ring-inset"
+    class="inline-flex h-9 items-center rounded-lg px-2.5 ring-1 ring-inset"
     :class="statusClass"
     :title="`Connection: ${globalStore.connected ? 'Connected' : 'Disconnected'} Mode: ${socketMode}`">
     <NetworkConnectedIcon v-if="globalStore.connected && globalStore.getNormalModeOn" class="h-6" />

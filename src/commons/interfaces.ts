@@ -38,7 +38,7 @@ export interface ISensorData {
   quality: SensorQuality;
   rssi: number;
   elapsed_time: number; // seconds since last reading
-  timestamp: number; // seconds since epoch unused
+  timestamp: number; // client epoch (s) when this reading was received; anchored locally to survive device clock skew
   config: ISensorConfig;
 }
 

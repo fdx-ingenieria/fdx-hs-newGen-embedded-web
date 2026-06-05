@@ -95,9 +95,9 @@
 </script>
 
 <template>
-  <section class="antialiased bg-gray-50">
+  <section class="antialiased">
     <div class="mx-auto">
-      <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden py-4 px-4 md:px-6">
+      <div class="card overflow-hidden py-4 px-4 md:px-6">
         <LoadingIcon v-if="!editable.region" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-12" />
         <template v-else>
 
@@ -106,10 +106,10 @@
             <div>
               <label
                 v-on:dblclick.shift.ctrl="adminMode = !adminMode"
-                class="block mb-2 text-sm font-semibold text-blue-900 select-none cursor-default">Region</label>
+                class="field-label !text-accent select-none cursor-default">Region</label>
               <select
                 v-model="editable.region"
-                class="bg-gray-50 border border-blue-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                class="input !border-accent/40">
                 <option v-for="item in Region" :key="item.value" :value="item.value">{{ item.label }}</option>
               </select>
             </div>
@@ -117,77 +117,77 @@
             <!-- Admin-only fields -->
             <template v-if="adminMode">
               <div>
-                <label class="block mb-2 text-sm font-semibold text-gray-900">Tag Encoding</label>
-                <select v-model="editable.tag_encoding" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                <label class="field-label">Tag Encoding</label>
+                <select v-model="editable.tag_encoding" class="input">
                   <option v-for="item in TagEncoding" :key="item.value" :value="item.value">{{ item.label }}</option>
                 </select>
               </div>
               <div>
-                <label class="block mb-2 text-sm font-semibold text-gray-900">Read power (cdBm)</label>
-                <input class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                <label class="field-label">Read power (cdBm)</label>
+                <input class="input"
                   type="number" step="1" min="0" max="3300"
                   v-model.number="editable.read_pwr"
                   placeholder="Read power in cdBm">
-                <p class="mt-2 text-sm text-gray-600">0 – 3300 cdBm.</p>
-                <p v-show="!validReadWritePowerValue(editable.read_pwr)" class="mt-2 text-sm text-red-600"><span class="font-semibold">Oops!</span> Valor fuera de rango.</p>
+                <p class="mt-2 text-sm text-ink-faint">0 – 3300 cdBm.</p>
+                <p v-show="!validReadWritePowerValue(editable.read_pwr)" class="mt-2 text-sm text-crit"><span class="font-semibold">Oops!</span> Valor fuera de rango.</p>
               </div>
               <div>
-                <label class="block mb-2 text-sm font-semibold text-gray-900">Write power (cdBm)</label>
-                <input class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                <label class="field-label">Write power (cdBm)</label>
+                <input class="input"
                   type="number" step="1" min="0" max="3300"
                   v-model.number="editable.write_pwr"
                   placeholder="Write power in cdBm">
-                <p class="mt-2 text-sm text-gray-600">0 – 3300 cdBm.</p>
-                <p v-show="!validReadWritePowerValue(editable.write_pwr)" class="mt-2 text-sm text-red-600"><span class="font-semibold">Oops!</span> Valor fuera de rango.</p>
+                <p class="mt-2 text-sm text-ink-faint">0 – 3300 cdBm.</p>
+                <p v-show="!validReadWritePowerValue(editable.write_pwr)" class="mt-2 text-sm text-crit"><span class="font-semibold">Oops!</span> Valor fuera de rango.</p>
               </div>
               <div>
-                <label class="block mb-2 text-sm font-semibold text-gray-900">Antenas activas</label>
-                <input class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                <label class="field-label">Antenas activas</label>
+                <input class="input"
                   type="text"
                   v-model="editable.ants"
                   placeholder="e.g. 0,1,2,3">
-                <p class="mt-2 text-sm text-gray-600">Índices separados por coma.</p>
+                <p class="mt-2 text-sm text-ink-faint">Índices separados por coma.</p>
               </div>
               <div>
-                <label class="block mb-2 text-sm font-semibold text-gray-900">T reader on (ms)</label>
-                <input class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                <label class="field-label">T reader on (ms)</label>
+                <input class="input"
                   type="number" step="1" min="0" max="10000"
                   v-model.number="editable.t_reader_on"
                   placeholder="Reader on time in ms">
-                <p class="mt-2 text-sm text-gray-600">0 – 10 000 ms.</p>
-                <p v-show="!validReaderOnValue(editable.t_reader_on)" class="mt-2 text-sm text-red-600"><span class="font-semibold">Oops!</span> Valor fuera de rango.</p>
+                <p class="mt-2 text-sm text-ink-faint">0 – 10 000 ms.</p>
+                <p v-show="!validReaderOnValue(editable.t_reader_on)" class="mt-2 text-sm text-crit"><span class="font-semibold">Oops!</span> Valor fuera de rango.</p>
               </div>
               <div>
-                <label class="block mb-2 text-sm font-semibold text-gray-900">T reader off (ms)</label>
-                <input class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                <label class="field-label">T reader off (ms)</label>
+                <input class="input"
                   type="number" step="1" min="0" max="300000"
                   v-model.number="editable.t_reader_off"
                   placeholder="Reader off time in ms">
-                <p class="mt-2 text-sm text-gray-600">0 – 300 000 ms.</p>
-                <p v-show="!validReaderOffValue(editable.t_reader_off)" class="mt-2 text-sm text-red-600"><span class="font-semibold">Oops!</span> Valor fuera de rango.</p>
+                <p class="mt-2 text-sm text-ink-faint">0 – 300 000 ms.</p>
+                <p v-show="!validReaderOffValue(editable.t_reader_off)" class="mt-2 text-sm text-crit"><span class="font-semibold">Oops!</span> Valor fuera de rango.</p>
               </div>
               <div>
-                <label class="block mb-2 text-sm font-semibold text-gray-900">Q (algoritmo)</label>
-                <select v-model="editable.q" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                <label class="field-label">Q (algoritmo)</label>
+                <select v-model="editable.q" class="input">
                   <option v-for="q in ReaderQ" :key="q" :value="q">{{ q }}</option>
                 </select>
               </div>
               <div>
-                <label class="block mb-2 text-sm font-semibold text-gray-900">Session</label>
-                <select v-model="editable.session" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                <label class="field-label">Session</label>
+                <select v-model="editable.session" class="input">
                   <option v-for="s in ReaderSession" :key="s" :value="s">{{ s }}</option>
                 </select>
               </div>
               <div>
-                <label class="block mb-2 text-sm font-semibold text-gray-900">Target</label>
-                <select v-model="editable.target" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                <label class="field-label">Target</label>
+                <select v-model="editable.target" class="input">
                   <option v-for="t in ReaderTarget" :key="t" :value="t">{{ t }}</option>
                 </select>
               </div>
               <div>
-                <label class="block mb-2 text-sm font-semibold text-blue-900">Password</label>
+                <label class="field-label !text-accent">Password</label>
                 <input type="password" v-model="editable.password"
-                  class="bg-gray-50 border border-blue-300 text-blue-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                  class="input !border-accent/40"
                   placeholder="admin password">
               </div>
             </template>
@@ -197,12 +197,12 @@
           <div class="flex flex-col items-end gap-2">
             <div class="flex items-center space-x-4">
               <button v-if="adminMode" @click="cancelAdmin()" :disabled="savingData" type="button"
-                class="text-white flex items-center gap-1 disabled:opacity-50 bg-gray-500 hover:bg-gray-600 focus:ring-4 focus:ring-gray-300 font-semibold rounded-lg text-sm px-5 py-1.5 focus:outline-none">
+                class="btn-ghost">
                 <CloseIcon class="w-4" />
                 Cancelar
               </button>
               <button @click="save()" :disabled="savingData || !isComplete()" type="button"
-                class="text-white flex items-center gap-1 disabled:opacity-50 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-5 py-1.5 focus:outline-none">
+                class="btn-primary">
                 <template v-if="savingData">
                   <LoadingIcon class="animate-spin fill-transparent w-4" />
                   Guardando...
@@ -213,8 +213,8 @@
                 </template>
               </button>
             </div>
-            <p v-if="advancedUpdated === false" class="text-sm text-red-600"><span class="font-semibold">Wrong password:</span> advanced fields were not updated.</p>
-            <p v-else-if="advancedUpdated === true" class="text-sm text-green-600">Advanced fields updated successfully.</p>
+            <p v-if="advancedUpdated === false" class="text-sm text-crit"><span class="font-semibold">Wrong password:</span> advanced fields were not updated.</p>
+            <p v-else-if="advancedUpdated === true" class="text-sm text-ok">Advanced fields updated successfully.</p>
           </div>
 
         </template>
