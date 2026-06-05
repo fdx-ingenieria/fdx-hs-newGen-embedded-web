@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ISystem, ModbusBitParity, BaudRate, isValidInteger } from '@/commons';
-  import { AlertIcon, LoadingIcon, SendIcon } from '@/components/icons';
+  import { AlertIcon, LoadingIcon, RefreshIcon, SendIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global'
   import { storeToRefs } from 'pinia';
   import { Ref, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -13,6 +13,19 @@
   const adminMode = ref(false)
   const hasUnsavedChanges = ref(false)
   const serialUpdated: Ref<boolean | null> = ref(null)
+  const restarting = ref(false)
+
+  const restartService = async () => {
+    if (!window.confirm('Are you sure? The app will disconnect for a few seconds while the service restarts.')) return
+    restarting.value = true
+    try {
+      await globalStore.restartService(editable.value.password ?? '')
+    } catch {
+      // El store ya notifica el error (password incorrecto u otro fallo).
+    } finally {
+      restarting.value = false
+    }
+  }
 
   watch(getSystemData, (newValue) => {
     editable.value = JSON.parse(JSON.stringify(newValue))
@@ -140,16 +153,23 @@
             </div>
           </div>
           <div class="flex flex-col items-end gap-2">
-            <button @click="save()" :disabled="savingData || !isComplete()" type="button" class="text-white flex items-center disabled:opacity-50 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-5 py-1.5 focus:outline-none">
-              <template v-if="savingData">
-                <LoadingIcon class="animate-spin fill-transparent w-4 mr-1" />
-                Saving...
-              </template>
-              <template v-else>
-                <SendIcon class="w-4 mr-1" />
-                Save
-              </template>
-            </button>
+            <div class="flex items-center gap-2">
+              <button v-if="adminMode" @click="restartService()" :disabled="restarting || !editable.password" type="button" class="text-white flex items-center disabled:opacity-50 bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-semibold rounded-lg text-sm px-5 py-1.5 focus:outline-none">
+                <LoadingIcon v-if="restarting" class="animate-spin fill-transparent w-4 mr-1" />
+                <RefreshIcon v-else class="w-4 mr-1" />
+                {{ restarting ? 'Restarting...' : 'Restart service' }}
+              </button>
+              <button @click="save()" :disabled="savingData || !isComplete()" type="button" class="text-white flex items-center disabled:opacity-50 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-semibold rounded-lg text-sm px-5 py-1.5 focus:outline-none">
+                <template v-if="savingData">
+                  <LoadingIcon class="animate-spin fill-transparent w-4 mr-1" />
+                  Saving...
+                </template>
+                <template v-else>
+                  <SendIcon class="w-4 mr-1" />
+                  Save
+                </template>
+              </button>
+            </div>
             <p v-if="serialUpdated === false" class="text-sm text-red-600"><span class="font-semibold">Wrong password:</span> serial number was not updated.</p>
             <p v-else-if="serialUpdated === true" class="text-sm text-green-600">Serial number updated successfully.</p>
           </div>

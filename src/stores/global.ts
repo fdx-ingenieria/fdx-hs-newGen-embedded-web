@@ -416,6 +416,26 @@ export const useGlobalStore = defineStore('global', () => {
     normalModeOn.value = !isDiscovery
   }
 
+  async function restartService(password: string): Promise<void> {
+    // Endpoint propio (no usa apiFetch) para distinguir el 403 de password
+    // incorrecto y dar mensajes a medida. Backend: POST con body { password },
+    // responde 200 {status:"ok"} y reinicia el servicio ~1s después vía systemd.
+    const res = await fetch('/api/action/system/service_restart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    })
+    if (res.status === 403) {
+      notify('Wrong password: service was not restarted', 'error')
+      throw new Error('unauthorized')
+    }
+    if (!res.ok) {
+      notify(`[${res.status}] Could not restart service`, 'error')
+      throw new Error('restart failed')
+    }
+    notify('Restarting service... the app will reconnect shortly', 'success')
+  }
+
   async function loadFirmwareVersion(): Promise<void> {
     const data = await apiFetch<{ version: string }>('/api/system/version')
     firmwareVersion.value = data.version
@@ -459,6 +479,7 @@ export const useGlobalStore = defineStore('global', () => {
     getModbusTable,
     startNormalMode,
     stopNormalMode,
+    restartService,
     getConfiguredSensors,
     addNewSensor,
     updateSensorData,
