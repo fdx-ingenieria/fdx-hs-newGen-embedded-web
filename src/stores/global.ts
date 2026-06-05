@@ -245,28 +245,21 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   function updateSensorsData(data: ISensorData[]) {
-    const availableSensorsIds = availableSensors.value.map((item: ISensor) => item.id);
-    const dataIDs = data.map(sensor => sensor.id);
-  
-    // Filter out elements that don't exist in dataIDs
+    const availableSensorsIds = availableSensors.value.map((item: ISensor) => item.id)
+    const dataIDs = data.map(sensor => sensor.id)
+
     availableSensors.value = availableSensors.value.filter((item: ISensor) => {
       if (!dataIDs.includes(item.id)) {
-        customLog("No existe sensor ", item.id);
-        return false; // Exclude this item
+        customLog("No existe sensor ", item.id)
+        return false
       }
-      return true; // Keep this item
-    });
-  
-    // Update availableSensorsIds
-    const updatedAvailableSensorsIds = availableSensors.value.map((item: ISensor) => item.id);
-  
-    // Replace the original availableSensorsIds (if needed)
-    // You may need to update this in the relevant context or store
-    console.log("Updated availableSensorsIds:", updatedAvailableSensorsIds);
+      return true
+    })
 
-    // Check if there are new sensors and update existing ones
+    const updatedAvailableSensorsIds = availableSensors.value.map((item: ISensor) => item.id)
+    console.log("Updated availableSensorsIds:", updatedAvailableSensorsIds)
+
     data.forEach((item: ISensorData) => {
-      // Round decimals
       item.avg_temp = parseFloat(item.avg_temp.toFixed(1))
       item.std_dev = parseFloat(item.std_dev.toFixed(1))
       item.rssi = Math.round(item.rssi)
@@ -276,11 +269,6 @@ export const useGlobalStore = defineStore('global', () => {
           id: item.id,
           EPC: item.EPC,
           config: item.config,
-          // config: {
-          //   equipment: 0,
-          //   position: 0,
-          //   location: 0
-          // },
           data: item,
         })
       } else {
