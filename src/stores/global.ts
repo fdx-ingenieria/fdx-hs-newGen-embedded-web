@@ -1,4 +1,4 @@
-import { SocketStatus, SocketCommands, ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ISensorData, IRequest, IAlarm, IAlarmData, IRequestQueue, IModbusTableEntry, IReaderConfig, SensorQuality, customLog } from '@/commons'
+import { SocketStatus, SocketCommands, ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ISensorData, IAlarm, IAlarmData, IModbusTableEntry, IReaderConfig, SensorQuality, customLog } from '@/commons'
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
 
@@ -37,8 +37,6 @@ const PARITY_INDEX_TO_CHAR: Record<number, string> = { 0: 'N', 1: 'O', 2: 'E' }
  * throughout the application.
  */
 export const useGlobalStore = defineStore('global', () => {
-  const maxRetries = parseInt(import.meta.env.VITE_MAX_RETRIES) || 150
-  const timeBetweenRequests = 800
   let socketInstace: WebSocket | null = null
   const status: Ref<SocketStatus> = ref(SocketStatus.CLOSED)
   const discoveryModeOn: Ref<boolean> = ref(false)
@@ -49,13 +47,9 @@ export const useGlobalStore = defineStore('global', () => {
   const systeamData: Ref<ISystem> = ref({} as ISystem)
   const readerConfigData: Ref<IReaderConfig> = ref({} as IReaderConfig)
   const modbusTable: Ref<Array<IModbusTableEntry>> = ref([])
-  const requestQueue: Array<IRequestQueue> = [];
   const boardTemp: Ref<number | string> = ref('N/A')
   const firmwareVersion: Ref<string> = ref('')
   const showSideBar = ref(false);
-  let isProcessing: boolean = false;
-
-  const sleep = async(ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
   // Getters
   const getFirmwareVersion = computed(() => firmwareVersion.value)
@@ -248,53 +242,6 @@ export const useGlobalStore = defineStore('global', () => {
         updateSensorData(item)
       }
     })
-  }
-
-  function processRequests(): void {
-    if (!isProcessing && requestQueue.length) {
-      isProcessing = true;
-      const nextRequest = requestQueue.shift();
-      if (!nextRequest) return
-
-      send(nextRequest.request)
-        .then(() => {
-          nextRequest.resolve(true)
-        })
-        .catch(() => {
-          console.error('Unable to process the request:', nextRequest)
-          nextRequest.reject(false)
-        })
-        .finally(async () => {
-          await sleep(timeBetweenRequests);
-          isProcessing = false;
-          processRequests();
-        });
-    }
-  }
-
-  async function addToRequestQueue(request: IRequest): Promise<any> {
-    const process = new Promise((resolve, reject) => {
-      requestQueue.push({ request, resolve, reject }); // Agrega resolve y reject al pedido
-    });
-    if (!isProcessing) {
-      processRequests();
-    }
-
-    return process;
-  }
-
-  async function send(message: IRequest, attempt = 1): Promise<void> {
-    if (status.value !== SocketStatus.OPEN) {
-      if (attempt === maxRetries) {
-        throw new Error("Socket is not connected");
-      }
-      console.error(`Socket is not connected. Cmd: ${message.cmd} Attempt ${attempt} of ${maxRetries}.`)
-      await sleep(5000)
-        .then(() => send(message, attempt + 1))
-      return
-    }
-    customLog('Sending message:', message)
-    socketInstace?.send(JSON.stringify(message))
   }
 
   async function loadLabels(): Promise<void> {
