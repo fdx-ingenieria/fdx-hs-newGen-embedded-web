@@ -1,4 +1,4 @@
-import { SocketStatus, SocketCommands, ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ISensorData, IAlarm, IAlarmData, IModbusTableEntry, IReaderConfig, SensorQuality, customLog } from '@/commons'
+import { ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ISensorData, IAlarm, IAlarmData, IModbusTableEntry, IReaderConfig, SensorQuality, customLog } from '@/commons'
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
 
@@ -39,8 +39,6 @@ const PARITY_INDEX_TO_CHAR: Record<number, string> = { 0: 'N', 1: 'O', 2: 'E' }
 export const useGlobalStore = defineStore('global', () => {
   let eventSource: EventSource | null = null
   const connected = ref(false)
-  let socketInstace: WebSocket | null = null
-  const status: Ref<SocketStatus> = ref(SocketStatus.CLOSED)
   const discoveryModeOn: Ref<boolean> = ref(false)
   const normalModeOn: Ref<boolean> = ref(false)
   const availableLabels: Ref<ILabelData> = ref({} as ILabelData)
@@ -51,11 +49,10 @@ export const useGlobalStore = defineStore('global', () => {
   const modbusTable: Ref<Array<IModbusTableEntry>> = ref([])
   const boardTemp: Ref<number | string> = ref('N/A')
   const firmwareVersion: Ref<string> = ref('')
-  const showSideBar = ref(false);
+  const showSideBar = ref(false)
 
   // Getters
   const getFirmwareVersion = computed(() => firmwareVersion.value)
-  const getStatus = computed(() => status.value)
   const getAvailableLabels = computed(() => availableLabels.value)
   const getAvailableSensors = computed(() => availableSensors.value)
   const getDiscoveryModeOn = computed(() => discoveryModeOn.value)
@@ -119,118 +116,6 @@ export const useGlobalStore = defineStore('global', () => {
     eventSource?.close()
     eventSource = null
     connected.value = false
-  }
-
-  // Actions
-  async function connect(url = ''): Promise<void> {
-    const socket = new WebSocket(url)
-    status.value = SocketStatus.CONNECTING
-
-    socket.onopen = async () => {
-      socketInstace = socket
-      status.value = SocketStatus.OPEN
-      loadFirmwareVersion()
-    };
-
-    socket.onclose = (e) => {
-      console.warn('WebSocket disconnected. Reconnection attempt in 10 seconds.', e)
-      socketInstace = null
-      setTimeout(connect, 10000)
-      status.value = SocketStatus.CLOSED
-    };
-
-    socket.onerror = () => {
-      status.value = SocketStatus.CLOSED
-    };
-
-    // Set up the message event handler to update messageReceived
-    socket.onmessage = (event) => messageHandler(event)
-
-    setTimeout(() => {
-      if (socket.readyState !== 1) {
-        socket.close(3506, 'Connection attempt timed out')
-      }
-    }, 5000)
-  }
-
-  async function disconnect(): Promise<void> {
-    if (socketInstace) {
-      customLog('Disconnecting socket')
-      socketInstace.close()
-    }
-  }
-
-  //TODO: refactor as dictionary
-  function messageHandler(event: MessageEvent) {
-    const { cmd, arg, data } = JSON.parse(event.data)
-
-    if (!cmd || !arg) {
-      console.error('Invalid message received:', event.data)
-      return
-    }
-    if (cmd === SocketCommands.LABEL && arg === 'get_all') {
-      customLog('New label data received:', data)
-      availableLabels.value = data
-      return
-    }
-    if (cmd === SocketCommands.SENSOR_CONFIG && arg === 'get_all') {
-      customLog('New sensor config received:', data)
-      availableSensors.value = data
-      return
-    }
-    if (cmd === SocketCommands.ALARM_CONFIG && arg === 'get_all') {
-      customLog('New alarm config received:', data)
-      data.forEach((alarm: IAlarm) => {
-        alarm._sensors = []
-        alarm.sensors?.forEach(sensorId => {
-          const sensor = availableSensors.value.find(sensor => sensor.id === sensorId)
-          if (sensor) {
-            alarm._sensors.push(sensor)
-          }
-        })
-      })
-
-      availableAlarms.value = data
-
-      return
-    }
-    if (cmd === SocketCommands.NEW_SENSOR_DATA && arg === 'get_all') {
-      customLog('New sensor data received:', data)
-      updateSensorsData(data)
-      return
-    }
-    if (cmd === SocketCommands.ALARM_DATA && arg === 'get_all') {
-      customLog('New alarms data received', data)
-      updateAlarmsData(data)
-      return
-    }
-    if (cmd === SocketCommands.HS_CONFIG && arg === 'get') {
-      customLog('New sytem data received:', data)
-      systeamData.value = data
-      return
-    }
-    if (cmd === SocketCommands.MODBUS_TABLE && arg === 'get') {
-      customLog('New modbus table data received:', data)
-      modbusTable.value = data
-      return
-    }
-    if (cmd === SocketCommands.READER_TEMP && arg === 'get') {
-      customLog('New board temp data received:', data)
-      boardTemp.value = data
-      return
-    }
-    if (cmd === SocketCommands.READER_CONFIG && arg === 'get') {
-      customLog('New reader config data received:', data)
-      readerConfigData.value = data
-      return
-    }
-    if (cmd === SocketCommands.FIRMWARE_VERSION && arg === 'get') {
-      customLog('New firmware version received:', data)
-      firmwareVersion.value = data.version
-      return
-    }
-
-    console.warn(`Unknow message received cmd: ${cmd}, arg: ${arg}`, data)
   }
 
   function updateAlarmsData(data: IAlarmData[]) {
@@ -461,14 +346,11 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   return {
-    status,
-    disconnect,
     connected,
     boardTemp,
     showSideBar,
     startMonitoring,
     stopMonitoring,
-    getStatus,
     getAvailableLabels,
     updateLabels,
     loadLabels,
@@ -499,10 +381,9 @@ export const useGlobalStore = defineStore('global', () => {
     getConfiguredSensors,
     addNewSensor,
     updateSensorData,
-    connect,
     firmwareVersion,
     getFirmwareVersion,
-    loadFirmwareVersion
+    loadFirmwareVersion,
   }
 },
 {
