@@ -404,51 +404,83 @@ export const useGlobalStore = defineStore('global', () => {
     await loadAlarms()
   }
 
-  async function startDiscoveryMode(): Promise<void> {
-    return addToRequestQueue({ cmd: SocketCommands.DISCOVERY, arg: "start", data: '' })
-      .then(() => { discoveryModeOn.value = true })
-  }
-
-  async function stopDiscoveryMode(): Promise<void> {
-    return addToRequestQueue({ cmd: SocketCommands.DISCOVERY, arg: "stop", data: '' })
-      .then(() => { discoveryModeOn.value = false })
-  }
-
   async function loadSystemData(): Promise<void> {
-    return addToRequestQueue({ cmd: SocketCommands.HS_CONFIG, arg: "get", data: '' })
-  }
-
-  async function loadReaderConfigData(): Promise<void> {
-    return addToRequestQueue({ cmd: SocketCommands.READER_CONFIG, arg: "get", data: '' })
+    const [systemRes, modbusRes] = await Promise.all([
+      apiFetch<{ serial_num: string; measure_period_ms: number }>('/api/config/system'),
+      apiFetch<{ address: number; baud_rate: number; parity: string; stop_bits: number }>('/api/config/modbus'),
+    ])
+    systeamData.value = {
+      serial_num: Number(systemRes.serial_num),
+      measure_period_ms: systemRes.measure_period_ms,
+      modbus_address: modbusRes.address,
+      baud_rate: modbusRes.baud_rate,
+      bit_parity: PARITY_CHAR_TO_INDEX[modbusRes.parity] ?? 0,
+    }
   }
 
   async function updateSystemData(data: ISystem): Promise<void> {
-    return addToRequestQueue({ cmd: SocketCommands.HS_CONFIG, arg: "set", data })
-      .then(() => loadSystemData())
+    await Promise.all([
+      apiFetch('/api/config/system', {
+        method: 'POST',
+        body: JSON.stringify({
+          serial_num: String(data.serial_num),
+          measure_period_ms: data.measure_period_ms,
+          ...(data.password ? { password: data.password } : {}),
+        }),
+      }),
+      apiFetch('/api/config/modbus', {
+        method: 'POST',
+        body: JSON.stringify({
+          address: data.modbus_address,
+          baud_rate: data.baud_rate,
+          parity: PARITY_INDEX_TO_CHAR[data.bit_parity] ?? 'N',
+          stop_bits: data.bit_parity === 0 ? 2 : 1,
+        }),
+      }),
+    ])
+    await loadSystemData()
+  }
+
+  async function loadReaderConfigData(): Promise<void> {
+    readerConfigData.value = await apiFetch<IReaderConfig>('/api/config/reader')
   }
 
   async function updateReaderConfigData(data: IReaderConfig): Promise<void> {
-    return addToRequestQueue({ cmd: SocketCommands.READER_CONFIG, arg: "set", data })
-      .then(() => loadReaderConfigData())
+    await apiFetch('/api/config/reader', { method: 'POST', body: JSON.stringify(data) })
+    await loadReaderConfigData()
   }
 
   async function loadModbusTable(): Promise<void> {
-    return addToRequestQueue({ cmd: SocketCommands.MODBUS_TABLE, arg: "get", data: '' })
+    modbusTable.value = await apiFetch<Array<IModbusTableEntry>>('/api/data/modbus_table')
+  }
+
+  async function startDiscoveryMode(): Promise<void> {
+    await apiFetch('/api/action/discovery/start', { method: 'POST' })
+    discoveryModeOn.value = true
+  }
+
+  async function stopDiscoveryMode(): Promise<void> {
+    await apiFetch('/api/action/discovery/stop', { method: 'POST' })
+    discoveryModeOn.value = false
   }
 
   async function startNormalMode(): Promise<void> {
-    return addToRequestQueue({ cmd: SocketCommands.NORMAL_MODE, arg: "start", data: '' })
-      .then(() => { normalModeOn.value = true })
+    await apiFetch('/api/action/normal_mode/start', { method: 'POST' })
+    normalModeOn.value = true
   }
 
   async function stopNormalMode(): Promise<void> {
-    return addToRequestQueue({ cmd: SocketCommands.NORMAL_MODE, arg: "stop", data: '' })
-      .then(() => { normalModeOn.value = false })
+    // El backend no expone /api/action/normal_mode/stop: MANUAL es el modo de
+    // reposo y no se "apaga". Solo se actualiza el estado local.
+    normalModeOn.value = false
   }
 
   async function loadFirmwareVersion(): Promise<void> {
-    return addToRequestQueue({ cmd: SocketCommands.FIRMWARE_VERSION, arg: "get", data: '' })
+    const data = await apiFetch<{ version: string }>('/api/system/version')
+    firmwareVersion.value = data.version
   }
+
+
 
   return {
     status,
