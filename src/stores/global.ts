@@ -231,6 +231,7 @@ export const useGlobalStore = defineStore('global', () => {
       })
     }
     await loadSensors()
+    notify('Sensors saved', 'success')
   }
 
   async function updateSensor(data: ISensor): Promise<void> {
@@ -239,11 +240,13 @@ export const useGlobalStore = defineStore('global', () => {
       body: JSON.stringify({ epc_id: data.id, config: data.config }),
     })
     await loadSensors()
+    notify('Sensor saved', 'success')
   }
 
   async function deleteSensor(id: string): Promise<void> {
     await apiFetch(`/api/config/sensors/${id}`, { method: 'DELETE' })
     await loadSensors()
+    notify('Sensor deleted', 'success')
   }
 
   function addNewSensor(newSensor: ISensor): void {
@@ -263,6 +266,7 @@ export const useGlobalStore = defineStore('global', () => {
     await apiFetch('/api/action/sensors/clear', { method: 'POST' })
     availableSensors.value = availableSensors.value.filter(s => !!s.config.equipment)
     await loadSensors()
+    notify('Unconfigured sensors cleared', 'success')
   }
 
   async function loadAlarms(): Promise<void> {
@@ -314,11 +318,13 @@ export const useGlobalStore = defineStore('global', () => {
     })
     // backend = fuente de verdad: re-leemos para reflejar lo realmente persistido
     await loadAlarms()
+    notify('Alarm saved', 'success')
   }
 
   async function resetAlarm(slot: number): Promise<void> {
     await apiFetch(`/api/config/alarms/${slot}`, { method: 'DELETE' })
     await loadAlarms()
+    notify('Alarm deleted', 'success')
   }
 
   async function loadSystemData(): Promise<void> {
