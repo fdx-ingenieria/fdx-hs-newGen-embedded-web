@@ -354,13 +354,54 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   async function loadAlarms(): Promise<void> {
-    return addToRequestQueue({ cmd: SocketCommands.ALARM_CONFIG, arg: "get_all", data: '' })
+    // Backend: [{ slot, config: { active, name, set_point, type(str), relay(str), field_pairs } }]
+    const raw = await apiFetch<Array<{
+      slot: number
+      config: {
+        active: boolean
+        name: string
+        set_point: number
+        type: string
+        relay: string
+        field_pairs: Array<{ location: number; equipment: number }>
+      }
+    }>>('/api/config/alarms')
+
+    availableAlarms.value = raw.map(a => {
+      const fields = a.config.field_pairs.map(fp => ({ location: fp.location, equipment: fp.equipment }))
+      // El backend no expone la lista de sensores por alarma: se reconstruye
+      // asociando los sensores cuyo equipment+location coincide con un field_pair.
+      const _sensors = availableSensors.value.filter(sensor =>
+        fields.some(f => f.equipment === sensor.config.equipment && f.location === sensor.config.location)
+      )
+      return {
+        id: a.slot,
+        name: a.config.name,
+        set_point: a.config.set_point,
+        reset_point: 0,
+        alarm_type: ALARM_TYPE_TO_INDEX[a.config.type] ?? 0,
+        relay_flag: RELAY_TO_INDEX[a.config.relay] ?? 0,
+        fields,
+        sensors: _sensors.map(s => s.id),
+        _sensors,
+      } as IAlarm
+    })
   }
 
   async function updateAlarms(data: IAlarm[]): Promise<void> {
-    // split data and send
-    return addToRequestQueue({ cmd: SocketCommands.ALARM_CONFIG, arg: 'set_all', data })
-      .then(() => loadAlarms())
+    const payload = data.map(a => ({
+      slot: a.id,
+      config: {
+        active: !!a.alarm_type,
+        name: a.name,
+        set_point: a.set_point,
+        type: ALARM_INDEX_TO_TYPE[a.alarm_type] ?? 'unknown',
+        relay: RELAY_INDEX_TO_STR[a.relay_flag] ?? 'none',
+        field_pairs: a.fields.map(f => ({ location: f.location, equipment: f.equipment })),
+      },
+    }))
+    await apiFetch('/api/config/alarms', { method: 'POST', body: JSON.stringify(payload) })
+    await loadAlarms()
   }
 
   async function startDiscoveryMode(): Promise<void> {
