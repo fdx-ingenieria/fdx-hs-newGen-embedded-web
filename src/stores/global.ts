@@ -298,38 +298,44 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   async function loadLabels(): Promise<void> {
-    return addToRequestQueue({ cmd: SocketCommands.LABEL, arg: "get_all", data: '' })
+    availableLabels.value = await apiFetch<ILabelData>('/api/config/labels')
   }
 
   async function updateLabels(data: ILabelData): Promise<void> {
-    // split data and send
-    return addToRequestQueue({ cmd: SocketCommands.LABEL, arg: 'set_all', data })
-      .then(() => loadLabels())
-
+    await apiFetch('/api/config/labels', { method: 'POST', body: JSON.stringify(data) })
+    availableLabels.value = data
   }
 
   function getLabelName(type: LabelType, index: number | undefined) {
     if (!getAvailableLabels.value[type]) return 'Not found'
-
     return index
       ? getAvailableLabels.value[type][index] || 'Not found'
       : 'Not found'
   }
 
   async function loadSensors(): Promise<void> {
-    return addToRequestQueue({ cmd: SocketCommands.SENSOR_CONFIG, arg: "get_all", data: '' })
+    // Backend devuelve [{ epc_id, config }]; el frontend usa { id, EPC, config }.
+    const raw = await apiFetch<Array<{ epc_id: string; config: ISensorConfig }>>('/api/config/sensors')
+    availableSensors.value = raw.map(s => ({ id: s.epc_id, EPC: s.epc_id, config: s.config }))
   }
 
   async function updateSensors(data: ISensor[]): Promise<void> {
-    // split data and send
-    data = data.map(({data, ...sensor}) => sensor)
-    return addToRequestQueue({ cmd: SocketCommands.SENSOR_CONFIG, arg: "set_all", data })
-      .then(() => loadSensors())
+    // El backend no tiene POST masivo: se envía un sensor por request.
+    for (const sensor of data) {
+      await apiFetch('/api/config/sensors', {
+        method: 'POST',
+        body: JSON.stringify({ epc_id: sensor.id, config: sensor.config }),
+      })
+    }
+    await loadSensors()
   }
 
   async function updateSensor(data: ISensor): Promise<void> {
-    return addToRequestQueue({ cmd: SocketCommands.SENSOR_CONFIG, arg: "set", data })
-      .then(() => loadSensors())
+    await apiFetch('/api/config/sensors', {
+      method: 'POST',
+      body: JSON.stringify({ epc_id: data.id, config: data.config }),
+    })
+    await loadSensors()
   }
 
   function addNewSensor(newSensor: ISensor): void {
@@ -338,16 +344,13 @@ export const useGlobalStore = defineStore('global', () => {
 
   function updateSensorData(sensorData: ISensorData): void {
     const sensor = availableSensors.value.find((sensor) => sensor.id === sensorData.id)
-
-    if (!sensor){
-      return
-    } 
+    if (!sensor) return
     sensor.data = sensorData
   }
 
   async function clearUnconfiguredSensors(): Promise<void> {
-    return addToRequestQueue({ cmd: SocketCommands.CLEAR_SENSORS_RAM, arg: "all", data: '' })
-      .then(() => loadSensors())
+    await apiFetch('/api/action/sensors/clear', { method: 'POST' })
+    await loadSensors()
   }
 
   async function loadAlarms(): Promise<void> {
