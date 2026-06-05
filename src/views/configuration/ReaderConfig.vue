@@ -55,6 +55,11 @@
         advancedUpdated.value = result.advanced_updated
         if (result.advanced_updated) adminMode.value = false
       }
+      if (wasInAdminMode && !result.advanced_updated) {
+        globalStore.notify('Wrong password: advanced fields were not updated', 'error')
+      } else {
+        globalStore.notify('Reader configuration saved', 'success')
+      }
     } finally {
       savingData.value = false
     }

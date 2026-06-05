@@ -34,6 +34,11 @@
     globalStore.updateSystemData(editable.value)
       .then(result => {
         if (wasInAdminMode) serialUpdated.value = result.serial_updated
+        if (wasInAdminMode && !result.serial_updated) {
+          globalStore.notify('Wrong password: serial number was not updated', 'error')
+        } else {
+          globalStore.notify('System configuration saved', 'success')
+        }
       })
       .finally(() => savingData.value = false)
   }

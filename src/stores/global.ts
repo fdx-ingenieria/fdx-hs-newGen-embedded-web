@@ -197,6 +197,7 @@ export const useGlobalStore = defineStore('global', () => {
   async function updateLabels(data: ILabelData): Promise<void> {
     await apiFetch('/api/config/labels', { method: 'POST', body: JSON.stringify(data) })
     availableLabels.value = data
+    notify('Labels saved', 'success')
   }
 
   function getLabelName(type: LabelType, index: number | undefined) {
@@ -362,6 +363,8 @@ export const useGlobalStore = defineStore('global', () => {
       }),
     ])
     await loadSystemData()
+    // Success is notified by the view: in admin mode the save can be partial
+    // (serial_updated=false on wrong password, even though the rest is saved).
     return { serial_updated: systemRes.serial_updated }
   }
 
@@ -372,6 +375,8 @@ export const useGlobalStore = defineStore('global', () => {
   async function updateReaderConfigData(data: IReaderConfig): Promise<{ advanced_updated: boolean }> {
     const result = await apiFetch<{ status: string; advanced_updated: boolean }>('/api/config/reader', { method: 'POST', body: JSON.stringify(data) })
     await loadReaderConfigData()
+    // Success is notified by the view: in admin mode the save can fail
+    // (advanced_updated=false on wrong password).
     return result
   }
 
@@ -410,6 +415,7 @@ export const useGlobalStore = defineStore('global', () => {
     boardTemp,
     showSideBar,
     notifications,
+    notify,
     dismissNotification,
     startMonitoring,
     stopMonitoring,
