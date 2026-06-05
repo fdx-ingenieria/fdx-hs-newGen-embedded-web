@@ -108,6 +108,7 @@ export const useGlobalStore = defineStore('global', () => {
   function startMonitoring(): void {
     if (eventSource) return
     loadFirmwareVersion().catch(() => {})
+    loadMode().catch(() => {})
     eventSource = new EventSource('/api/events')
     eventSource.onopen = () => { connected.value = true }
     eventSource.onerror = () => { connected.value = false }
@@ -403,6 +404,16 @@ export const useGlobalStore = defineStore('global', () => {
     // El backend no expone /api/action/normal_mode/stop: MANUAL es el modo de
     // reposo y no se "apaga". Solo se actualiza el estado local.
     normalModeOn.value = false
+  }
+
+  async function loadMode(): Promise<void> {
+    // Poll inicial del modo operativo para no depender del primer tick SSE (hasta 5s).
+    // El backend solo tiene dos modos alcanzables: DISCOVERY y MANUAL. Lo que el front
+    // llama "Normal" ES el MANUAL del backend (normal_mode/start == discovery/stop).
+    const data = await apiFetch<{ mode: 'DISCOVERY' | 'MANUAL' }>('/api/data/mode')
+    const isDiscovery = data.mode === 'DISCOVERY'
+    discoveryModeOn.value = isDiscovery
+    normalModeOn.value = !isDiscovery
   }
 
   async function loadFirmwareVersion(): Promise<void> {

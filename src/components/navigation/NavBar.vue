@@ -2,6 +2,7 @@
   import { useGlobalStore } from '@/stores/global';
   import { MenuCloseIcon, MenuOpenIcon, ThermometerIcon } from '../icons';
   import ConnectionStatus from './ConnectionStatus.vue';
+  import ModeIndicator from './ModeIndicator.vue';
 
   const globalStore = useGlobalStore();
 </script>
@@ -28,6 +29,7 @@
           {{  globalStore.boardTemp }}
           <small class="ml-1">°C</small>
         </div>
+        <ModeIndicator class="ml-4" />
         <ConnectionStatus class="ml-4" />
       </div>
     </div>
