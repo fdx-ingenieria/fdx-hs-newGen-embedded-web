@@ -12,7 +12,8 @@ const store = useGlobalStore()
         <div
           v-for="n in store.notifications"
           :key="n.id"
-          class="bg-red-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-start gap-3 pointer-events-auto"
+          class="text-white px-4 py-3 rounded-lg shadow-lg flex items-start gap-3 pointer-events-auto"
+          :class="n.type === 'success' ? 'bg-green-600' : 'bg-red-600'"
         >
           <span class="flex-1 text-sm break-words leading-snug">{{ n.message }}</span>
           <button

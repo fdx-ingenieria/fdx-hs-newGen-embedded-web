@@ -2,9 +2,12 @@ import { ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ISensorData, IA
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
 
+export type NotificationType = 'success' | 'error'
+
 export interface Notification {
   id: number
   message: string
+  type: NotificationType
 }
 
 /* ---------------------------------------------------------------------------
@@ -58,9 +61,9 @@ export const useGlobalStore = defineStore('global', () => {
   const notifications: Ref<Notification[]> = ref([])
   let _notifId = 0
 
-  function notify(message: string): void {
+  function notify(message: string, type: NotificationType = 'error'): void {
     const id = ++_notifId
-    notifications.value.push({ id, message })
+    notifications.value.push({ id, message, type })
     setTimeout(() => dismissNotification(id), 5000)
   }
 
