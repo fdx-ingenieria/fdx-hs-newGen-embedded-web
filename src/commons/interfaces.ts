@@ -92,7 +92,8 @@ export interface ISystem {
   password?: string;
   modbus_address: number;
   baud_rate: number;
-  bit_parity: number; 
+  bit_parity: number;
+  measure_period_ms?: number;
 }
 
 // Menu & Sidebars
