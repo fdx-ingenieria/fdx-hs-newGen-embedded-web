@@ -3,7 +3,7 @@
   import { AlertIcon, LoadingIcon, RefreshIcon, SendIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global'
   import { storeToRefs } from 'pinia';
-  import { Ref, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { Ref, computed, onMounted, onUnmounted, ref, watch } from 'vue'
   import { onBeforeRouteLeave } from 'vue-router';
 
   const globalStore = useGlobalStore()
@@ -61,10 +61,25 @@
     return value >= 1 && value <= 247
   }
 
+  // El backend guarda el período en ms (rango 1000–3600000), pero lo editamos en
+  // segundos para que sea más legible. Conversión ida/vuelta en este computed.
+  const MIN_PERIOD_S = 1
+  const MAX_PERIOD_S = 3600
+  const measurePeriodSec = computed<number>({
+    get: () => Math.round((editable.value.measure_period_ms ?? 5000) / 1000),
+    set: (value) => { editable.value.measure_period_ms = Math.round(value * 1000) },
+  })
+
+  const validMeasurePeriod = (sec: number): boolean => {
+    if (!isValidInteger(sec)) return false
+    return sec >= MIN_PERIOD_S && sec <= MAX_PERIOD_S
+  }
+
   const isComplete = (): boolean => {
     const { serial_num, modbus_address, baud_rate, bit_parity, password } = editable.value
     const modbusValid = validDirModbus(modbus_address) && !!baud_rate && bit_parity !== undefined
-    if (adminMode.value) return modbusValid && !!serial_num && !!password
+    // El período solo es editable en modo admin; fuera de admin no se valida.
+    if (adminMode.value) return modbusValid && validMeasurePeriod(measurePeriodSec.value) && !!serial_num && !!password
     return modbusValid
   }
 
@@ -115,6 +130,17 @@
                   maxlength="8"
                   v-model="editable.serial_num"
                   placeholder="Serial value">
+              </div>
+              <div>
+                <label class="field-label !text-accent">Measure period (s)</label>
+                <input class="input !border-accent/40"
+                  type="number"
+                  min="1"
+                  max="3600"
+                  step="1"
+                  v-model.number="measurePeriodSec"
+                  placeholder="Seconds between read cycles">
+                <p v-show="!validMeasurePeriod(measurePeriodSec)" class="mt-2 text-sm text-crit"><span class="font-semibold">Oops!</span> This value should be between 1 and 3600 seconds.</p>
               </div>
               <div>
                 <label class="field-label !text-accent">Password</label>
