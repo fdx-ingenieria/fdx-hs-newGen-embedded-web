@@ -1,4 +1,4 @@
-import { SocketStatus, SocketCommands, ILabelData, ISensor, LabelType, ISystem, ISensorData, IRequest, IAlarm, IAlarmData, IRequestQueue, IModbusTableEntry, IReaderConfig, SensorQuality, customLog } from '@/commons'
+import { SocketStatus, SocketCommands, ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ISensorData, IRequest, IAlarm, IAlarmData, IRequestQueue, IModbusTableEntry, IReaderConfig, SensorQuality, customLog } from '@/commons'
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
 
@@ -70,6 +70,17 @@ export const useGlobalStore = defineStore('global', () => {
   const getConfiguredSensors = computed(() => availableSensors.value.filter(sensor => !!sensor.config.equipment))
   const getAvailableAlarms = computed(() => availableAlarms.value)
   const getConfiguredAlarms = computed(() => availableAlarms.value.filter(alarm => !!alarm.alarm_type))
+
+  async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+    const res = await fetch(path, {
+      headers: { 'Content-Type': 'application/json' },
+      ...options,
+    })
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${path}`)
+    }
+    return res.json()
+  }
 
   // Actions
   async function connect(url = ''): Promise<void> {
