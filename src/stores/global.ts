@@ -37,6 +37,8 @@ const PARITY_INDEX_TO_CHAR: Record<number, string> = { 0: 'N', 1: 'O', 2: 'E' }
  * throughout the application.
  */
 export const useGlobalStore = defineStore('global', () => {
+  let eventSource: EventSource | null = null
+  const connected = ref(false)
   let socketInstace: WebSocket | null = null
   const status: Ref<SocketStatus> = ref(SocketStatus.CLOSED)
   const discoveryModeOn: Ref<boolean> = ref(false)
@@ -74,6 +76,49 @@ export const useGlobalStore = defineStore('global', () => {
       throw new Error(`HTTP ${res.status}: ${path}`)
     }
     return res.json()
+  }
+
+  function startMonitoring(): void {
+    if (eventSource) return
+    loadFirmwareVersion().catch(() => {})
+    eventSource = new EventSource('/api/events')
+    eventSource.onopen = () => { connected.value = true }
+    eventSource.onerror = () => { connected.value = false }
+    eventSource.addEventListener('sensor_data', (event) => {
+      const raw: Array<{ epc_id: string; avg_temp: number; std_dev: number; avg_rssi: number; n_readings: number; quality: number; timestamp: number }> = JSON.parse(event.data)
+      const sensors: ISensorData[] = raw.map(s => ({
+        id: s.epc_id,
+        EPC: s.epc_id,
+        avg_temp: s.avg_temp,
+        temp: s.avg_temp,
+        std_dev: s.std_dev,
+        rssi: s.avg_rssi,
+        n_readings: s.n_readings,
+        quality: QUALITY_BY_INDEX[s.quality] ?? SensorQuality.OUT_OF_SERVICE,
+        elapsed_time: 0,
+        timestamp: s.timestamp,
+        config: availableSensors.value.find(x => x.id === s.epc_id)?.config ?? { equipment: 0, location: 0, position: 0 },
+      }))
+      updateSensorsData(sensors)
+      connected.value = true
+    })
+    eventSource.addEventListener('alarm_data', (event) => {
+      const raw: Array<{ slot: number; is_alarmed: boolean }> = JSON.parse(event.data)
+      const alarms: IAlarmData[] = raw.map(a => ({ id: a.slot, state: a.is_alarmed, sensors: [] }))
+      updateAlarmsData(alarms)
+      connected.value = true
+    })
+    eventSource.addEventListener('reader_temp', (event) => {
+      const data = JSON.parse(event.data)
+      boardTemp.value = data.temperature_c
+      connected.value = true
+    })
+  }
+
+  function stopMonitoring(): void {
+    eventSource?.close()
+    eventSource = null
+    connected.value = false
   }
 
   // Actions
@@ -427,13 +472,14 @@ export const useGlobalStore = defineStore('global', () => {
     firmwareVersion.value = data.version
   }
 
-
-
   return {
     status,
     disconnect,
+    connected,
     boardTemp,
     showSideBar,
+    startMonitoring,
+    stopMonitoring,
     getStatus,
     getAvailableLabels,
     updateLabels,
