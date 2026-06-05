@@ -94,7 +94,8 @@
 <template>
   <section class="antialiased bg-gray-50">
     <div class="mx-auto">
-      <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden py-4 px-4 md:px-6">
+      <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden py-4 px-4 md:px-6 select-none"
+        v-on:dblclick.shift.ctrl="adminMode = !adminMode">
         <LoadingIcon v-if="editable.baud_rate === undefined" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-12" />
         <template  v-else >
           <div class="grid gap-4 mb-4">
@@ -102,8 +103,7 @@
               <label class="block mb-2 text-sm font-semibold text-gray-900">Serial</label>
               <input class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 disabled:opacity-50"
                 type="text"
-                v-on:dblclick.shift.ctrl="adminMode = !adminMode"
-                :value="editable.serial_num" 
+                :value="editable.serial_num"
                 placeholder="Serial value"
                 readonly />
             </div>
