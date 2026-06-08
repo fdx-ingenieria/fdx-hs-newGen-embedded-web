@@ -46,6 +46,10 @@ const PARITY_INDEX_TO_CHAR: Record<number, string> = { 0: 'N', 1: 'O', 2: 'E' }
  */
 export const useGlobalStore = defineStore('global', () => {
   let eventSource: EventSource | null = null
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  let monitoring = false      // intención: queremos mantener el SSE abierto
+  let everConnected = false   // ya hubo al menos una conexión exitosa (para avisar al reconectar)
+  const RECONNECT_DELAY_MS = 2000
   // Último timestamp (epoch del device) visto por sensor. Sirve solo para detectar
   // cuándo llega una lectura NUEVA: el reloj del device puede estar desfasado del
   // browser (sin NTP/RTC), así que no se usa su valor absoluto para medir antigüedad.
@@ -110,12 +114,40 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   function startMonitoring(): void {
+    if (monitoring) return
+    monitoring = true
+    openEventSource()
+  }
+
+  function openEventSource(): void {
     if (eventSource) return
     loadFirmwareVersion().catch(() => {})
     loadMode().catch(() => {})
     eventSource = new EventSource('/api/events')
-    eventSource.onopen = () => { connected.value = true }
-    eventSource.onerror = () => { connected.value = false }
+    eventSource.onopen = () => {
+      connected.value = true
+      // Avisamos solo en una RE-conexión (tras un corte), no en la primera apertura:
+      // así el usuario sabe que el servicio volvió tras reiniciarlo.
+      if (everConnected) notify('Connection restored', 'success')
+      everConnected = true
+    }
+    eventSource.onerror = () => {
+      const wasConnected = connected.value
+      connected.value = false
+      // EventSource reports transient network interruptions through onerror while
+      // remaining in CONNECTING and handling reconnection internally. Forcing a
+      // reconnect in that state creates unnecessary reconnect cycles and may leave
+      // configuration views disconnected. Only trigger a manual reconnect when the
+      // connection has transitioned to CLOSED.
+      if (eventSource?.readyState === EventSource.CLOSED) {
+        // Avisamos el corte UNA sola vez (en la transición conectado→caído). Los
+        // reinicios deliberados cierran el stream nosotros mismos (sin onerror), así
+        // que este warning solo salta ante caídas inesperadas. "Connection restored"
+        // (success) es su contraparte al reconectar.
+        if (wasConnected) notify('Connection lost, trying to reconnect...', 'warning')
+        scheduleReconnect()
+      }
+    }
     eventSource.addEventListener('sensor_data', (event) => {
       const raw: Array<{ epc_id: string; avg_temp: number; std_dev: number; avg_rssi: number; n_readings: number; quality: number; timestamp: number }> = JSON.parse(event.data)
       const sensors: ISensorData[] = raw.map(s => {
@@ -162,7 +194,49 @@ export const useGlobalStore = defineStore('global', () => {
     })
   }
 
+  function scheduleReconnect(): void {
+    if (!monitoring || reconnectTimer) return
+    eventSource?.close()
+    eventSource = null
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null
+      if (monitoring) openEventSource()
+    }, RECONNECT_DELAY_MS)
+  }
+
+  // Reconexión ACTIVA tras reiniciar el servicio. No esperamos a que el EventSource
+  // detecte la recuperación (su retry/onerror es poco fiable detrás del proxy y a veces
+  // queda colgado sin volver): cerramos el stream y sondeamos /api/ping hasta que el
+  // backend responda, recién ahí reabrimos el SSE. `initialDelayMs` deja pasar la ventana
+  // de reinicio (el backend responde OK ~2s ANTES de caerse, ver routes_actions.cpp) para
+  // no reconectar contra la instancia que está por morir.
+  async function reconnectAfterRestart(initialDelayMs = 3000): Promise<void> {
+    monitoring = true
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null }
+    eventSource?.close()
+    eventSource = null
+    connected.value = false
+
+    await new Promise(r => setTimeout(r, initialDelayMs))
+    const deadline = Date.now() + 60_000
+    while (Date.now() < deadline) {
+      try {
+        const res = await fetch('/api/ping', { cache: 'no-store' })
+        if (res.ok) {
+          // Backend de nuevo en pie: refrescamos estado y reabrimos el stream.
+          await Promise.all([loadMode().catch(() => {}), loadSensors().catch(() => {})])
+          openEventSource()  // onopen disparará el aviso "Connection restored"
+          return
+        }
+      } catch { /* backend todavía caído: seguimos sondeando */ }
+      await new Promise(r => setTimeout(r, 1500))
+    }
+    notify('Could not reconnect after restart, please reload the page (F5)', 'error')
+  }
+
   function stopMonitoring(): void {
+    monitoring = false
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null }
     eventSource?.close()
     eventSource = null
     connected.value = false
@@ -449,7 +523,12 @@ export const useGlobalStore = defineStore('global', () => {
       notify(`[${res.status}] Could not restart service`, 'error')
       throw new Error('restart failed')
     }
-    notify('Restarting service... the app will reconnect shortly', 'success')
+    // El backend responde OK y reinicia el servicio ~2s después: la conexión SSE muere.
+    // Disparamos la reconexión ACTIVA (fire-and-forget) para recuperar los datos sin que
+    // el usuario tenga que apretar F5. Al volver, openEventSource() dispara "Connection
+    // restored". No await: la vista no debe quedar bloqueada esperando la reconexión.
+    notify('Service is restarting, reconnecting automatically...', 'warning')
+    void reconnectAfterRestart()
   }
 
   async function loadFirmwareVersion(): Promise<void> {

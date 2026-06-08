@@ -32,12 +32,17 @@
     editable.value = JSON.parse(JSON.stringify(newValue))
   }, { immediate: true })
 
+  // El password es una credencial transitoria (para guardar serial o reiniciar el
+  // servicio), no un campo persistido. Lo excluimos de la comparación para que
+  // tipearlo no marque "cambios sin guardar" y bloquee la navegación.
+  const withoutPassword = (s: ISystem): Omit<ISystem, 'password'> => {
+    const { password: _password, ...rest } = s
+    return rest
+  }
+
   watch(editable, () => {
-    hasUnsavedChanges.value = true
-    // deep compare
-    if (JSON.stringify(editable.value) === JSON.stringify(getSystemData.value)) {
-      hasUnsavedChanges.value = false
-    }
+    hasUnsavedChanges.value =
+      JSON.stringify(withoutPassword(editable.value)) !== JSON.stringify(withoutPassword(getSystemData.value))
   }, { deep: true })
 
   // Guardado de settings de admin (serial / measure period / password).
