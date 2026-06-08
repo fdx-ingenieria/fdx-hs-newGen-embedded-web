@@ -531,6 +531,17 @@ export const useGlobalStore = defineStore('global', () => {
     void reconnectAfterRestart()
   }
 
+  async function detectAntennas(): Promise<{ ant_count: number; ant_ports: number[] }> {
+    // Dispara una detección de antenas en el reader y devuelve los puertos vivos.
+    // Backend: POST /api/action/reader/detect_antennas → { ant_count, ant_ports:int[] }.
+    // No requiere password (a diferencia de service_restart). Si el reader no responde,
+    // el backend devuelve 503 y apiFetch ya notifica el error.
+    return apiFetch<{ ant_count: number; ant_ports: number[] }>(
+      '/api/action/reader/detect_antennas',
+      { method: 'POST' },
+    )
+  }
+
   async function loadFirmwareVersion(): Promise<void> {
     const data = await apiFetch<{ version: string }>('/api/system/version')
     firmwareVersion.value = data.version
@@ -576,6 +587,7 @@ export const useGlobalStore = defineStore('global', () => {
     startNormalMode,
     stopNormalMode,
     restartService,
+    detectAntennas,
     getConfiguredSensors,
     addNewSensor,
     updateSensorData,

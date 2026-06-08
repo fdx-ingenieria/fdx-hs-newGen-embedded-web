@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ISystem, ModbusBitParity, BaudRate, isValidInteger } from '@/commons';
-  import { AlertIcon, LoadingIcon, RefreshIcon, SendIcon } from '@/components/icons';
+  import { AlertIcon, LoadingIcon, RefreshIcon, SearchIcon, SendIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global'
   import { storeToRefs } from 'pinia';
   import { Ref, computed, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -15,6 +15,28 @@
   const hasUnsavedChanges = ref(false)
   const serialUpdated: Ref<boolean | null> = ref(null)
   const restarting = ref(false)
+
+// Autodetección de antenas. No requiere password, solo modo admin.
+// `antennaScan` es null mientras no se haya corrido ningún scan en esta sesión.
+  const detectingAntennas = ref(false)
+  const antennaScan: Ref<{ count: number; ports: number[] } | null> = ref(null)
+
+  const detectAntennas = async () => {
+    detectingAntennas.value = true
+    try {
+      const { ant_count, ant_ports } = await globalStore.detectAntennas()
+      antennaScan.value = { count: ant_count, ports: ant_ports }
+      // 0 antenas no es un error (el reader respondió): lo avisamos como warning.
+      globalStore.notify(
+        ant_count > 0 ? `${ant_count} antenna(s) detected` : 'No antennas detected',
+        ant_count > 0 ? 'success' : 'warning',
+      )
+    } catch {
+      // El store ya notifica el error (reader sin responder, 503, etc).
+    } finally {
+      detectingAntennas.value = false
+    }
+  }
 
   const restartService = async () => {
     if (!window.confirm('Are you sure? The app will disconnect for a few seconds while the service restarts.')) return
@@ -188,6 +210,49 @@
             <p v-else-if="serialUpdated === true" class="text-sm text-ok">Serial number updated successfully.</p>
           </div>
         </template>
+      </div>
+
+      <!-- Antenna detection card: solo en modo admin, NO requiere password (FHC-190) -->
+      <div v-if="adminMode" class="card overflow-hidden py-4 px-4 md:px-6">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 class="text-base font-semibold">Antenna detection</h2>
+            <p class="text-sm text-ink-soft mt-0.5">Scan the reader for connected antenna ports.</p>
+          </div>
+          <button @click="detectAntennas()" :disabled="detectingAntennas" type="button" class="btn-ghost">
+            <LoadingIcon v-if="detectingAntennas" class="animate-spin fill-transparent w-4 mr-1" />
+            <SearchIcon v-else class="w-4 mr-1" />
+            {{ detectingAntennas ? 'Detecting...' : 'Detect antennas' }}
+          </button>
+        </div>
+
+        <!-- Estado inicial: aún no se corrió ningún scan en esta sesión. -->
+        <div v-if="antennaScan === null" class="flex items-center gap-2 text-sm text-ink-faint py-2">
+          <SearchIcon class="w-4 h-4 shrink-0" />
+          <span>No scan yet — press <span class="font-semibold text-ink-soft">Detect antennas</span> to query the reader.</span>
+        </div>
+
+        <!-- Resultado con antenas: resumen + tiles tipo LED por puerto. -->
+        <template v-else-if="antennaScan.count > 0">
+          <span class="pill bg-ok-soft text-ok ring-ok/30">
+            <span class="w-2 h-2 rounded-full bg-ok"></span>
+            {{ antennaScan.count }} {{ antennaScan.count === 1 ? 'antenna' : 'antennas' }} detected
+          </span>
+          <div class="flex flex-wrap gap-3 mt-4">
+            <div v-for="port in antennaScan.ports" :key="port"
+              class="flex flex-col items-center justify-center w-16 h-16 rounded-lg border border-ok/40 bg-ok-soft">
+              <span class="text-sm font-semibold text-ok">P{{ port }}</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-ok mt-1.5 shadow-[0_0_6px_rgb(var(--ok))]"></span>
+            </div>
+          </div>
+          <p class="text-xs text-ink-faint mt-3">Lit = port with a connected antenna.</p>
+        </template>
+
+        <!-- Resultado vacío: el reader respondió, pero sin antenas. -->
+        <div v-else class="flex items-center p-4 text-warn rounded-lg bg-warn-soft" role="status">
+          <AlertIcon class="w-5 h-5 mr-3 shrink-0" />
+          <p class="text-sm font-medium">No antennas detected. Check the physical connections and scan again.</p>
+        </div>
       </div>
 
       <!-- Modbus card: settings comunes (no requieren admin) -->
