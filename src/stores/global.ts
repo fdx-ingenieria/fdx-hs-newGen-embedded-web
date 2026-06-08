@@ -355,30 +355,34 @@ export const useGlobalStore = defineStore('global', () => {
     }
   }
 
+  // Settings de admin (serial / measure_period / password). Devuelve serial_updated
+  // porque el guardado puede ser parcial: con password incorrecto el resto se guarda
+  // igual pero el serial no. La vista decide cómo notificar.
   async function updateSystemData(data: ISystem): Promise<{ serial_updated: boolean }> {
-    const [systemRes] = await Promise.all([
-      apiFetch<{ status: string; serial_updated: boolean }>('/api/config/system', {
-        method: 'POST',
-        body: JSON.stringify({
-          serial_num: String(data.serial_num),
-          measure_period_ms: data.measure_period_ms,
-          ...(data.password ? { password: data.password } : {}),
-        }),
+    const systemRes = await apiFetch<{ status: string; serial_updated: boolean }>('/api/config/system', {
+      method: 'POST',
+      body: JSON.stringify({
+        serial_num: String(data.serial_num),
+        measure_period_ms: data.measure_period_ms,
+        ...(data.password ? { password: data.password } : {}),
       }),
-      apiFetch('/api/config/modbus', {
-        method: 'POST',
-        body: JSON.stringify({
-          address: data.modbus_address,
-          baud_rate: data.baud_rate,
-          parity: (PARITY_INDEX_TO_CHAR[data.bit_parity] ?? 'N').charCodeAt(0),
-          stop_bits: data.bit_parity === 0 ? 2 : 1,
-        }),
-      }),
-    ])
+    })
     await loadSystemData()
-    // Success is notified by the view: in admin mode the save can be partial
-    // (serial_updated=false on wrong password, even though the rest is saved).
     return { serial_updated: systemRes.serial_updated }
+  }
+
+  // Settings de Modbus (address / baud rate / parity). No requiere modo admin.
+  async function updateModbusData(data: ISystem): Promise<void> {
+    await apiFetch('/api/config/modbus', {
+      method: 'POST',
+      body: JSON.stringify({
+        address: data.modbus_address,
+        baud_rate: data.baud_rate,
+        parity: (PARITY_INDEX_TO_CHAR[data.bit_parity] ?? 'N').charCodeAt(0),
+        stop_bits: data.bit_parity === 0 ? 2 : 1,
+      }),
+    })
+    await loadSystemData()
   }
 
   async function loadReaderConfigData(): Promise<void> {
@@ -484,6 +488,7 @@ export const useGlobalStore = defineStore('global', () => {
     getSystemData,
     loadSystemData,
     updateSystemData,
+    updateModbusData,
     getReaderConfigData,
     loadReaderConfigData,
     updateReaderConfigData,

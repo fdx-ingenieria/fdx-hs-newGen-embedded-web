@@ -8,7 +8,8 @@
 
   const globalStore = useGlobalStore()
   const editable: Ref<ISystem> = ref({} as ISystem)
-  const savingData = ref(false)
+  const savingSystem = ref(false)
+  const savingModbus = ref(false)
   const { getSystemData } = storeToRefs(globalStore)
   const adminMode = ref(false)
   const hasUnsavedChanges = ref(false)
@@ -39,21 +40,29 @@
     }
   }, { deep: true })
 
-  const save = () => {
-    const wasInAdminMode = adminMode.value
+  // Guardado de settings de admin (serial / measure period / password).
+  const saveSystem = () => {
     serialUpdated.value = null
-    savingData.value = true
-    adminMode.value = false
+    savingSystem.value = true
     globalStore.updateSystemData(editable.value)
       .then(result => {
-        if (wasInAdminMode) serialUpdated.value = result.serial_updated
-        if (wasInAdminMode && !result.serial_updated) {
+        serialUpdated.value = result.serial_updated
+        if (!result.serial_updated) {
           globalStore.notify('Wrong password: serial number was not updated', 'error')
         } else {
           globalStore.notify('System configuration saved', 'success')
+          adminMode.value = false
         }
       })
-      .finally(() => savingData.value = false)
+      .finally(() => savingSystem.value = false)
+  }
+
+  // Guardado de settings de Modbus (siempre disponible, no requiere admin).
+  const saveModbus = () => {
+    savingModbus.value = true
+    globalStore.updateModbusData(editable.value)
+      .then(() => globalStore.notify('Modbus configuration saved', 'success'))
+      .finally(() => savingModbus.value = false)
   }
 
   const validDirModbus = (value: number): boolean => {
@@ -75,12 +84,14 @@
     return sec >= MIN_PERIOD_S && sec <= MAX_PERIOD_S
   }
 
-  const isComplete = (): boolean => {
-    const { serial_num, modbus_address, baud_rate, bit_parity, password } = editable.value
-    const modbusValid = validDirModbus(modbus_address) && !!baud_rate && bit_parity !== undefined
-    // El período solo es editable en modo admin; fuera de admin no se valida.
-    if (adminMode.value) return modbusValid && validMeasurePeriod(measurePeriodSec.value) && !!serial_num && !!password
-    return modbusValid
+  const isSystemComplete = (): boolean => {
+    const { serial_num, password } = editable.value
+    return !!serial_num && !!password && validMeasurePeriod(measurePeriodSec.value)
+  }
+
+  const isModbusComplete = (): boolean => {
+    const { modbus_address, baud_rate, bit_parity } = editable.value
+    return validDirModbus(modbus_address) && !!baud_rate && bit_parity !== undefined
   }
 
   const preventUnsaved = (e: any) => {
@@ -108,11 +119,13 @@
 
 <template>
   <section class="antialiased">
-    <div class="mx-auto">
+    <div class="mx-auto space-y-4">
+      <!-- System card: settings de admin (serial / measure period / password) -->
       <div class="card overflow-hidden py-4 px-4 md:px-6 select-none"
         v-on:dblclick.shift.ctrl="adminMode = !adminMode">
+        <h2 class="text-base font-semibold mb-4">System</h2>
         <LoadingIcon v-if="editable.baud_rate === undefined" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-12" />
-        <template  v-else >
+        <template v-else>
           <div class="grid gap-4 mb-4">
             <div v-if="!adminMode">
               <label class="field-label">Serial</label>
@@ -147,6 +160,37 @@
                 <input type="password" v-model="editable.password" class="input !border-accent/40" placeholder="Admin password">
               </div>
             </template>
+          </div>
+          <div v-if="adminMode" class="flex flex-col items-end gap-2">
+            <div class="flex items-center gap-2">
+              <button @click="restartService()" :disabled="restarting || !editable.password" type="button" class="btn-danger">
+                <LoadingIcon v-if="restarting" class="animate-spin fill-transparent w-4 mr-1" />
+                <RefreshIcon v-else class="w-4 mr-1" />
+                {{ restarting ? 'Restarting...' : 'Restart service' }}
+              </button>
+              <button @click="saveSystem()" :disabled="savingSystem || !isSystemComplete()" type="button" class="btn-primary">
+                <template v-if="savingSystem">
+                  <LoadingIcon class="animate-spin fill-transparent w-4 mr-1" />
+                  Saving...
+                </template>
+                <template v-else>
+                  <SendIcon class="w-4 mr-1" />
+                  Save
+                </template>
+              </button>
+            </div>
+            <p v-if="serialUpdated === false" class="text-sm text-crit"><span class="font-semibold">Wrong password:</span> serial number was not updated.</p>
+            <p v-else-if="serialUpdated === true" class="text-sm text-ok">Serial number updated successfully.</p>
+          </div>
+        </template>
+      </div>
+
+      <!-- Modbus card: settings comunes (no requieren admin) -->
+      <div class="card overflow-hidden py-4 px-4 md:px-6">
+        <h2 class="text-base font-semibold mb-4">Modbus</h2>
+        <LoadingIcon v-if="editable.baud_rate === undefined" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-12" />
+        <template v-else>
+          <div class="grid gap-4 mb-4">
             <div>
               <label class="field-label">Modbus address</label>
               <input class="input"
@@ -178,26 +222,17 @@
               </div>
             </div>
           </div>
-          <div class="flex flex-col items-end gap-2">
-            <div class="flex items-center gap-2">
-              <button v-if="adminMode" @click="restartService()" :disabled="restarting || !editable.password" type="button" class="btn-danger">
-                <LoadingIcon v-if="restarting" class="animate-spin fill-transparent w-4 mr-1" />
-                <RefreshIcon v-else class="w-4 mr-1" />
-                {{ restarting ? 'Restarting...' : 'Restart service' }}
-              </button>
-              <button @click="save()" :disabled="savingData || !isComplete()" type="button" class="btn-primary">
-                <template v-if="savingData">
-                  <LoadingIcon class="animate-spin fill-transparent w-4 mr-1" />
-                  Saving...
-                </template>
-                <template v-else>
-                  <SendIcon class="w-4 mr-1" />
-                  Save
-                </template>
-              </button>
-            </div>
-            <p v-if="serialUpdated === false" class="text-sm text-crit"><span class="font-semibold">Wrong password:</span> serial number was not updated.</p>
-            <p v-else-if="serialUpdated === true" class="text-sm text-ok">Serial number updated successfully.</p>
+          <div class="flex items-center justify-end gap-2">
+            <button @click="saveModbus()" :disabled="savingModbus || !isModbusComplete()" type="button" class="btn-primary">
+              <template v-if="savingModbus">
+                <LoadingIcon class="animate-spin fill-transparent w-4 mr-1" />
+                Saving...
+              </template>
+              <template v-else>
+                <SendIcon class="w-4 mr-1" />
+                Save
+              </template>
+            </button>
           </div>
         </template>
       </div>
