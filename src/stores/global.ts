@@ -2,7 +2,7 @@ import { ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ISensorData, IA
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
 
-export type NotificationType = 'success' | 'error'
+export type NotificationType = 'success' | 'error' | 'warning'
 
 export interface Notification {
   id: number

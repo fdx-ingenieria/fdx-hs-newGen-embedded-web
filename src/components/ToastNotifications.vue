@@ -1,8 +1,16 @@
 <script setup lang="ts">
-import { useGlobalStore } from '@/stores/global'
+import { useGlobalStore, type NotificationType } from '@/stores/global'
 import { CloseIcon } from '@/components/icons'
 
 const store = useGlobalStore()
+
+// Estilo por severidad. 'warning' = ámbar, para estados transitorios o
+// resultados no exitosos que no son errores (ej: cero antenas detectadas).
+const toastClass: Record<NotificationType, string> = {
+  success: 'border-ok/30 bg-ok-soft text-ok',
+  warning: 'border-warn/30 bg-warn-soft text-warn',
+  error: 'border-crit/30 bg-crit-soft text-crit',
+}
 </script>
 
 <template>
@@ -13,7 +21,7 @@ const store = useGlobalStore()
           v-for="n in store.notifications"
           :key="n.id"
           class="pointer-events-auto flex items-start gap-3 rounded-xl border px-4 py-3 shadow-lg"
-          :class="n.type === 'success' ? 'border-ok/30 bg-ok-soft text-ok' : 'border-crit/30 bg-crit-soft text-crit'"
+          :class="toastClass[n.type]"
         >
           <span class="flex-1 text-sm font-medium break-words leading-snug">{{ n.message }}</span>
           <button
