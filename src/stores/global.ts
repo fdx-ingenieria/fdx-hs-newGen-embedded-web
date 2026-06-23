@@ -149,7 +149,7 @@ export const useGlobalStore = defineStore('global', () => {
       }
     }
     eventSource.addEventListener('sensor_data', (event) => {
-      const raw: Array<{ epc_id: string; avg_temp: number; std_dev: number; avg_rssi: number; n_readings: number; quality: number; timestamp: number }> = JSON.parse(event.data)
+      const raw: Array<{ epc_id: string; name?: string; avg_temp: number; std_dev: number; avg_rssi: number; n_readings: number; quality: number; timestamp: number }> = JSON.parse(event.data)
       const sensors: ISensorData[] = raw.map(s => {
         const quality = QUALITY_BY_INDEX[s.quality] ?? SensorQuality.OUT_OF_SERVICE
         const prevData = availableSensors.value.find(x => x.id === s.epc_id)?.data
@@ -166,7 +166,7 @@ export const useGlobalStore = defineStore('global', () => {
         const timestamp = isNewReading ? clientNow : (prevData?.timestamp ?? clientNow)
         return {
           id: s.epc_id,
-          EPC: s.epc_id,
+          EPC: s.name ?? s.epc_id,  // decoded 4-char name from backend; hex fallback
           avg_temp: s.avg_temp,
           temp: s.avg_temp,
           std_dev: s.std_dev,
@@ -297,8 +297,8 @@ export const useGlobalStore = defineStore('global', () => {
   async function loadSensors(): Promise<void> {
     // Backend devuelve solo sensores configurados; los descubiertos vía SSE no existen en el backend.
     // Hacer merge para no perder los sensores sin configurar que viven solo en memoria.
-    const raw = await apiFetch<Array<{ epc_id: string; config: ISensorConfig }>>('/api/config/sensors')
-    const fromBackend = raw.map(s => ({ id: s.epc_id, EPC: s.epc_id, config: s.config }))
+    const raw = await apiFetch<Array<{ epc_id: string; name?: string; config: ISensorConfig }>>('/api/config/sensors')
+    const fromBackend = raw.map(s => ({ id: s.epc_id, EPC: s.name ?? s.epc_id, config: s.config }))
     const backendIds = new Set(fromBackend.map(s => s.id))
     const unconfigured = availableSensors.value.filter(s => !backendIds.has(s.id) && !s.config.equipment)
     availableSensors.value = [

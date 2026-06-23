@@ -131,7 +131,7 @@
             <span class="font-mono text-3xl font-bold leading-none text-info">{{ temperatures.min?.temp.toFixed(1) }}</span>
             <span class="text-sm font-semibold text-ink-faint">°C</span>
           </p>
-          <small class="block truncate font-mono text-xs text-ink-faint" :title="`EPC: ${temperatures.min?.EPC}`">{{ temperatures.min?.id }}</small>
+          <small class="block truncate font-mono text-xs text-ink-faint" :title="`EPC: ${temperatures.min?.id}`">{{ temperatures.min?.EPC }}</small>
         </div>
       </div>
 
@@ -147,7 +147,7 @@
             <span class="font-mono text-3xl font-bold leading-none text-crit">{{ temperatures.max?.temp.toFixed(1) }}</span>
             <span class="text-sm font-semibold text-ink-faint">°C</span>
           </p>
-          <small class="block truncate font-mono text-xs text-ink-faint" :title="`EPC: ${temperatures.max?.EPC}`">{{ temperatures.max?.id }}</small>
+          <small class="block truncate font-mono text-xs text-ink-faint" :title="`EPC: ${temperatures.max?.id}`">{{ temperatures.max?.EPC }}</small>
         </div>
       </div>
     </div>
