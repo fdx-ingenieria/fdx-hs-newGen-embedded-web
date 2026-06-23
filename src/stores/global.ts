@@ -26,8 +26,8 @@ const QUALITY_BY_INDEX: SensorQuality[] = [
   SensorQuality.EXCELLENT,
 ]
 
-const ALARM_TYPE_TO_INDEX: Record<string, number> = { absolute: 1, unbalance: 2, dispersion: 3 }
-const ALARM_INDEX_TO_TYPE: Record<number, string> = { 1: 'absolute', 2: 'unbalance', 3: 'dispersion' }
+const ALARM_TYPE_TO_INDEX: Record<string, number> = { absolute: 1, unbalance: 2, dispersion: 3, hysteresis: 4 }
+const ALARM_INDEX_TO_TYPE: Record<number, string> = { 1: 'absolute', 2: 'unbalance', 3: 'dispersion', 4: 'hysteresis' }
 const RELAY_TO_INDEX: Record<string, number> = { none: 0, relay_1: 1, relay_2: 2 }
 const RELAY_INDEX_TO_STR: Record<number, string> = { 0: 'none', 1: 'relay_1', 2: 'relay_2' }
 
@@ -365,6 +365,7 @@ export const useGlobalStore = defineStore('global', () => {
         active: boolean
         name: string
         set_point: number
+        reset_point: number
         type: string
         relay: string
         field_pairs: Array<{ location: number; equipment: number }>
@@ -382,7 +383,7 @@ export const useGlobalStore = defineStore('global', () => {
         id: a.slot,
         name: a.config.name,
         set_point: a.config.set_point,
-        reset_point: 0,
+        reset_point: a.config.reset_point,
         alarm_type: ALARM_TYPE_TO_INDEX[a.config.type] ?? 0,
         relay_flag: RELAY_TO_INDEX[a.config.relay] ?? 0,
         fields,
@@ -399,6 +400,7 @@ export const useGlobalStore = defineStore('global', () => {
         active: !!data.alarm_type,
         name: data.name,
         set_point: data.set_point,
+        reset_point: data.reset_point,
         type: ALARM_INDEX_TO_TYPE[data.alarm_type] ?? 'unknown',
         relay: RELAY_INDEX_TO_STR[data.relay_flag] ?? 'none',
         field_pairs: data.fields.map(f => ({ location: f.location, equipment: f.equipment })),
