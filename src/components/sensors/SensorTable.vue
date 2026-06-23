@@ -63,6 +63,9 @@
     reset: [id: string]
   }>()
 
+  // EPC hex for display: drop leading zero padding (keep at least one char).
+  const displayId = (id: string): string => id.replace(/^0+(?=.)/, '')
+
   const searcHighlight = (text: string): string => {
     if (!searchText.value) return text
 
@@ -116,7 +119,7 @@
         <tr @click="emit('edit', item.id)" v-for="item in localAvailableSensors"
           class="border-b border-line hover:bg-panel-strong" :key="`${item.id}`"
           :class="{'cursor-pointer': !readonly, '!bg-crit-soft hover:!brightness-95': item?.alarmed}">
-          <th scope="row" class="px-4 py-3 font-mono font-medium text-ink" v-html="searcHighlight(item.id)"></th>
+          <th scope="row" class="px-4 py-3 font-mono font-medium text-ink" v-html="searcHighlight(displayId(item.id))"></th>
           <th scope="row" class="px-4 py-3 font-mono font-medium text-ink-soft" v-html="searcHighlight(item.EPC)"></th>
           <template v-if="showlabels">
             <td class="px-4 py-3" v-html="searcHighlight(globalStore.getLabelName(LabelType.EQUIPMENT, item.config.equipment))"></td>
