@@ -1,4 +1,4 @@
-import { ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ISensorData, IAlarm, IAlarmData, IModbusTableEntry, IReaderConfig, SensorQuality } from '@/commons'
+import { ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ITimers, ISensorData, IAlarm, IAlarmData, IModbusTableEntry, IReaderConfig, SensorQuality } from '@/commons'
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
 
@@ -61,6 +61,7 @@ export const useGlobalStore = defineStore('global', () => {
   const availableSensors: Ref<ISensor[]> = ref([])
   const availableAlarms: Ref<IAlarm[]> = ref([])
   const systeamData: Ref<ISystem> = ref({} as ISystem)
+  const timersData: Ref<ITimers> = ref({} as ITimers)
   const readerConfigData: Ref<IReaderConfig> = ref({} as IReaderConfig)
   const modbusTable: Ref<Array<IModbusTableEntry>> = ref([])
   const boardTemp: Ref<number | string> = ref('N/A')
@@ -87,6 +88,7 @@ export const useGlobalStore = defineStore('global', () => {
   const getDiscoveryModeOn = computed(() => discoveryModeOn.value)
   const getNormalModeOn = computed(() => normalModeOn.value)
   const getSystemData = computed(() => systeamData.value)
+  const getTimersData = computed(() => timersData.value)
   const getReaderConfigData = computed(() => readerConfigData.value)
   const getModbusTable = computed(() => modbusTable.value)
   const getConfiguredSensors = computed(() => availableSensors.value.filter(sensor => !!sensor.config.equipment))
@@ -419,32 +421,57 @@ export const useGlobalStore = defineStore('global', () => {
 
   async function loadSystemData(): Promise<void> {
     const [systemRes, modbusRes] = await Promise.all([
-      apiFetch<{ serial_num: string; measure_period_ms: number }>('/api/config/system'),
+      apiFetch<{ serial_num: string }>('/api/config/system'),
       apiFetch<{ address: number; baud_rate: number; parity: number; stop_bits: number }>('/api/config/modbus'),
     ])
     systeamData.value = {
       serial_num: Number(systemRes.serial_num),
-      measure_period_ms: systemRes.measure_period_ms,
       modbus_address: modbusRes.address,
       baud_rate: modbusRes.baud_rate,
       bit_parity: PARITY_CHAR_TO_INDEX[String.fromCharCode(modbusRes.parity)] ?? 0,
     }
   }
 
-  // Settings de admin (serial / measure_period / password). Devuelve serial_updated
-  // porque el guardado puede ser parcial: con password incorrecto el resto se guarda
-  // igual pero el serial no. La vista decide cómo notificar.
+  // Settings de admin (solo serial / password). Devuelve serial_updated porque el
+  // guardado es admin-gated: con password incorrecto el serial no se actualiza.
+  // Los timers ya no viven acá (ver updateTimersData).
   async function updateSystemData(data: ISystem): Promise<{ serial_updated: boolean }> {
     const systemRes = await apiFetch<{ status: string; serial_updated: boolean }>('/api/config/system', {
       method: 'POST',
       body: JSON.stringify({
         serial_num: String(data.serial_num),
-        measure_period_ms: data.measure_period_ms,
         ...(data.password ? { password: data.password } : {}),
       }),
     })
     await loadSystemData()
     return { serial_updated: systemRes.serial_updated }
+  }
+
+  // Timers de orquestación del inventario (t_reader_on/off, measure_period_ms).
+  // Recurso propio /api/config/timers: los tres son admin-gated. El backend valida
+  // measure_period_ms >= t_reader_on + t_reader_off (400 si se viola, capturado por
+  // apiFetch). Devuelve `updated` (false con password incorrecto: nada se persiste).
+  async function loadTimersData(): Promise<void> {
+    const res = await apiFetch<{ t_reader_on: number; t_reader_off: number; measure_period_ms: number }>('/api/config/timers')
+    timersData.value = {
+      t_reader_on: res.t_reader_on,
+      t_reader_off: res.t_reader_off,
+      measure_period_ms: res.measure_period_ms,
+    }
+  }
+
+  async function updateTimersData(data: ITimers): Promise<{ updated: boolean }> {
+    const res = await apiFetch<{ status: string; updated: boolean }>('/api/config/timers', {
+      method: 'POST',
+      body: JSON.stringify({
+        t_reader_on: data.t_reader_on,
+        t_reader_off: data.t_reader_off,
+        measure_period_ms: data.measure_period_ms,
+        ...(data.password ? { password: data.password } : {}),
+      }),
+    })
+    await loadTimersData()
+    return { updated: res.updated }
   }
 
   // Settings de Modbus (address / baud rate / parity). No requiere modo admin.
@@ -580,6 +607,9 @@ export const useGlobalStore = defineStore('global', () => {
     getSystemData,
     loadSystemData,
     updateSystemData,
+    getTimersData,
+    loadTimersData,
+    updateTimersData,
     updateModbusData,
     getReaderConfigData,
     loadReaderConfigData,

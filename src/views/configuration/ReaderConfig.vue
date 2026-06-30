@@ -28,20 +28,12 @@
   const validReadWritePowerValue = (value: number): boolean =>
     isValidInteger(value) && value >= 0 && value <= 3300
 
-  const validReaderOnValue = (value: number): boolean =>
-    isValidInteger(value) && value >= 0 && value <= 10_000
-
-  const validReaderOffValue = (value: number): boolean =>
-    isValidInteger(value) && value >= 0 && value <= 300_000
-
   const isComplete = (): boolean => {
-    const { region, read_pwr, write_pwr, t_reader_on, t_reader_off, password } = editable.value
+    const { region, read_pwr, write_pwr, password } = editable.value
     if (!region) return false
     if (!adminMode.value) return true
     return validReadWritePowerValue(read_pwr)
       && validReadWritePowerValue(write_pwr)
-      && validReaderOnValue(t_reader_on)
-      && validReaderOffValue(t_reader_off)
       && !!password
   }
 
@@ -147,24 +139,6 @@
                   v-model="editable.ants"
                   placeholder="e.g. 0,1,2,3">
                 <p class="mt-2 text-sm text-ink-faint">Índices separados por coma.</p>
-              </div>
-              <div>
-                <label class="field-label">T reader on (ms)</label>
-                <input class="input"
-                  type="number" step="1" min="0" max="10000"
-                  v-model.number="editable.t_reader_on"
-                  placeholder="Reader on time in ms">
-                <p class="mt-2 text-sm text-ink-faint">0 – 10 000 ms.</p>
-                <p v-show="!validReaderOnValue(editable.t_reader_on)" class="mt-2 text-sm text-crit"><span class="font-semibold">Oops!</span> Valor fuera de rango.</p>
-              </div>
-              <div>
-                <label class="field-label">T reader off (ms)</label>
-                <input class="input"
-                  type="number" step="1" min="0" max="300000"
-                  v-model.number="editable.t_reader_off"
-                  placeholder="Reader off time in ms">
-                <p class="mt-2 text-sm text-ink-faint">0 – 300 000 ms.</p>
-                <p v-show="!validReaderOffValue(editable.t_reader_off)" class="mt-2 text-sm text-crit"><span class="font-semibold">Oops!</span> Valor fuera de rango.</p>
               </div>
               <div>
                 <label class="field-label">Q (algoritmo)</label>

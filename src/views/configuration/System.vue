@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ISystem, ModbusBitParity, BaudRate, isValidInteger } from '@/commons';
+  import { ISystem, ITimers, ModbusBitParity, BaudRate, isValidInteger } from '@/commons';
   import { AlertIcon, LoadingIcon, RefreshIcon, SearchIcon, SendIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global'
   import { storeToRefs } from 'pinia';
