@@ -19,7 +19,8 @@
           <MenuCloseIcon v-else class="w-7" />
         </button>
         <a class="flex items-center">
-          <img src="@/assets/fdx_no_bg_sm.png" class="h-11" alt="FDX Logo" />
+          <img src="@/assets/fdx_no_bg_logo_negro.png" class="h-11 dark:hidden" alt="FDX Logo" />
+          <img src="@/assets/fdx_no_bg_logo_blanco.png" class="hidden h-11 dark:block" alt="FDX Logo" />
         </a>
       </div>
 
