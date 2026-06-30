@@ -8,12 +8,15 @@
 
   const globalStore = useGlobalStore()
   const editable: Ref<ISystem> = ref({} as ISystem)
+  const editableTimers: Ref<ITimers> = ref({} as ITimers)
   const savingSystem = ref(false)
   const savingModbus = ref(false)
-  const { getSystemData } = storeToRefs(globalStore)
+  const savingTimers = ref(false)
+  const { getSystemData, getTimersData } = storeToRefs(globalStore)
   const adminMode = ref(false)
   const hasUnsavedChanges = ref(false)
   const serialUpdated: Ref<boolean | null> = ref(null)
+  const timersUpdated: Ref<boolean | null> = ref(null)
   const restarting = ref(false)
 
 // Autodetección de antenas. No requiere password, solo modo admin.
@@ -54,20 +57,30 @@
     editable.value = JSON.parse(JSON.stringify(newValue))
   }, { immediate: true })
 
-  // El password es una credencial transitoria (para guardar serial o reiniciar el
-  // servicio), no un campo persistido. Lo excluimos de la comparación para que
+  watch(getTimersData, (newValue) => {
+    editableTimers.value = JSON.parse(JSON.stringify(newValue))
+  }, { immediate: true })
+
+  // El password es una credencial transitoria (para guardar serial/timers o reiniciar
+  // el servicio), no un campo persistido. Lo excluimos de la comparación para que
   // tipearlo no marque "cambios sin guardar" y bloquee la navegación.
-  const withoutPassword = (s: ISystem): Omit<ISystem, 'password'> => {
+  const withoutPassword = <T extends { password?: string }>(s: T): Omit<T, 'password'> => {
     const { password: _password, ...rest } = s
     return rest
   }
 
-  watch(editable, () => {
-    hasUnsavedChanges.value =
+  const recomputeUnsaved = () => {
+    const systemDirty =
       JSON.stringify(withoutPassword(editable.value)) !== JSON.stringify(withoutPassword(getSystemData.value))
-  }, { deep: true })
+    const timersDirty =
+      JSON.stringify(withoutPassword(editableTimers.value)) !== JSON.stringify(withoutPassword(getTimersData.value))
+    hasUnsavedChanges.value = systemDirty || timersDirty
+  }
 
-  // Guardado de settings de admin (serial / measure period / password).
+  watch(editable, recomputeUnsaved, { deep: true })
+  watch(editableTimers, recomputeUnsaved, { deep: true })
+
+  // Guardado de settings de admin (serial / password).
   const saveSystem = () => {
     serialUpdated.value = null
     savingSystem.value = true
@@ -78,10 +91,28 @@
           globalStore.notify('Wrong password: serial number was not updated', 'error')
         } else {
           globalStore.notify('System configuration saved', 'success')
-          adminMode.value = false
         }
       })
       .finally(() => savingSystem.value = false)
+  }
+
+  // Guardado de los timers de inventario. Reusa el password de admin de la card de
+  // System (la misma credencial). El backend valida measure >= t_on + t_off (400);
+  // también lo chequeamos en cliente para deshabilitar el botón antes de pegarle.
+  const saveTimers = () => {
+    timersUpdated.value = null
+    savingTimers.value = true
+    globalStore.updateTimersData({ ...editableTimers.value, password: editable.value.password })
+      .then(result => {
+        timersUpdated.value = result.updated
+        if (!result.updated) {
+          globalStore.notify('Wrong password: timers were not updated', 'error')
+        } else {
+          globalStore.notify('Inventory timers saved', 'success')
+        }
+      })
+      // El 400 de la constraint cruzada lo notifica apiFetch; no marcamos updated.
+      .finally(() => savingTimers.value = false)
   }
 
   // Guardado de settings de Modbus (siempre disponible, no requiere admin).
@@ -101,9 +132,23 @@
   // segundos para que sea más legible. Conversión ida/vuelta en este computed.
   const MIN_PERIOD_S = 1
   const MAX_PERIOD_S = 3600
+  // UI ceiling for reader-on; well below the backend hard limit (10 s, tied to the
+  // ZMQ socket timeout). 10 s of continuous irradiation is overkill and runs hot —
+  // most tags are discovered within a second, so 5 s is already generous.
+  const T_ON_MAX_MS = 5_000
+  const T_OFF_MAX_MS = 15_000
+  // Both sliders share one track (0 – 15 000 ms) so the two knobs sit on the same
+  // visual scale; reader-on is just clamped to its lower ceiling (T_ON_MAX_MS).
   const measurePeriodSec = computed<number>({
-    get: () => Math.round((editable.value.measure_period_ms ?? 5000) / 1000),
-    set: (value) => { editable.value.measure_period_ms = Math.round(value * 1000) },
+    get: () => Math.round((editableTimers.value.measure_period_ms ?? 30000) / 1000),
+    set: (value) => { editableTimers.value.measure_period_ms = Math.round(value * 1000) },
+  })
+
+  // reader-on shares the 0–15 000 track but locks at 10 000: the setter clamps so
+  // dragging the slider (or typing) past the ceiling snaps back to T_ON_MAX_MS.
+  const readerOnModel = computed<number>({
+    get: () => editableTimers.value.t_reader_on,
+    set: (value) => { editableTimers.value.t_reader_on = Math.min(value, T_ON_MAX_MS) },
   })
 
   const validMeasurePeriod = (sec: number): boolean => {
@@ -111,9 +156,27 @@
     return sec >= MIN_PERIOD_S && sec <= MAX_PERIOD_S
   }
 
+  const validReaderOn = (ms: number): boolean => isValidInteger(ms) && ms >= 0 && ms <= T_ON_MAX_MS
+  const validReaderOff = (ms: number): boolean => isValidInteger(ms) && ms >= 0 && ms <= T_OFF_MAX_MS
+
+  // Constraint cruzada (espejo del backend): al menos un ciclo completo de inventario
+  // por ventana de medición. measure_period_ms se compara en ms con t_on + t_off.
+  const crossConstraintOk = computed<boolean>(() =>
+    (editableTimers.value.measure_period_ms ?? 0) >=
+    (editableTimers.value.t_reader_on ?? 0) + (editableTimers.value.t_reader_off ?? 0))
+
   const isSystemComplete = (): boolean => {
     const { serial_num, password } = editable.value
-    return !!serial_num && !!password && validMeasurePeriod(measurePeriodSec.value)
+    return !!serial_num && !!password
+  }
+
+  const isTimersComplete = (): boolean => {
+    const { t_reader_on, t_reader_off } = editableTimers.value
+    return !!editable.value.password
+      && validReaderOn(t_reader_on)
+      && validReaderOff(t_reader_off)
+      && validMeasurePeriod(measurePeriodSec.value)
+      && crossConstraintOk.value
   }
 
   const isModbusComplete = (): boolean => {
@@ -137,6 +200,7 @@
   onMounted(() => {
     window.addEventListener("beforeunload", preventUnsaved)
     globalStore.loadSystemData()
+    globalStore.loadTimersData()
   })
 
   onUnmounted(() => {
@@ -147,22 +211,27 @@
 <template>
   <section class="antialiased">
     <div class="mx-auto space-y-4">
-      <!-- System card: settings de admin (serial / measure period / password) -->
+      <!-- System card: admin settings (serial + inventory timing). The admin password
+           and the save/restart buttons live at the very bottom, shared by serial and
+           timers (both are admin-gated by the same credential). -->
       <div class="card overflow-hidden py-4 px-4 md:px-6 select-none"
         v-on:dblclick.shift.ctrl="adminMode = !adminMode">
         <h2 class="text-base font-semibold mb-4">System</h2>
         <LoadingIcon v-if="editable.baud_rate === undefined" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-12" />
         <template v-else>
-          <div class="grid gap-4 mb-4">
-            <div v-if="!adminMode">
-              <label class="field-label">Serial</label>
-              <input class="input disabled:opacity-50"
-                type="text"
-                :value="editable.serial_num"
-                placeholder="Serial value"
-                readonly />
-            </div>
-            <template v-else>
+          <!-- Non-admin: serial is read-only -->
+          <div v-if="!adminMode">
+            <label class="field-label">Serial</label>
+            <input class="input disabled:opacity-50"
+              type="text"
+              :value="editable.serial_num"
+              placeholder="Serial value"
+              readonly />
+          </div>
+
+          <!-- Admin: serial + inventory timing, then password + actions at the bottom -->
+          <template v-else>
+            <div class="grid gap-4 mb-4">
               <div>
                 <label class="field-label !text-accent">Serial</label>
                 <input class="input !border-accent/40"
@@ -171,44 +240,101 @@
                   v-model="editable.serial_num"
                   placeholder="Serial value">
               </div>
-              <div>
-                <label class="field-label !text-accent">Measure period (s)</label>
-                <input class="input !border-accent/40"
-                  type="number"
-                  min="1"
-                  max="3600"
-                  step="1"
-                  v-model.number="measurePeriodSec"
-                  placeholder="Seconds between read cycles">
-                <p v-show="!validMeasurePeriod(measurePeriodSec)" class="mt-2 text-sm text-crit"><span class="font-semibold">Oops!</span> This value should be between 1 and 3600 seconds.</p>
+            </div>
+
+            <!-- Inventory timing subsection: advanced reader cadence knobs -->
+            <div class="border-t border-line pt-4 mb-4">
+              <div class="grid gap-5">
+                <!-- T reader on: slider + numeric, 0–10 000 ms -->
+                <div>
+                  <label class="field-label !text-accent">Reader on (ms)</label>
+                  <div class="flex items-center gap-3">
+                    <input type="range" min="0" max="15000" step="100"
+                      v-model.number="readerOnModel"
+                      class="flex-1 accent-accent">
+                    <input class="input !border-accent/40 w-28"
+                      type="number" min="0" max="5000" step="1"
+                      v-model.number="readerOnModel">
+                  </div>
+                  <p class="mt-1 text-sm text-ink-faint">0 – 5 000 ms. Active irradiation time per inventory cycle.</p>
+                  <p v-show="!validReaderOn(editableTimers.t_reader_on)" class="mt-1 text-sm text-crit"><span class="font-semibold">Oops!</span> This value should be between 0 and 5 000 ms.</p>
+                </div>
+
+                <!-- T reader off: slider + numeric, 0–20 000 ms -->
+                <div>
+                  <label class="field-label !text-accent">Reader off (ms)</label>
+                  <div class="flex items-center gap-3">
+                    <input type="range" min="0" max="15000" step="500"
+                      v-model.number="editableTimers.t_reader_off"
+                      class="flex-1 accent-accent">
+                    <input class="input !border-accent/40 w-28"
+                      type="number" min="0" max="15000" step="1"
+                      v-model.number="editableTimers.t_reader_off">
+                  </div>
+                  <p class="mt-1 text-sm text-ink-faint">0 – 15 000 ms. Rest time between inventory cycles.</p>
+                  <p v-show="!validReaderOff(editableTimers.t_reader_off)" class="mt-1 text-sm text-crit"><span class="font-semibold">Oops!</span> This value should be between 0 and 15 000 ms.</p>
+                </div>
+
+                <!-- Measure period: numeric only (1 s – 1 h no escala en slider) -->
+                <div>
+                  <label class="field-label !text-accent">Measure period (s)</label>
+                  <input class="input !border-accent/40"
+                    type="number" min="1" max="3600" step="1"
+                    v-model.number="measurePeriodSec"
+                    placeholder="Seconds between measurement windows">
+                  <p class="mt-1 text-sm text-ink-faint">1 – 3600 s. How often readings are drained into a measurement.</p>
+                  <p v-show="!validMeasurePeriod(measurePeriodSec)" class="mt-1 text-sm text-crit"><span class="font-semibold">Oops!</span> This value should be between 1 and 3600 seconds.</p>
+                </div>
+
+                <!-- Constraint cruzada: measure_period >= t_on + t_off -->
+                <div v-if="!crossConstraintOk" class="flex items-center p-4 text-warn rounded-lg bg-warn-soft" role="alert">
+                  <AlertIcon class="w-5 h-5 mr-3 shrink-0" />
+                  <p class="text-sm font-medium">Measure period must be at least <strong>Reader on + Reader off</strong> ({{ ((editableTimers.t_reader_on ?? 0) + (editableTimers.t_reader_off ?? 0)) / 1000 }} s) — one full inventory cycle per measurement window.</p>
+                </div>
               </div>
-              <div>
+            </div>
+
+            <!-- Password + actions: shared admin credential for serial and timers -->
+            <div class="border-t border-line pt-4">
+              <div class="mb-4">
                 <label class="field-label !text-accent">Password</label>
                 <input type="password" v-model="editable.password" class="input !border-accent/40" placeholder="Admin password">
               </div>
-            </template>
-          </div>
-          <div v-if="adminMode" class="flex flex-col items-end gap-2">
-            <div class="flex items-center gap-2">
-              <button @click="restartService()" :disabled="restarting || !editable.password" type="button" class="btn-danger">
-                <LoadingIcon v-if="restarting" class="animate-spin fill-transparent w-4 mr-1" />
-                <RefreshIcon v-else class="w-4 mr-1" />
-                {{ restarting ? 'Restarting...' : 'Restart service' }}
-              </button>
-              <button @click="saveSystem()" :disabled="savingSystem || !isSystemComplete()" type="button" class="btn-primary">
-                <template v-if="savingSystem">
-                  <LoadingIcon class="animate-spin fill-transparent w-4 mr-1" />
-                  Saving...
-                </template>
-                <template v-else>
-                  <SendIcon class="w-4 mr-1" />
-                  Save
-                </template>
-              </button>
+              <div class="flex flex-col items-end gap-2">
+                <div class="flex flex-wrap items-center justify-end gap-2">
+                  <button @click="restartService()" :disabled="restarting || !editable.password" type="button" class="btn-danger">
+                    <LoadingIcon v-if="restarting" class="animate-spin fill-transparent w-4 mr-1" />
+                    <RefreshIcon v-else class="w-4 mr-1" />
+                    {{ restarting ? 'Restarting...' : 'Restart service' }}
+                  </button>
+                  <button @click="saveSystem()" :disabled="savingSystem || !isSystemComplete()" type="button" class="btn-primary">
+                    <template v-if="savingSystem">
+                      <LoadingIcon class="animate-spin fill-transparent w-4 mr-1" />
+                      Saving...
+                    </template>
+                    <template v-else>
+                      <SendIcon class="w-4 mr-1" />
+                      Save serial
+                    </template>
+                  </button>
+                  <button @click="saveTimers()" :disabled="savingTimers || !isTimersComplete()" type="button" class="btn-primary">
+                    <template v-if="savingTimers">
+                      <LoadingIcon class="animate-spin fill-transparent w-4 mr-1" />
+                      Saving...
+                    </template>
+                    <template v-else>
+                      <SendIcon class="w-4 mr-1" />
+                      Save timers
+                    </template>
+                  </button>
+                </div>
+                <p v-if="serialUpdated === false" class="text-sm text-crit"><span class="font-semibold">Wrong password:</span> serial number was not updated.</p>
+                <p v-else-if="serialUpdated === true" class="text-sm text-ok">Serial number updated successfully.</p>
+                <p v-if="timersUpdated === false" class="text-sm text-crit"><span class="font-semibold">Wrong password:</span> timers were not updated.</p>
+                <p v-else-if="timersUpdated === true" class="text-sm text-ok">Timers updated successfully.</p>
+              </div>
             </div>
-            <p v-if="serialUpdated === false" class="text-sm text-crit"><span class="font-semibold">Wrong password:</span> serial number was not updated.</p>
-            <p v-else-if="serialUpdated === true" class="text-sm text-ok">Serial number updated successfully.</p>
-          </div>
+          </template>
         </template>
       </div>
 
