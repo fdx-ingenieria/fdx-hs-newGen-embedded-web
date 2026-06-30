@@ -77,16 +77,16 @@
       .finally(() => savingData.value = false)
   }
 
+  // Each toggle is a single backend call; the store keeps both mode flags in sync
+  // (see global.ts). Chaining the opposite mode here would double-publish the event.
   const stopDiscoveryMode = () => {
     stoppingDiscoveryMode.value = true
     globalStore.stopDiscoveryMode()
-      .then(() => globalStore.startNormalMode())
       .finally(() => stoppingDiscoveryMode.value = false)
   }
   const startDiscoveryMode = () => {
     startingDiscoveryMode.value = true
-    globalStore.stopNormalMode()
-      .then(() => globalStore.startDiscoveryMode())
+    globalStore.startDiscoveryMode()
       .finally(() => startingDiscoveryMode.value = false)
   }
 

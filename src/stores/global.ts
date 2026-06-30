@@ -504,14 +504,20 @@ export const useGlobalStore = defineStore('global', () => {
     modbusTable.value = await apiFetch<Array<IModbusTableEntry>>('/api/data/modbus_table')
   }
 
+  // DISCOVERY and MANUAL ("Normal") are the two mutually exclusive backend modes,
+  // so each toggle keeps both mirror flags in sync. This avoids chaining a second
+  // backend call (discovery/stop == normal_mode/start on the backend), which would
+  // otherwise publish the config-updated event twice.
   async function startDiscoveryMode(): Promise<void> {
     await apiFetch('/api/action/discovery/start', { method: 'POST' })
     discoveryModeOn.value = true
+    normalModeOn.value = false
   }
 
   async function stopDiscoveryMode(): Promise<void> {
     await apiFetch('/api/action/discovery/stop', { method: 'POST' })
     discoveryModeOn.value = false
+    normalModeOn.value = true
   }
 
   async function startNormalMode(): Promise<void> {
