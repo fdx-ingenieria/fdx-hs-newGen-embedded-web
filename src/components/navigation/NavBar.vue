@@ -1,7 +1,6 @@
 <script setup lang="ts">
   import { useGlobalStore } from '@/stores/global';
   import { MenuCloseIcon, MenuOpenIcon, ThermometerIcon } from '../icons';
-  import ConnectionStatus from './ConnectionStatus.vue';
   import ModeIndicator from './ModeIndicator.vue';
   import ThemeToggle from './ThemeToggle.vue';
 
@@ -32,7 +31,6 @@
           <small class="text-ink-faint">°C</small>
         </div>
         <ModeIndicator />
-        <ConnectionStatus />
         <ThemeToggle />
       </div>
     </div>

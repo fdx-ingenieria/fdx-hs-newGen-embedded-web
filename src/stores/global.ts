@@ -57,6 +57,9 @@ export const useGlobalStore = defineStore('global', () => {
   const connected = ref(false)
   const discoveryModeOn: Ref<boolean> = ref(false)
   const normalModeOn: Ref<boolean> = ref(false)
+  // Installation-type flag, orthogonal to discovery/normal: whether this unit
+  // auto-registers/tracks sensor groups per antenna (switchgear cabinets).
+  const appModeIsSwitchgear: Ref<boolean> = ref(false)
   const availableLabels: Ref<ILabelData> = ref({} as ILabelData)
   const availableSensors: Ref<ISensor[]> = ref([])
   const availableAlarms: Ref<IAlarm[]> = ref([])
@@ -87,6 +90,7 @@ export const useGlobalStore = defineStore('global', () => {
   const getAvailableSensors = computed(() => availableSensors.value)
   const getDiscoveryModeOn = computed(() => discoveryModeOn.value)
   const getNormalModeOn = computed(() => normalModeOn.value)
+  const getAppModeIsSwitchgear = computed(() => appModeIsSwitchgear.value)
   const getSystemData = computed(() => systeamData.value)
   const getTimersData = computed(() => timersData.value)
   const getReaderConfigData = computed(() => readerConfigData.value)
@@ -535,10 +539,35 @@ export const useGlobalStore = defineStore('global', () => {
     // Poll inicial del modo operativo para no depender del primer tick SSE (hasta 5s).
     // El backend solo tiene dos modos alcanzables: DISCOVERY y MANUAL. Lo que el front
     // llama "Normal" ES el MANUAL del backend (normal_mode/start == discovery/stop).
-    const data = await apiFetch<{ mode: 'DISCOVERY' | 'MANUAL' }>('/api/data/mode')
+    // `app_mode` es un eje ortogonal (instalación normal vs. switchgear), no un tercer
+    // modo: convive con DISCOVERY o MANUAL en vez de reemplazarlos.
+    const data = await apiFetch<{ mode: 'DISCOVERY' | 'MANUAL'; app_mode: 'normal' | 'switchgear' }>('/api/data/mode')
     const isDiscovery = data.mode === 'DISCOVERY'
     discoveryModeOn.value = isDiscovery
     normalModeOn.value = !isDiscovery
+    appModeIsSwitchgear.value = data.app_mode === 'switchgear'
+  }
+
+  async function setAppMode(switchgear: boolean, password: string): Promise<void> {
+    // Backend: POST /api/action/app_mode {mode, password}. Persiste inmediatamente
+    // (no hay distinción modo-en-vivo/modo-de-arranque como en discovery/normal),
+    // así que no requiere un botón de guardado aparte. Admin-gated como
+    // service_restart: fetch propio (no apiFetch) para distinguir el 403 de
+    // password incorrecto y dar un mensaje a medida.
+    const res = await fetch('/api/action/app_mode', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: switchgear ? 'switchgear' : 'normal', password }),
+    })
+    if (res.status === 403) {
+      notify('Wrong password: installation mode was not changed', 'error')
+      throw new Error('unauthorized')
+    }
+    if (!res.ok) {
+      notify(`[${res.status}] Could not change installation mode`, 'error')
+      throw new Error('set app mode failed')
+    }
+    appModeIsSwitchgear.value = switchgear
   }
 
   async function restartService(password: string): Promise<void> {
@@ -610,6 +639,8 @@ export const useGlobalStore = defineStore('global', () => {
     getNormalModeOn: getNormalModeOn,
     startDiscoveryMode,
     stopDiscoveryMode,
+    getAppModeIsSwitchgear,
+    setAppMode,
     getSystemData,
     loadSystemData,
     updateSystemData,

@@ -41,6 +41,30 @@
     }
   }
 
+  // Installation mode (normal vs. switchgear): admin-only, gated by its own
+  // password field (changing it wrong could silently switch the reader's
+  // processing behavior). Persists immediately on the backend, so there's no
+  // separate save step — the toggle itself is the action.
+  const { getAppModeIsSwitchgear } = storeToRefs(globalStore)
+  const settingAppMode = ref(false)
+  const appModePassword = ref('')
+
+  const toggleAppMode = async () => {
+    settingAppMode.value = true
+    try {
+      await globalStore.setAppMode(!getAppModeIsSwitchgear.value, appModePassword.value)
+      globalStore.notify(
+        `Installation mode set to ${getAppModeIsSwitchgear.value ? 'Auto' : 'Manual'}`,
+        'success',
+      )
+      appModePassword.value = ''
+    } catch {
+      // El store ya notifica el error (password incorrecto u otro fallo).
+    } finally {
+      settingAppMode.value = false
+    }
+  }
+
   const restartService = async () => {
     if (!window.confirm('Are you sure? The app will disconnect for a few seconds while the service restarts.')) return
     restarting.value = true
@@ -379,6 +403,33 @@
           <AlertIcon class="w-5 h-5 mr-3 shrink-0" />
           <p class="text-sm font-medium">No antennas detected. Check the physical connections and scan again.</p>
         </div>
+      </div>
+
+      <!-- Installation mode card: solo en modo admin, con su propia password (no
+           comparte la de arriba) — cambiarlo por error altera el comportamiento
+           de procesamiento del reader. -->
+      <div v-if="adminMode" class="card overflow-hidden py-4 px-4 md:px-6">
+        <div class="mb-3">
+          <h2 class="text-base font-semibold">Installation mode</h2>
+          <p class="text-sm text-ink-soft mt-0.5">Switchgear cabinets auto-register sensor groups per antenna instead of relying on manually configured sensors.</p>
+        </div>
+        <div class="flex flex-wrap items-end gap-3">
+          <div class="flex-1 min-w-[160px]">
+            <label class="field-label">Password</label>
+            <input type="password" v-model="appModePassword" class="input" placeholder="Admin password">
+          </div>
+          <button @click="toggleAppMode()" :disabled="settingAppMode || !appModePassword" type="button" class="btn-ghost">
+            <LoadingIcon v-if="settingAppMode" class="animate-spin fill-transparent w-4 mr-1" />
+            <RefreshIcon v-else class="w-4 mr-1" />
+            Switch to {{ getAppModeIsSwitchgear ? 'Manual' : 'Auto' }}
+          </button>
+        </div>
+        <p class="mt-3 text-sm text-ink-soft">
+          Current:
+          <span class="ml-1 font-semibold" :class="getAppModeIsSwitchgear ? 'text-accent/70' : 'text-ok/70'">
+            {{ getAppModeIsSwitchgear ? 'Auto' : 'Manual' }}
+          </span>
+        </p>
       </div>
 
       <!-- Modbus card: settings comunes (no requieren admin) -->
