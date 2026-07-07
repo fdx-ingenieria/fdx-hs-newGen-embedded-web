@@ -382,17 +382,17 @@
           <span>No scan yet — press <span class="font-semibold text-ink-soft">Detect antennas</span> to query the reader.</span>
         </div>
 
-        <!-- Resultado con antenas: resumen + tiles tipo LED por puerto. -->
+        <!-- Resultado con antenas: resumen + tiles por puerto (contenedor neutro,
+             el color queda solo en texto/punto — sin fondo relleno, ring ni glow). -->
         <template v-else-if="antennaScan.count > 0">
-          <span class="pill bg-ok-soft text-ok ring-ok/30">
-            <span class="w-2 h-2 rounded-full bg-ok"></span>
+          <p class="text-sm font-medium text-ok/70">
             {{ antennaScan.count }} {{ antennaScan.count === 1 ? 'antenna' : 'antennas' }} detected
-          </span>
-          <div class="flex flex-wrap gap-3 mt-4">
+          </p>
+          <div class="flex flex-wrap gap-3 mt-3">
             <div v-for="port in antennaScan.ports" :key="port"
-              class="flex flex-col items-center justify-center w-16 h-16 rounded-lg border border-ok/40 bg-ok-soft">
-              <span class="text-sm font-semibold text-ok">P{{ port }}</span>
-              <span class="w-2.5 h-2.5 rounded-full bg-ok mt-1.5 shadow-[0_0_6px_rgb(var(--ok))]"></span>
+              class="flex flex-col items-center justify-center w-16 h-16 rounded-lg border border-line bg-panel-soft">
+              <span class="text-sm font-semibold text-ink">P{{ port }}</span>
+              <span class="w-1.5 h-1.5 rounded-full bg-ok/70 mt-1.5"></span>
             </div>
           </div>
           <p class="text-xs text-ink-faint mt-3">Lit = port with a connected antenna.</p>
