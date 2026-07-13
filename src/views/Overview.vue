@@ -194,6 +194,65 @@
       </div>
     </div>
 
+    <!-- Switchgear (Auto) only: which EPC group is currently locked per antenna.
+         Irrelevant for normal installations, so it stays hidden otherwise. -->
+    <div v-if="getAppModeIsSwitchgear" class="card mb-4 p-4">
+      <div class="flex items-start justify-between gap-3 mb-1">
+        <h2 class="text-base font-semibold">Active groups</h2>
+        <!-- Fast detection: temporary aggressive timing (3 min, self-expiring on
+             the backend) so groups lock in seconds during commissioning. -->
+        <div v-if="getFastDetectionActive" class="flex items-center gap-2">
+          <span class="font-mono text-sm font-semibold text-warn/80" title="Fast detection time remaining">{{ fastDetectionCountdown }}</span>
+          <button
+            class="flex items-center gap-1 rounded-md border border-line bg-panel px-3 py-1 text-sm font-semibold text-crit hover:bg-crit hover:text-white disabled:opacity-50"
+            :disabled="togglingFastDetection"
+            @click="stopFastDetection">
+            <StopIcon class="h-4 w-4" />
+            Stop
+          </button>
+        </div>
+        <button v-else
+          class="flex items-center gap-1 rounded-md border border-line bg-panel px-3 py-1 text-sm font-semibold text-ok hover:bg-ok hover:text-white disabled:opacity-50"
+          :disabled="togglingFastDetection"
+          title="Speed up group detection for 3 minutes (turns itself off)"
+          @click="startFastDetection">
+          <PlayIcon class="h-4 w-4" />
+          Fast detection
+        </button>
+      </div>
+      <p class="text-sm text-ink-soft mb-3">
+        {{ getFastDetectionActive
+          ? 'Fast detection running — groups lock in seconds while it lasts.'
+          : 'EPC group currently locked per antenna.' }}
+      </p>
+      <!-- 2x2 on phones, one row of 4 from sm up (flex-wrap broke into 3+1). -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div v-for="entry in getAntennaGroups" :key="entry.antenna"
+          class="flex flex-col items-center justify-center min-h-16 px-3 py-2 rounded-lg border border-line bg-panel-soft">
+          <span class="text-xs text-ink-faint">Antenna {{ entry.antenna }}</span>
+          <span class="font-mono text-sm font-semibold" :class="entry.group ? 'text-accent/70' : 'text-ink-faint'">
+            {{ entry.group || '—' }}
+          </span>
+          <!-- Live tally of the voting window in progress: feedback while (or
+               before) a group locks, instead of a silent wait. -->
+          <span v-if="entry.votes?.length" class="font-mono text-[10px] text-warn/80"
+            title="Votes in the current detection window">
+            {{ votesLine(entry.votes) }}
+          </span>
+          <!-- Manual lock of the leading candidate, shown only when it differs
+               from what is locked. Plain shortcut: the next voting window can
+               still override it. -->
+          <button v-if="entry.votes?.length && entry.votes[0].group !== entry.group"
+            class="text-xs font-semibold text-accent hover:underline disabled:opacity-50"
+            :disabled="lockingAntenna === entry.antenna"
+            title="Lock this group now instead of waiting for the voting window"
+            @click="lockGroup(entry.antenna, entry.votes[0].group)">
+            Set {{ entry.votes[0].group }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="card mb-4 overflow-hidden">
       <div class="border-b border-line text-sm font-semibold text-ink-faint">
         <ul class="flex flex-wrap px-2 -mb-px">
