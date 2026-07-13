@@ -577,6 +577,17 @@ export const useGlobalStore = defineStore('global', () => {
     fastDetectionRemainingS.value = 0
   }
 
+  async function lockAntennaGroup(antenna: number, group: string): Promise<void> {
+    // Manually lock a group as the antenna's active group right now, instead of
+    // waiting for the voting window to close. Plain shortcut: the next voting
+    // window can still override it. The updated group arrives via the
+    // 'antenna_groups' SSE event on the next tick.
+    await apiFetch('/api/action/antenna_group/lock', {
+      method: 'POST',
+      body: JSON.stringify({ antenna, group }),
+    })
+  }
+
   async function loadMode(): Promise<void> {
     // Poll inicial del modo operativo para no depender del primer tick SSE (hasta 5s).
     // El backend solo tiene dos modos alcanzables: DISCOVERY y MANUAL. Lo que el front
@@ -701,6 +712,7 @@ export const useGlobalStore = defineStore('global', () => {
     getFastDetectionRemainingS,
     startFastDetection,
     stopFastDetection,
+    lockAntennaGroup,
     startNormalMode,
     stopNormalMode,
     restartService,
