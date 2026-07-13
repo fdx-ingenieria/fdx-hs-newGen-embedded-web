@@ -4,7 +4,9 @@
   import {
     AlarmIcon,
     LoadingIcon,
+    PlayIcon,
     SensorIcon,
+    StopIcon,
     ThermometerHighIcon,
     ThermometerLowIcon,
     BellRingIcon
@@ -18,9 +20,34 @@
   const {
     getConfiguredAlarms,
     getConfiguredSensors,
+    getAppModeIsSwitchgear,
+    getFastDetectionActive,
+    getFastDetectionRemainingS,
   } = storeToRefs(globalStore)
   const loading = ref(true)
   const activeTab = ref('sensors')
+  const togglingFastDetection = ref(false)
+
+  const startFastDetection = () => {
+    togglingFastDetection.value = true
+    globalStore.startFastDetection()
+      .catch(() => {})
+      .finally(() => togglingFastDetection.value = false)
+  }
+
+  const stopFastDetection = () => {
+    togglingFastDetection.value = true
+    globalStore.stopFastDetection()
+      .catch(() => {})
+      .finally(() => togglingFastDetection.value = false)
+  }
+
+  // mm:ss from the SSE-driven remaining seconds (server-driven countdown).
+  const fastDetectionCountdown = computed(() => {
+    const s = getFastDetectionRemainingS.value
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+  })
+
 
   const getTabClass = (type: string): string => {
     if (type === activeTab.value) {

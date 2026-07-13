@@ -67,6 +67,11 @@ export const useGlobalStore = defineStore('global', () => {
   const timersData: Ref<ITimers> = ref({} as ITimers)
   const readerConfigData: Ref<IReaderConfig> = ref({} as IReaderConfig)
   const modbusTable: Ref<Array<IModbusTableEntry>> = ref([])
+  // Switchgear (Auto) only: temporary fast-detection window (commissioning aid).
+  // Server-driven: both values come from the SSE stream every ~1s, so the
+  // countdown needs no local timer and can never drift from the backend.
+  const fastDetectionActive: Ref<boolean> = ref(false)
+  const fastDetectionRemainingS: Ref<number> = ref(0)
   const boardTemp: Ref<number | string> = ref('N/A')
   const firmwareVersion: Ref<string> = ref('')
   const showSideBar = ref(false)
@@ -95,6 +100,8 @@ export const useGlobalStore = defineStore('global', () => {
   const getTimersData = computed(() => timersData.value)
   const getReaderConfigData = computed(() => readerConfigData.value)
   const getModbusTable = computed(() => modbusTable.value)
+  const getFastDetectionActive = computed(() => fastDetectionActive.value)
+  const getFastDetectionRemainingS = computed(() => fastDetectionRemainingS.value)
   const getConfiguredSensors = computed(() => availableSensors.value.filter(sensor => !!sensor.config.equipment))
   const getAvailableAlarms = computed(() => availableAlarms.value)
   const getConfiguredAlarms = computed(() => availableAlarms.value.filter(alarm => !!alarm.alarm_type))
@@ -192,6 +199,11 @@ export const useGlobalStore = defineStore('global', () => {
       const alarms: IAlarmData[] = raw.map(a => ({ id: a.slot, state: a.is_alarmed, sensors: [] }))
       updateAlarmsData(alarms)
       connected.value = true
+    })
+    eventSource.addEventListener('fast_detection', (event) => {
+      const data: { active: boolean; remaining_s: number } = JSON.parse(event.data)
+      fastDetectionActive.value = data.active
+      fastDetectionRemainingS.value = data.remaining_s
     })
     eventSource.addEventListener('reader_temp', (event) => {
       const data = JSON.parse(event.data)
@@ -535,6 +547,22 @@ export const useGlobalStore = defineStore('global', () => {
     normalModeOn.value = false
   }
 
+  async function startFastDetection(): Promise<void> {
+    // Switchgear (Auto) only: aggressive inventory timing for 3 minutes so the
+    // group voting converges in seconds. Self-expiring on the backend (never
+    // persisted), so it cannot be left enabled by accident. The countdown state
+    // arrives via the 'fast_detection' SSE event; we optimistically flip the
+    // flag so the button reacts before the next tick.
+    await apiFetch('/api/action/fast_detection/start', { method: 'POST' })
+    fastDetectionActive.value = true
+  }
+
+  async function stopFastDetection(): Promise<void> {
+    await apiFetch('/api/action/fast_detection/stop', { method: 'POST' })
+    fastDetectionActive.value = false
+    fastDetectionRemainingS.value = 0
+  }
+
   async function loadMode(): Promise<void> {
     // Poll inicial del modo operativo para no depender del primer tick SSE (hasta 5s).
     // El backend solo tiene dos modos alcanzables: DISCOVERY y MANUAL. Lo que el front
@@ -653,6 +681,10 @@ export const useGlobalStore = defineStore('global', () => {
     updateReaderConfigData,
     loadModbusTable,
     getModbusTable,
+    getFastDetectionActive,
+    getFastDetectionRemainingS,
+    startFastDetection,
+    stopFastDetection,
     startNormalMode,
     stopNormalMode,
     restartService,
