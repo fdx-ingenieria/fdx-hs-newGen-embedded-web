@@ -183,7 +183,7 @@
                 </template>
                 <template v-else>
                   <SendIcon class="w-4" />
-                  Guardar
+                  Save
                 </template>
               </button>
             </div>
