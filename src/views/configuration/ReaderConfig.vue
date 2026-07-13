@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { IReaderConfig, Region, TagEncoding, ReaderQ, ReaderSession, ReaderTarget, isValidInteger } from '@/commons';
-  import { CloseIcon, LoadingIcon, SendIcon } from '@/components/icons';
+  import { CloseIcon, LoadingIcon, RefreshIcon, SendIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global'
   import { storeToRefs } from 'pinia';
   import { Ref, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -9,6 +9,7 @@
   const globalStore = useGlobalStore()
   const editable: Ref<IReaderConfig> = ref({} as IReaderConfig)
   const savingData = ref(false)
+  const resetting = ref(false)
   const { getReaderConfigData } = storeToRefs(globalStore)
   const adminMode = ref(false)
   const hasUnsavedChanges = ref(false)
@@ -54,6 +55,28 @@
       }
     } finally {
       savingData.value = false
+    }
+  }
+
+  // Factory reset overwrites the whole reader config (region + advanced fields) with
+  // the backend defaults, so it is admin-gated and reuses the password field. On a
+  // wrong password the backend returns 403 and the store call throws (already
+  // notified by apiFetch); we just clear the flag in that case.
+  const factoryReset = async () => {
+    if (!window.confirm('Restore the RFID reader configuration to factory defaults? This overwrites all reader settings.')) {
+      return
+    }
+    resetting.value = true
+    advancedUpdated.value = null
+    try {
+      await globalStore.resetReaderConfigToFactory(editable.value.password ?? '')
+      hasUnsavedChanges.value = false
+      adminMode.value = false
+      globalStore.notify('Reader configuration restored to factory defaults', 'success')
+    } catch {
+      /* apiFetch already notified the error (e.g. wrong password) */
+    } finally {
+      resetting.value = false
     }
   }
 
@@ -121,7 +144,7 @@
                   v-model.number="editable.read_pwr"
                   placeholder="Read power in cdBm">
                 <p class="mt-2 text-sm text-ink-faint">0 – 3300 cdBm.</p>
-                <p v-show="!validReadWritePowerValue(editable.read_pwr)" class="mt-2 text-sm text-crit"><span class="font-semibold">Oops!</span> Valor fuera de rango.</p>
+                <p v-show="!validReadWritePowerValue(editable.read_pwr)" class="mt-2 text-sm text-crit"><span class="font-semibold">Oops!</span> Value out of range.</p>
               </div>
               <div>
                 <label class="field-label">Write power (cdBm)</label>
@@ -130,18 +153,18 @@
                   v-model.number="editable.write_pwr"
                   placeholder="Write power in cdBm">
                 <p class="mt-2 text-sm text-ink-faint">0 – 3300 cdBm.</p>
-                <p v-show="!validReadWritePowerValue(editable.write_pwr)" class="mt-2 text-sm text-crit"><span class="font-semibold">Oops!</span> Valor fuera de rango.</p>
+                <p v-show="!validReadWritePowerValue(editable.write_pwr)" class="mt-2 text-sm text-crit"><span class="font-semibold">Oops!</span> Value out of range.</p>
               </div>
               <div>
-                <label class="field-label">Antenas activas</label>
+                <label class="field-label">Active antennas</label>
                 <input class="input"
                   type="text"
                   v-model="editable.ants"
                   placeholder="e.g. 0,1,2,3">
-                <p class="mt-2 text-sm text-ink-faint">Índices separados por coma.</p>
+                <p class="mt-2 text-sm text-ink-faint">Comma-separated indices.</p>
               </div>
               <div>
-                <label class="field-label">Q (algoritmo)</label>
+                <label class="field-label">Q (algorithm)</label>
                 <select v-model="editable.q" class="input">
                   <option v-for="q in ReaderQ" :key="q" :value="q">{{ q }}</option>
                 </select>
@@ -170,16 +193,27 @@
           <!-- Action buttons -->
           <div class="flex flex-col items-end gap-2">
             <div class="flex items-center space-x-4">
-              <button v-if="adminMode" @click="cancelAdmin()" :disabled="savingData" type="button"
+              <button v-if="adminMode" @click="factoryReset()" :disabled="savingData || resetting || !editable.password" type="button"
+                class="btn-ghost !text-crit" title="Restore reader configuration to factory defaults">
+                <template v-if="resetting">
+                  <LoadingIcon class="animate-spin fill-transparent w-4" />
+                  Restoring...
+                </template>
+                <template v-else>
+                  <RefreshIcon class="w-4" />
+                  Restore factory defaults
+                </template>
+              </button>
+              <button v-if="adminMode" @click="cancelAdmin()" :disabled="savingData || resetting" type="button"
                 class="btn-ghost">
                 <CloseIcon class="w-4" />
-                Cancelar
+                Cancel
               </button>
-              <button @click="save()" :disabled="savingData || !isComplete()" type="button"
+              <button @click="save()" :disabled="savingData || resetting || !isComplete()" type="button"
                 class="btn-primary">
                 <template v-if="savingData">
                   <LoadingIcon class="animate-spin fill-transparent w-4" />
-                  Guardando...
+                  Saving...
                 </template>
                 <template v-else>
                   <SendIcon class="w-4" />

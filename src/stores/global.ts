@@ -526,6 +526,14 @@ export const useGlobalStore = defineStore('global', () => {
     return result
   }
 
+  // Restores the reader configuration to factory defaults. Admin-gated: a wrong or
+  // missing password returns 403, which apiFetch surfaces as a thrown error (the
+  // view catches it and nothing is reloaded). On success the reset config is reloaded.
+  async function resetReaderConfigToFactory(password: string): Promise<void> {
+    await apiFetch('/api/action/reader/factory_reset', { method: 'POST', body: JSON.stringify({ password }) })
+    await loadReaderConfigData()
+  }
+
   async function loadModbusTable(): Promise<void> {
     modbusTable.value = await apiFetch<Array<IModbusTableEntry>>('/api/data/modbus_table')
   }
@@ -704,6 +712,7 @@ export const useGlobalStore = defineStore('global', () => {
     getReaderConfigData,
     loadReaderConfigData,
     updateReaderConfigData,
+    resetReaderConfigToFactory,
     loadModbusTable,
     getModbusTable,
     loadAntennaGroups,
