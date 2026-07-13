@@ -1,4 +1,4 @@
-import { ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ITimers, ISensorData, IAlarm, IAlarmData, IModbusTableEntry, IReaderConfig, SensorQuality } from '@/commons'
+import { IAntennaGroup, ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ITimers, ISensorData, IAlarm, IAlarmData, IModbusTableEntry, IReaderConfig, SensorQuality } from '@/commons'
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
 
@@ -67,6 +67,9 @@ export const useGlobalStore = defineStore('global', () => {
   const timersData: Ref<ITimers> = ref({} as ITimers)
   const readerConfigData: Ref<IReaderConfig> = ref({} as IReaderConfig)
   const modbusTable: Ref<Array<IModbusTableEntry>> = ref([])
+  // Switchgear (Auto) only: EPC group currently locked per antenna, plus the
+  // live vote tally of the voting window in progress (sorted by count desc).
+  const antennaGroups: Ref<Array<IAntennaGroup>> = ref([])
   // Switchgear (Auto) only: temporary fast-detection window (commissioning aid).
   // Server-driven: both values come from the SSE stream every ~1s, so the
   // countdown needs no local timer and can never drift from the backend.
@@ -100,6 +103,7 @@ export const useGlobalStore = defineStore('global', () => {
   const getTimersData = computed(() => timersData.value)
   const getReaderConfigData = computed(() => readerConfigData.value)
   const getModbusTable = computed(() => modbusTable.value)
+  const getAntennaGroups = computed(() => antennaGroups.value)
   const getFastDetectionActive = computed(() => fastDetectionActive.value)
   const getFastDetectionRemainingS = computed(() => fastDetectionRemainingS.value)
   const getConfiguredSensors = computed(() => availableSensors.value.filter(sensor => !!sensor.config.equipment))
@@ -199,6 +203,12 @@ export const useGlobalStore = defineStore('global', () => {
       const alarms: IAlarmData[] = raw.map(a => ({ id: a.slot, state: a.is_alarmed, sensors: [] }))
       updateAlarmsData(alarms)
       connected.value = true
+    })
+    eventSource.addEventListener('antenna_groups', (event) => {
+      // Switchgear (Auto) only: grupo EPC activo por antena. Pushed en cada
+      // tick del SSE (~1s), así se ve solo apenas se fija el grupo, sin
+      // depender de un refresh manual de la página.
+      antennaGroups.value = JSON.parse(event.data)
     })
     eventSource.addEventListener('fast_detection', (event) => {
       const data: { active: boolean; remaining_s: number } = JSON.parse(event.data)
@@ -520,6 +530,10 @@ export const useGlobalStore = defineStore('global', () => {
     modbusTable.value = await apiFetch<Array<IModbusTableEntry>>('/api/data/modbus_table')
   }
 
+  async function loadAntennaGroups(): Promise<void> {
+    antennaGroups.value = await apiFetch<Array<IAntennaGroup>>('/api/data/antenna_groups')
+  }
+
   // DISCOVERY and MANUAL ("Normal") are the two mutually exclusive backend modes,
   // so each toggle keeps both mirror flags in sync. This avoids chaining a second
   // backend call (discovery/stop == normal_mode/start on the backend), which would
@@ -681,6 +695,8 @@ export const useGlobalStore = defineStore('global', () => {
     updateReaderConfigData,
     loadModbusTable,
     getModbusTable,
+    loadAntennaGroups,
+    getAntennaGroups,
     getFastDetectionActive,
     getFastDetectionRemainingS,
     startFastDetection,

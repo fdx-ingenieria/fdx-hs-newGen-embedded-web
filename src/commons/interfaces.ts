@@ -97,6 +97,14 @@ export interface IMenuItem {
   route?: string;
 }
 
+// Switchgear (Auto): active EPC group per antenna + live vote tally of the
+// voting window in progress (sorted by count desc, from the backend).
+export interface IAntennaGroup {
+  antenna: number;
+  group: string;
+  votes: Array<{ group: string; count: number }>;
+}
+
 // Modbus table
 export interface IModbusTableEntry {
   name: string;

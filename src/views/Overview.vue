@@ -21,6 +21,7 @@
     getConfiguredAlarms,
     getConfiguredSensors,
     getAppModeIsSwitchgear,
+    getAntennaGroups,
     getFastDetectionActive,
     getFastDetectionRemainingS,
   } = storeToRefs(globalStore)
@@ -48,6 +49,19 @@
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
   })
 
+  // Top candidates of the voting window in progress, e.g. "A4·5  B2·1".
+  const votesLine = (votes: Array<{ group: string; count: number }>): string =>
+    votes.slice(0, 2).map(v => `${v.group}·${v.count}`).join('  ')
+
+  // Manual lock: commit the leading candidate right now instead of waiting for
+  // the voting window. Per-antenna loading ref so only that button disables.
+  const lockingAntenna = ref(0)
+  const lockGroup = (antenna: number, group: string) => {
+    lockingAntenna.value = antenna
+    globalStore.lockAntennaGroup(antenna, group)
+      .catch(() => {})
+      .finally(() => lockingAntenna.value = 0)
+  }
 
   const getTabClass = (type: string): string => {
     if (type === activeTab.value) {
@@ -105,6 +119,7 @@
     await globalStore.loadLabels()
     await globalStore.loadSensors()
     await globalStore.loadAlarms()
+    await globalStore.loadAntennaGroups()
     loading.value = false
   })
 
