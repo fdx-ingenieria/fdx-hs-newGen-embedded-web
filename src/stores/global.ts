@@ -672,6 +672,28 @@ export const useGlobalStore = defineStore('global', () => {
     firmwareVersion.value = data.version
   }
 
+  // Admin log download. Backend: POST /api/admin/logs { service, severity, password }
+  // → text/plain (the filtered log). Own fetch (not apiFetch) because the response is
+  // plain text, not JSON, and we want to tell the 403 (wrong password) apart from a
+  // 400 (unknown service / bad severity / file not readable). Returns the raw text so
+  // the caller can either save it directly or merge several services before saving.
+  async function fetchLogText(service: string, severity: string, password: string): Promise<string> {
+    const res = await fetch('/api/admin/logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ service, severity, password }),
+    })
+    if (res.status === 403) {
+      notify('Wrong password: logs were not downloaded', 'error')
+      throw new Error('unauthorized')
+    }
+    if (!res.ok) {
+      notify(`[${res.status}] Could not download logs for "${service}"`, 'error')
+      throw new Error('log download failed')
+    }
+    return res.text()
+  }
+
   return {
     connected,
     boardTemp,
@@ -732,6 +754,7 @@ export const useGlobalStore = defineStore('global', () => {
     firmwareVersion,
     getFirmwareVersion,
     loadFirmwareVersion,
+    fetchLogText,
   }
 },
 {
