@@ -694,6 +694,26 @@ export const useGlobalStore = defineStore('global', () => {
     return res.text()
   }
 
+  // Set the runtime (session-only) log level of a service ('fdx-hs' | 'fdx-api').
+  // Not persisted: a service restart restores the level from its env/defaults.
+  // Returns true on success; notifies and returns false on 403/other errors.
+  async function setLogLevel(service: string, level: string, password: string, module = 'all'): Promise<boolean> {
+    const res = await fetch('/api/admin/log-level', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ service, level, module, password }),
+    })
+    if (res.status === 403) {
+      notify('Wrong password: log level was not changed', 'error')
+      return false
+    }
+    if (!res.ok) {
+      notify(`[${res.status}] Could not set log level for "${service}"`, 'error')
+      return false
+    }
+    return true
+  }
+
   return {
     connected,
     boardTemp,
@@ -755,6 +775,7 @@ export const useGlobalStore = defineStore('global', () => {
     getFirmwareVersion,
     loadFirmwareVersion,
     fetchLogText,
+    setLogLevel,
   }
 },
 {
