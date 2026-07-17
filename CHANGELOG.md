@@ -1,4 +1,11 @@
-## [0.3.0] - 2026-07-13
+## [0.4.0] - 2026-07-17
+
+### Features
+
+- View para descargar logs de la aplicación
+- *(LogsAdmin)* Agrego configuración de nivel de logeo a la view
+- *(LogsAdmin)* Live tail y refactor del front end
+## [0.3.0] - 2026-07-17
 
 ### Features
 
@@ -32,6 +39,7 @@
 - *(global)* Alarmas con histéresis no se mostraban en overview
 - Evito duplicación de comandos en cambio de modo
 - Botón de guardar rfid conf en español
+- *(cliff)* Skip chore(release) commits regardless of subject
 
 ### Refactor
 
@@ -56,6 +64,10 @@
 - Actualizo logo fdx a versión 2026
 - *(System)* Mejoro estilo en sección de detección de antenas
 - Front para modo fast, e interacción con grupos
+
+### Documentation
+
+- *(changelog)* Remove Jira ticket references from historical entries
 
 ### Styling
 
@@ -82,7 +94,7 @@
 
 ### Bug Fixes
 
-- Disconnect socket before refresh
+- *(FHNGW-87)* Disconnect socket before refresh
 
 ### Miscellaneous Tasks
 
@@ -99,12 +111,12 @@
 
 ### Bug Fixes
 
-- Remove hidden class on small screens
-- Enhance reactivity
+- *(FHNGW-73)* Remove hidden class on small screens
+- *(FHNGW-80)* Enhance reactivity
 - Alarmed counter
 - Correct loading order of labels before sensors
 - Sleep 1000 before send first message
-- Correct loading order to prevent sync issue
+- *(FHNGW-87)* Correct loading order to prevent sync issue
 
 ### Refactor
 
@@ -140,65 +152,65 @@
 - Add get, set and view alarms
 - Add filter to Alarms table
 - Add loading icon on conf labels view
-- Prevent duplicate labels based on type
-- Implement clear unconfigured command
-- Set max length for alarm names
+- *(FHNGW-7)* Prevent duplicate labels based on type
+- *(FHNGW-5)* Implement clear unconfigured command
+- *(FHNGW-15)* Set max length for alarm names
 - Add new icons
 - Add overview
 - Use elapsed time with intervals
 - Add EPC property and filter
-- System configuration and related enum/interface updates
-- Hide reset action in sensor table
-- Check duplicate sensor config
-- Update individual sensor
-- Global save for alarms
+- FHNGW-42 & FHNGW-32
+- *(FHNGW-47)* Hide reset action in sensor table
+- *(FHNGW-46)* Check duplicate sensor config
+- *(FHNGW-45)* Update individual sensor
+- *(FHNGW-35)* Global save for alarms
 - Add modbus view
 - Add modbus view
 - Modbus print view
-- Add board temp info
-- Add reader config view & some improvements
-- Set maxlength
-- Change range and validate integers
-- Add integer validation
+- *(FHNGW-55)* Add board temp info
+- *(FHNGW-57)* Add reader config view & some improvements
+- *(FHNGW-54)* Set maxlength
+- *(FHNGW-85)* Change range and validate integers
+- *(FHNGW-70)* Add integer validation
 - Pkgs upgrade
-- Add afterEach router handler to close menu
+- *(FHNGW-61)* Add afterEach router handler to close menu
 - Add pinia persist plugin
 - *(v0.0.4)* Several changes
-- Ux improvements
-- Ux improvements
-- Several UX changes
+- *(FHNGW-68)* Ux improvements
+- *(FHNGW-83)* Ux improvements
+- *(FHNGW-86)* Several UX changes
 
 ### Bug Fixes
 
 - Disable edit first element of each array tag
 - Add missing config file
-- Show sensor ID as hexa when it's being edited
-- Hide empty labels
-- Ensure normal mode starts after stopping discovery mode
+- *(FHNGW-3)* Show sensor ID as hexa when it's being edited
+- *(FHNGW-14)* Hide empty labels
+- *(FHNGW-8)* Ensure normal mode starts after stopping discovery mode
 - Allow multiple blank labels
-- Support starting index at zero
+- *(FHNGW-21)* Support starting index at zero
 - Improve async request
-- Remove auto-stop on edits
-- Handle bigint values
-- Remove unnecessary data
-- Check alarm fields completiton
+- *(FHNGW-19)* Remove auto-stop on edits
+- *(FHNGW-25)* Handle bigint values
+- *(FHNGW-26)* Remove unnecessary data
+- *(FHNGW-20)* Check alarm fields completiton
 - Not assignable type
 - Trasition duration
 - Stop normal mode if discovery is off
 - Start normal mode after stop discovery mode
 - Ts warning
-- Socket reconnect
-- Load entire page before get data
-- Remove routes lazy loading
-- Unexpected behavior on alarmed sensors
+- *(FHNGW-53)* Socket reconnect
+- *(FHNGW-50)* Load entire page before get data
+- *(FHNGW-50)* Remove routes lazy loading
+- *(FHNGW-49)* Unexpected behavior on alarmed sensors
 - Socket reconection handler
 - Change to explicit imports
 - Menu
 - Remove typo
 - Move sensors ids from number to string
-- Move bk from 768 to 1024
-- Handle left bar visibility
-- Improve reactivity
+- *(FHNGW-67)* Move bk from 768 to 1024
+- *(FHNGW-67)* Handle left bar visibility
+- *(FHNGW-74)* Improve reactivity
 
 ### Refactor
 
@@ -206,9 +218,9 @@
 - Improve async request handlers
 - Add env vars for conf max retries and time between requests
 - Improve UX on async events
-- Implements new command names
-- Send configured sensors only
-- Enhance UX for sensors data
+- *(FHNGW-9)* Implements new command names
+- *(FHNGW-6)* Send configured sensors only
+- *(FHNGW-4)* Enhance UX for sensors data
 - Update mocks for improved sandbox
 - Remove unnecessary code and files
 
@@ -227,7 +239,7 @@
 - Add elapsed_time
 - Remove anchors
 - Add EPC to mock server
-- Update mock server for hs_system structure change
+- Hs_system structure according  FHNGW-42
 - Add modbus_table command
 - Add temp reader task
 - Fix indent
