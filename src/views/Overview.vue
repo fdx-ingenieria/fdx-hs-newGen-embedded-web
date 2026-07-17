@@ -220,10 +220,13 @@
           Fast detection
         </button>
       </div>
-      <p class="text-sm text-ink-soft mb-3">
+      <p class="text-sm text-ink-soft mb-1">
         {{ getFastDetectionActive
           ? 'Fast detection running — groups lock in seconds while it lasts.'
           : 'EPC group currently locked per antenna.' }}
+      </p>
+      <p class="text-xs text-ink-faint mb-3">
+        A tag may not appear if its EPC could not be parsed correctly.
       </p>
       <!-- 2x2 on phones, one row of 4 from sm up (flex-wrap broke into 3+1). -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
