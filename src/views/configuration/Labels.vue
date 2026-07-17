@@ -32,6 +32,20 @@
     }
   }
 
+  const addLabel = (type: LabelType) => {
+    availableLabels.value[type].push('')
+    hasUnsavedChanges.value = true
+  }
+
+  // Only the trailing slot can be removed (LabelTable only shows the button on
+  // the last row) — indices are referenced by sensors/config, so shrinking
+  // from the middle would silently reassign what every other index means.
+  const removeLastLabel = (type: LabelType) => {
+    if (availableLabels.value[type].length <= 1) return
+    availableLabels.value[type].pop()
+    hasUnsavedChanges.value = true
+  }
+
   const hasDuplicateLabel = (labels: string[]): boolean => {
     const noEmpty = labels.filter(label => label !== '');
     const uniqueLabels = new Set(noEmpty);
@@ -118,7 +132,7 @@
           <template v-for="labelType in LabelType" :key="labelType">
             <div v-if="activeTab === labelType">
               <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-4" />
-              <LabelTable v-else :availableLabels="availableLabels[labelType]" :labelType="labelType" @edit="editLabel" />
+              <LabelTable v-else :availableLabels="availableLabels[labelType]" :labelType="labelType" @edit="editLabel" @add="addLabel" @removeLast="removeLastLabel" />
             </div>
           </template>
         </transition-group>
@@ -132,7 +146,7 @@
             </div>
           </div>
           <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-4" />
-          <LabelTable v-else :availableLabels="availableLabels[labelType]" :labelType="labelType" @edit="editLabel" />
+          <LabelTable v-else :availableLabels="availableLabels[labelType]" :labelType="labelType" @edit="editLabel" @add="addLabel" @removeLast="removeLastLabel" />
         </div>
       </div>
       <div v-if="hasUnsavedChanges"
