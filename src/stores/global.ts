@@ -714,6 +714,53 @@ export const useGlobalStore = defineStore('global', () => {
     return true
   }
 
+  // Live, merged tail of every service log (POST /api/admin/logs/stream). Streams
+  // chunked text/plain with fetch's ReadableStream — not EventSource — so the admin
+  // password travels in the body. Complete lines are handed to `onLines` as they
+  // arrive; a trailing partial line is buffered until its newline shows up. The
+  // stream is long-lived and ends when `signal` is aborted (the caller aborts on
+  // Stop / when leaving the view), which tears down the server-side connection.
+  async function streamLogTail(
+    severity: string,
+    password: string,
+    signal: AbortSignal,
+    onLines: (lines: string[]) => void,
+  ): Promise<void> {
+    const res = await fetch('/api/admin/logs/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ severity, password }),
+      signal,
+    })
+    if (res.status === 403) {
+      notify('Wrong password: live tail not started', 'error')
+      throw new Error('unauthorized')
+    }
+    if (!res.ok || !res.body) {
+      notify(`[${res.status}] Could not start live tail`, 'error')
+      throw new Error('log tail failed')
+    }
+
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buf = ''
+    try {
+      for (;;) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += decoder.decode(value, { stream: true })
+        // Emit only whole lines; keep the tail after the last newline for next read.
+        const nl = buf.lastIndexOf('\n')
+        if (nl === -1) continue
+        const complete = buf.slice(0, nl)
+        buf = buf.slice(nl + 1)
+        onLines(complete.split('\n'))
+      }
+    } finally {
+      reader.releaseLock()
+    }
+  }
+
   return {
     connected,
     boardTemp,
@@ -776,6 +823,7 @@ export const useGlobalStore = defineStore('global', () => {
     loadFirmwareVersion,
     fetchLogText,
     setLogLevel,
+    streamLogTail,
   }
 },
 {
