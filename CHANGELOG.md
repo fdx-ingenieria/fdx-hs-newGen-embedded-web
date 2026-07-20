@@ -1,3 +1,13 @@
+## [0.5.0] - 2026-07-20
+
+### Features
+
+- *(Sensors)* Advertencia de sensores invalidos en modo switchgear
+- *(System)* Limites para timers on, off y measure
+
+### Bug Fixes
+
+- *(Labels)* Se pueden agregar labels nuevamente
 ## [0.4.0] - 2026-07-17
 
 ### Features
