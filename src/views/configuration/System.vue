@@ -161,6 +161,9 @@
   // most tags are discovered within a second, so 5 s is already generous.
   const T_ON_MAX_MS = 5_000
   const T_OFF_MAX_MS = 15_000
+  // Lower bound (mirror of backend): t_on/t_off below this are not physically
+  // meaningful and can leave the reader in a degenerate state.
+  const T_READER_MIN_MS = 100
   // Both sliders share one track (0 – 15 000 ms) so the two knobs sit on the same
   // visual scale; reader-on is just clamped to its lower ceiling (T_ON_MAX_MS).
   const measurePeriodSec = computed<number>({
@@ -180,14 +183,25 @@
     return sec >= MIN_PERIOD_S && sec <= MAX_PERIOD_S
   }
 
-  const validReaderOn = (ms: number): boolean => isValidInteger(ms) && ms >= 0 && ms <= T_ON_MAX_MS
-  const validReaderOff = (ms: number): boolean => isValidInteger(ms) && ms >= 0 && ms <= T_OFF_MAX_MS
+  const validReaderOn = (ms: number): boolean => isValidInteger(ms) && ms >= T_READER_MIN_MS && ms <= T_ON_MAX_MS
+  const validReaderOff = (ms: number): boolean => isValidInteger(ms) && ms >= T_READER_MIN_MS && ms <= T_OFF_MAX_MS
 
   // Constraint cruzada (espejo del backend): al menos un ciclo completo de inventario
   // por ventana de medición. measure_period_ms se compara en ms con t_on + t_off.
   const crossConstraintOk = computed<boolean>(() =>
     (editableTimers.value.measure_period_ms ?? 0) >=
     (editableTimers.value.t_reader_on ?? 0) + (editableTimers.value.t_reader_off ?? 0))
+
+  // Non-blocking recommendation (mirror of backend warn): a measure_period barely
+  // above (t_on + t_off) risks fewer than two samples per window, producing false
+  // "out of service" states. Recommend >= 1.5x (ideal 2x) the reader cycle. This is
+  // a hint only — it never blocks saving.
+  const readerCycleMs = computed<number>(() =>
+    (editableTimers.value.t_reader_on ?? 0) + (editableTimers.value.t_reader_off ?? 0))
+  const periodBelowRecommended = computed<boolean>(() =>
+    crossConstraintOk.value &&
+    readerCycleMs.value > 0 &&
+    (editableTimers.value.measure_period_ms ?? 0) < 1.5 * readerCycleMs.value)
 
   const isSystemComplete = (): boolean => {
     const { serial_num, password } = editable.value
@@ -277,11 +291,11 @@
                       v-model.number="readerOnModel"
                       class="flex-1 accent-accent">
                     <input class="input !border-accent/40 w-28"
-                      type="number" min="0" max="5000" step="1"
+                      type="number" min="100" max="5000" step="1"
                       v-model.number="readerOnModel">
                   </div>
-                  <p class="mt-1 text-sm text-ink-faint">0 – 5 000 ms. Active irradiation time per inventory cycle.</p>
-                  <p v-show="!validReaderOn(editableTimers.t_reader_on)" class="mt-1 text-sm text-crit"><span class="font-semibold">Oops!</span> This value should be between 0 and 5 000 ms.</p>
+                  <p class="mt-1 text-sm text-ink-faint">100 – 5 000 ms. Active irradiation time per inventory cycle.</p>
+                  <p v-show="!validReaderOn(editableTimers.t_reader_on)" class="mt-1 text-sm text-crit"><span class="font-semibold">Oops!</span> This value should be between 100 and 5 000 ms.</p>
                 </div>
 
                 <!-- T reader off: slider + numeric, 0–20 000 ms -->
@@ -292,11 +306,11 @@
                       v-model.number="editableTimers.t_reader_off"
                       class="flex-1 accent-accent">
                     <input class="input !border-accent/40 w-28"
-                      type="number" min="0" max="15000" step="1"
+                      type="number" min="100" max="15000" step="1"
                       v-model.number="editableTimers.t_reader_off">
                   </div>
-                  <p class="mt-1 text-sm text-ink-faint">0 – 15 000 ms. Rest time between inventory cycles.</p>
-                  <p v-show="!validReaderOff(editableTimers.t_reader_off)" class="mt-1 text-sm text-crit"><span class="font-semibold">Oops!</span> This value should be between 0 and 15 000 ms.</p>
+                  <p class="mt-1 text-sm text-ink-faint">100 – 15 000 ms. Rest time between inventory cycles.</p>
+                  <p v-show="!validReaderOff(editableTimers.t_reader_off)" class="mt-1 text-sm text-crit"><span class="font-semibold">Oops!</span> This value should be between 100 and 15 000 ms.</p>
                 </div>
 
                 <!-- Measure period: numeric only (1 s – 1 h no escala en slider) -->
@@ -314,6 +328,12 @@
                 <div v-if="!crossConstraintOk" class="flex items-center p-4 text-warn rounded-lg bg-warn-soft" role="alert">
                   <AlertIcon class="w-5 h-5 mr-3 shrink-0" />
                   <p class="text-sm font-medium">Measure period must be at least <strong>Reader on + Reader off</strong> ({{ ((editableTimers.t_reader_on ?? 0) + (editableTimers.t_reader_off ?? 0)) / 1000 }} s) — one full inventory cycle per measurement window.</p>
+                </div>
+
+                <!-- Non-blocking recommendation: measure_period >= 1.5x (t_on + t_off) -->
+                <div v-if="periodBelowRecommended" class="flex items-center p-4 text-info rounded-lg bg-info-soft" role="note">
+                  <AlertIcon class="w-5 h-5 mr-3 shrink-0" />
+                  <p class="text-sm font-medium">For reliable readings we recommend a measure period of at least <strong>1.5×</strong> (ideally 2×) Reader on + Reader off ({{ (readerCycleMs * 1.5) / 1000 }} s). A tighter window may capture fewer than two samples and cause false "out of service" states.</p>
                 </div>
               </div>
             </div>
