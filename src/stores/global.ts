@@ -76,6 +76,37 @@ export const useGlobalStore = defineStore('global', () => {
   const fastDetectionActive: Ref<boolean> = ref(false)
   const fastDetectionRemainingS: Ref<number> = ref(0)
   const boardTemp: Ref<number | string> = ref('N/A')
+  // Antennas the reader found on its last detection, straight from the reader
+  // status in the SSE stream. -1 means "not known yet" (no status received, or a
+  // backend that predates the field) and is deliberately NOT the same as 0: only
+  // a real 0 means "probed, nothing attached", which is a fault worth showing.
+  const antCount: Ref<number> = ref(-1)
+  // Reader-side link state, from the same status payload. Distinct from `connected`
+  // above, which tracks whether OUR event stream is alive — the browser can be
+  // receiving events perfectly while the reader behind them is silent.
+  const readerConnected: Ref<boolean> = ref(false)
+  // Whether a backend that reports ant_count has been heard from at all. Gates the
+  // fault below so an older backend, which never sends the field, cannot raise an
+  // alarm it has no way to describe.
+  const readerStatusSeen: Ref<boolean> = ref(false)
+
+  // Mirrors the firmware's front-panel LED predicate exactly: the unit is faulted
+  // whenever it is not the case that the reader answers AND has an antenna. Note
+  // this includes ant_count === -1 ("never successfully probed"), which is the most
+  // common real failure — the detection threw because the reader never replied. An
+  // earlier version only tested for a confirmed 0 and therefore stayed silent in
+  // precisely that case.
+  const readerFault = computed(
+    () => readerStatusSeen.value && !(readerConnected.value && antCount.value > 0),
+  )
+
+  // What to tell the operator, narrowed to what is actually known.
+  const readerFaultMessage = computed(() => {
+    if (!readerConnected.value) return 'The reader is not responding. The unit is not measuring.'
+    if (antCount.value === 0)
+      return 'No antennas detected. The unit is not measuring — check the antenna cabling.'
+    return 'Antenna state unknown: detection has not completed. The unit is not measuring.'
+  })
   const firmwareVersion: Ref<string> = ref('')
   const showSideBar = ref(false)
   const notifications: Ref<Notification[]> = ref([])
@@ -218,6 +249,13 @@ export const useGlobalStore = defineStore('global', () => {
     eventSource.addEventListener('reader_temp', (event) => {
       const data = JSON.parse(event.data)
       boardTemp.value = data.temperature_c
+      // Absent on older backends: keep -1 ("unknown") rather than coercing to 0, and
+      // only arm the fault indication once the field has actually been seen.
+      if (data.ant_count !== undefined) {
+        antCount.value = data.ant_count
+        readerStatusSeen.value = true
+      }
+      readerConnected.value = data.connected === true
       connected.value = true
     })
   }
@@ -661,10 +699,14 @@ export const useGlobalStore = defineStore('global', () => {
     // Backend: POST /api/action/reader/detect_antennas → { ant_count, ant_ports:int[] }.
     // No requiere password (a diferencia de service_restart). Si el reader no responde,
     // el backend devuelve 503 y apiFetch ya notifica el error.
-    return apiFetch<{ ant_count: number; ant_ports: number[] }>(
+    const result = await apiFetch<{ ant_count: number; ant_ports: number[] }>(
       '/api/action/reader/detect_antennas',
       { method: 'POST' },
     )
+    // Reflect the result right away instead of waiting for the next SSE tick, so the
+    // banner clears (or appears) on the same click that triggered the detection.
+    antCount.value = result.ant_count
+    return result
   }
 
   async function loadFirmwareVersion(): Promise<void> {
@@ -764,6 +806,10 @@ export const useGlobalStore = defineStore('global', () => {
   return {
     connected,
     boardTemp,
+    antCount,
+    readerConnected,
+    readerFault,
+    readerFaultMessage,
     showSideBar,
     notifications,
     notify,
