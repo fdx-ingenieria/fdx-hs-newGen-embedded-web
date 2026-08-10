@@ -1,3 +1,8 @@
+## [0.6.0] - 2026-08-10
+
+### Features
+
+- *(App)* Muestro missing antennas
 ## [0.5.0] - 2026-07-20
 
 ### Features
@@ -8,6 +13,7 @@
 ### Bug Fixes
 
 - *(Labels)* Se pueden agregar labels nuevamente
+- Updated ts version from package.json
 ## [0.4.0] - 2026-07-17
 
 ### Features
