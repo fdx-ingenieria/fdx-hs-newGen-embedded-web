@@ -210,19 +210,21 @@
           <ListIcon class="h-6 w-6" />
         </div>
         <div class="min-w-0">
-          <h1 class="text-lg font-semibold tracking-wide text-ink">Log console</h1>
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h1 class="text-lg font-semibold tracking-wide text-ink">Log console</h1>
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold"
+              :class="canDownload ? 'text-ok' : 'text-ink-faint'">
+              <span class="h-1.5 w-1.5 rounded-full" :class="canDownload ? 'bg-ok' : 'bg-idle'" />
+              {{ canDownload ? 'Unlocked' : 'Locked' }}
+            </span>
+          </div>
           <p class="truncate text-sm text-ink-faint">
             Download, tune runtime levels, and watch every service live.
           </p>
         </div>
-        <span class="pill ml-auto shrink-0"
-          :class="canDownload ? 'bg-ok-soft text-ok ring-ok/30' : 'bg-idle-soft text-idle ring-idle/30'">
-          <span class="h-1.5 w-1.5 rounded-full" :class="canDownload ? 'bg-ok' : 'bg-idle'" />
-          {{ canDownload ? 'Unlocked' : 'Locked' }}
-        </span>
       </header>
 
-      <!-- Shared controls: admin password + severity apply to every action below. -->
+      <!-- Shared controls: admin password + severity apply to both the live tail below and the downloads at the bottom. -->
       <div class="card mb-4 overflow-hidden">
         <div class="panel-head">
           <h3 class="flex items-center gap-2"><FilterIcon class="h-4 w-4 text-brand" /> Access &amp; filter</h3>
@@ -239,130 +241,125 @@
               <option v-for="s in SEVERITIES" :key="s" :value="s">{{ s }}</option>
             </select>
           </div>
+          <p class="text-xs text-ink-faint sm:col-span-2">
+            Severity applies to both the live tail (takes effect on the next Start) and the downloaded files below.
+          </p>
         </div>
       </div>
 
-      <!-- Controls on the left, the live terminal (the star) on the right. -->
-      <div class="grid items-start gap-4 lg:grid-cols-[minmax(0,23rem)_minmax(0,1fr)]">
+      <!-- Live tail: the hero. Full width so lines never wrap mid-line. -->
+      <div class="card mb-4 flex h-[60vh] flex-col overflow-hidden">
+        <!-- Terminal titlebar. -->
+        <div class="flex items-center gap-3 border-b border-line border-l-4 border-l-brand bg-panel-strong px-4 py-2.5">
+          <h3 class="flex items-center gap-2 text-base font-semibold tracking-wide text-ink">
+            <ListIcon class="h-4 w-4 text-brand" /> Live tail
+          </h3>
+          <span class="inline-flex items-center gap-1.5 text-xs font-semibold"
+            :class="tailing ? 'text-ok' : 'text-ink-faint'">
+            <LoadingIcon v-if="tailing" class="h-3 w-3 animate-spin fill-transparent" />
+            <span v-else class="h-1.5 w-1.5 rounded-full bg-idle" />
+            {{ tailing ? 'Streaming' : 'Idle' }}
+          </span>
 
-        <!-- Left rail: downloads + runtime levels. -->
-        <div class="space-y-4">
+          <span class="ml-auto font-mono text-xs text-ink-faint tabular-nums">
+            {{ tailLines.length }} / {{ MAX_TAIL_LINES }}
+          </span>
+          <button type="button"
+            class="rounded-md border border-line bg-panel p-1.5 text-ink-faint hover:bg-panel-strong hover:text-ink disabled:opacity-40"
+            title="Clear buffer"
+            :disabled="!tailLines.length"
+            @click="clearTail()">
+            <RemoveIcon class="h-4 w-4" />
+          </button>
+          <button type="button"
+            class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold disabled:opacity-50"
+            :class="tailing ? 'border border-line bg-panel text-crit hover:bg-crit hover:text-white' : 'bg-accent text-accent-fg hover:brightness-110'"
+            :disabled="(!tailing && !canDownload)"
+            @click="tailing ? stopTail() : startTail()">
+            <StopIcon v-if="tailing" class="h-4 w-4" />
+            <PlayIcon v-else class="h-4 w-4" />
+            {{ tailing ? 'Stop' : 'Start' }}
+          </button>
+        </div>
 
-          <!-- Download service logs. -->
-          <div class="card overflow-hidden">
-            <div class="panel-head">
-              <h3 class="flex items-center gap-2"><PrintIcon class="h-4 w-4 text-brand" /> Download</h3>
-            </div>
-            <div class="space-y-2 p-4">
-              <div v-for="src in SOURCES" :key="src.key"
-                class="flex items-center justify-between gap-3 rounded-lg border border-line bg-panel-soft px-3 py-2.5"
-                :class="{ 'opacity-50': !src.available }">
-                <div class="min-w-0">
-                  <p class="truncate text-sm font-medium text-ink">{{ src.label }}</p>
-                  <p v-if="!src.available" class="text-xs text-ink-faint">{{ src.note }}</p>
-                </div>
-                <button type="button" class="btn-ghost shrink-0"
-                  :disabled="!src.available || !canDownload || !!busy"
-                  @click="downloadOne(src)">
-                  <LoadingIcon v-if="busy === src.key" class="h-4 w-4 animate-spin fill-transparent" />
-                  <span v-else>Download</span>
-                </button>
-              </div>
+        <!-- Terminal body: fills all remaining height. -->
+        <div ref="tailBox"
+          class="min-h-0 flex-1 overflow-auto bg-black/95 p-3 font-mono text-xs leading-relaxed">
+          <div v-for="(line, i) in tailLines" :key="i"
+            class="whitespace-pre-wrap break-all" :class="lineClass(line)">{{ line }}</div>
 
-              <button type="button" class="btn-primary mt-2 w-full"
-                :disabled="!canDownload || !!busy || availableSources.length === 0"
-                @click="downloadAll()">
-                <LoadingIcon v-if="busy === '__all__'" class="h-4 w-4 animate-spin fill-transparent" />
-                <span v-else>Download all — merged</span>
-              </button>
-              <p class="text-xs text-ink-faint">
-                Fetches every available source and interleaves their lines by timestamp into one file.
-              </p>
-            </div>
+          <!-- Empty states. -->
+          <div v-if="tailing && !tailLines.length" class="flex items-center gap-2 text-gray-500">
+            <LoadingIcon class="h-3.5 w-3.5 animate-spin fill-transparent" />
+            Waiting for log output…
           </div>
+          <div v-else-if="!tailLines.length"
+            class="flex h-full flex-col items-center justify-center gap-2 text-center text-gray-600">
+            <ListIcon class="h-8 w-8 opacity-40" />
+            <p class="text-sm">
+              {{ canDownload ? 'Press Start to stream every service, live.' : 'Enter the admin password to start streaming.' }}
+            </p>
+          </div>
+        </div>
+      </div>
 
-          <!-- Runtime log level: session-only, resets on service restart. -->
-          <div class="card overflow-hidden">
-            <div class="panel-head">
-              <h3 class="flex items-center gap-2"><CogIcon class="h-4 w-4 text-brand" /> Runtime level</h3>
-            </div>
-            <div class="space-y-2 p-4">
-              <p class="text-xs text-ink-faint">
-                Session-only — resets to the service default when the service restarts.
-              </p>
-              <div v-for="target in LEVEL_TARGETS" :key="'lvl-' + target.key"
-                class="rounded-lg border border-line bg-panel-soft px-3 py-2.5">
-                <p class="mb-2 truncate text-sm font-medium text-ink">{{ target.label }}</p>
-                <div class="flex items-center gap-2">
-                  <select v-model="levelChoice[target.key]" class="input !py-1.5">
-                    <option v-for="l in LEVELS" :key="l" :value="l">{{ l }}</option>
-                  </select>
-                  <button type="button" class="btn-ghost shrink-0"
-                    :disabled="!canDownload || !!levelBusy"
-                    @click="applyLevel(target)">
-                    <LoadingIcon v-if="levelBusy === target.key" class="h-4 w-4 animate-spin fill-transparent" />
-                    <span v-else>Apply</span>
-                  </button>
-                </div>
-              </div>
+      <!-- Runtime log level: per-module severity, session-only, resets on service restart. -->
+      <div class="card mb-4 overflow-hidden">
+        <div class="panel-head">
+          <h3 class="flex items-center gap-2"><CogIcon class="h-4 w-4 text-brand" /> Runtime level</h3>
+        </div>
+        <div class="space-y-2 p-4">
+          <p class="text-xs text-ink-faint">
+            Session-only — resets to the service default when the service restarts.
+          </p>
+          <div v-for="target in LEVEL_TARGETS" :key="'lvl-' + target.key"
+            class="rounded-lg border border-line bg-panel-soft px-3 py-2.5">
+            <p class="mb-2 truncate text-sm font-medium text-ink">{{ target.label }}</p>
+            <div class="flex items-center gap-2">
+              <select v-model="levelChoice[target.key]" class="input !py-1.5">
+                <option v-for="l in LEVELS" :key="l" :value="l">{{ l }}</option>
+              </select>
+              <button type="button" class="btn-ghost shrink-0"
+                :disabled="!canDownload || !!levelBusy"
+                @click="applyLevel(target)">
+                <LoadingIcon v-if="levelBusy === target.key" class="h-4 w-4 animate-spin fill-transparent" />
+                <span v-else>Apply</span>
+              </button>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Live tail: the hero. Sticky + tall so it dominates the view. -->
-        <div class="card flex h-[65vh] flex-col overflow-hidden lg:sticky lg:top-24 lg:h-[calc(100vh-8rem)]">
-          <!-- Terminal titlebar. -->
-          <div class="flex items-center gap-3 border-b border-line border-l-4 border-l-brand bg-panel-strong px-4 py-2.5">
-            <h3 class="flex items-center gap-2 text-base font-semibold tracking-wide text-ink">
-              <ListIcon class="h-4 w-4 text-brand" /> Live tail
-            </h3>
-            <span class="inline-flex items-center gap-1.5 text-xs font-semibold"
-              :class="tailing ? 'text-ok' : 'text-ink-faint'">
-              <LoadingIcon v-if="tailing" class="h-3 w-3 animate-spin fill-transparent" />
-              <span v-else class="h-1.5 w-1.5 rounded-full bg-idle" />
-              {{ tailing ? 'Streaming' : 'Idle' }}
-            </span>
-
-            <span class="ml-auto font-mono text-xs text-ink-faint tabular-nums">
-              {{ tailLines.length }} / {{ MAX_TAIL_LINES }}
-            </span>
-            <button type="button"
-              class="rounded-md border border-line bg-panel p-1.5 text-ink-faint hover:bg-panel-strong hover:text-ink disabled:opacity-40"
-              title="Clear buffer"
-              :disabled="!tailLines.length"
-              @click="clearTail()">
-              <RemoveIcon class="h-4 w-4" />
-            </button>
-            <button type="button"
-              class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold disabled:opacity-50"
-              :class="tailing ? 'border border-line bg-panel text-crit hover:bg-crit hover:text-white' : 'bg-accent text-accent-fg hover:brightness-110'"
-              :disabled="(!tailing && !canDownload)"
-              @click="tailing ? stopTail() : startTail()">
-              <StopIcon v-if="tailing" class="h-4 w-4" />
-              <PlayIcon v-else class="h-4 w-4" />
-              {{ tailing ? 'Stop' : 'Start' }}
+      <!-- Download service logs: at the very bottom. -->
+      <div class="card overflow-hidden">
+        <div class="panel-head">
+          <h3 class="flex items-center gap-2"><PrintIcon class="h-4 w-4 text-brand" /> Download</h3>
+        </div>
+        <div class="space-y-2 p-4">
+          <div v-for="src in SOURCES" :key="src.key"
+            class="flex items-center justify-between gap-3 rounded-lg border border-line bg-panel-soft px-3 py-2.5"
+            :class="{ 'opacity-50': !src.available }">
+            <div class="min-w-0">
+              <p class="truncate text-sm font-medium text-ink">{{ src.label }}</p>
+              <p v-if="!src.available" class="text-xs text-ink-faint">{{ src.note }}</p>
+            </div>
+            <button type="button" class="btn-ghost shrink-0"
+              :disabled="!src.available || !canDownload || !!busy"
+              @click="downloadOne(src)">
+              <LoadingIcon v-if="busy === src.key" class="h-4 w-4 animate-spin fill-transparent" />
+              <span v-else>Download</span>
             </button>
           </div>
 
-          <!-- Terminal body: fills all remaining height. -->
-          <div ref="tailBox"
-            class="min-h-0 flex-1 overflow-auto bg-black/95 p-3 font-mono text-xs leading-relaxed">
-            <div v-for="(line, i) in tailLines" :key="i"
-              class="whitespace-pre-wrap break-all" :class="lineClass(line)">{{ line }}</div>
-
-            <!-- Empty states. -->
-            <div v-if="tailing && !tailLines.length" class="flex items-center gap-2 text-gray-500">
-              <LoadingIcon class="h-3.5 w-3.5 animate-spin fill-transparent" />
-              Waiting for log output…
-            </div>
-            <div v-else-if="!tailLines.length"
-              class="flex h-full flex-col items-center justify-center gap-2 text-center text-gray-600">
-              <ListIcon class="h-8 w-8 opacity-40" />
-              <p class="text-sm">
-                {{ canDownload ? 'Press Start to stream every service, live.' : 'Enter the admin password to start streaming.' }}
-              </p>
-            </div>
-          </div>
+          <button type="button" class="btn-primary mt-2 w-full"
+            :disabled="!canDownload || !!busy || availableSources.length === 0"
+            @click="downloadAll()">
+            <LoadingIcon v-if="busy === '__all__'" class="h-4 w-4 animate-spin fill-transparent" />
+            <span v-else>Download all — merged</span>
+          </button>
+          <p class="text-xs text-ink-faint">
+            Fetches every available source and interleaves their lines by timestamp into one file.
+          </p>
         </div>
       </div>
     </div>
