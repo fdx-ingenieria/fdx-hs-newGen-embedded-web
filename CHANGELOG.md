@@ -1,3 +1,8 @@
+## [0.6.1] - 2026-08-21
+
+### Refactor
+
+- *(Logs)* Mejoro view reordenandola
 ## [0.6.0] - 2026-08-10
 
 ### Features
