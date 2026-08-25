@@ -65,6 +65,33 @@
     }
   }
 
+  // Wi-Fi session: cuántos minutos sigue arriba el AP antes de apagarse solo.
+  // Es de sesión (no se persiste): al reiniciar el equipo el servicio wifi vuelve
+  // a su default de 60 min. No hay GET, así que el input arranca en ese default.
+  const WIFI_SESSION_DEFAULT_MIN = 60
+  const WIFI_SESSION_MIN = 1
+  const WIFI_SESSION_MAX = 1440
+  const wifiSessionMinutes = ref(WIFI_SESSION_DEFAULT_MIN)
+  const settingWifiSession = ref(false)
+
+  const validWifiSession = computed<boolean>(() =>
+    isValidInteger(wifiSessionMinutes.value)
+    && wifiSessionMinutes.value >= WIFI_SESSION_MIN
+    && wifiSessionMinutes.value <= WIFI_SESSION_MAX)
+
+  const applyWifiSession = async () => {
+    settingWifiSession.value = true
+    try {
+      await globalStore.setWifiSessionTimeout(wifiSessionMinutes.value)
+      const unit = wifiSessionMinutes.value === 1 ? 'minute' : 'minutes'
+      globalStore.notify(`Wi-Fi session set to ${wifiSessionMinutes.value} ${unit}`, 'success')
+    } catch {
+      // El store ya notifica el error (503 sin servicio wifi, u otro fallo).
+    } finally {
+      settingWifiSession.value = false
+    }
+  }
+
   const restartService = async () => {
     if (!window.confirm('Are you sure? The app will disconnect for a few seconds while the service restarts.')) return
     restarting.value = true
@@ -380,6 +407,39 @@
             </div>
           </template>
         </template>
+      </div>
+
+      <!-- Wi-Fi session card: cuánto falta para que el AP se apague solo. No requiere
+           admin ni password; aplica desde ahora y no se persiste. -->
+      <div class="card overflow-hidden py-4 px-4 md:px-6">
+        <div class="mb-3">
+          <h2 class="text-base font-semibold">Wi-Fi session</h2>
+          <p class="text-sm text-ink-soft mt-0.5">
+            How long the Wi-Fi access point stays up, counted from the moment you save. When it runs out
+            the access point shuts down and this page becomes unreachable. Only for this session: after a
+            reboot it goes back to {{ WIFI_SESSION_DEFAULT_MIN }} minutes.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-end gap-3">
+          <div class="flex-1 min-w-[160px]">
+            <label class="field-label">Minutes</label>
+            <input type="number" v-model.number="wifiSessionMinutes" :min="WIFI_SESSION_MIN" :max="WIFI_SESSION_MAX"
+              class="input">
+          </div>
+          <button @click="applyWifiSession()" :disabled="settingWifiSession || !validWifiSession" type="button" class="btn-primary">
+            <template v-if="settingWifiSession">
+              <LoadingIcon class="animate-spin fill-transparent w-4 mr-1" />
+              Saving...
+            </template>
+            <template v-else>
+              <SendIcon class="w-4 mr-1" />
+              Save
+            </template>
+          </button>
+        </div>
+        <p v-show="!validWifiSession" class="mt-2 text-sm text-crit">
+          <span class="font-semibold">Oops!</span> This value should be between {{ WIFI_SESSION_MIN }} and {{ WIFI_SESSION_MAX }} minutes.
+        </p>
       </div>
 
       <!-- Antenna detection card: solo en modo admin, NO requiere password (FHC-190) -->

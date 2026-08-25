@@ -709,6 +709,17 @@ export const useGlobalStore = defineStore('global', () => {
     return result
   }
 
+  async function setWifiSessionTimeout(minutes: number): Promise<void> {
+    // Backend: POST /api/action/wifi/session { minutes }. Reinicia desde ahora la
+    // cuenta regresiva que apaga el AP WiFi. Es de sesión: no se persiste, al
+    // reiniciar el servicio wifi vuelve al default. 503 = build sin servicio wifi
+    // (PC/stubs); apiFetch ya notifica el error.
+    await apiFetch('/api/action/wifi/session', {
+      method: 'POST',
+      body: JSON.stringify({ minutes }),
+    })
+  }
+
   async function loadFirmwareVersion(): Promise<void> {
     const data = await apiFetch<{ version: string }>('/api/system/version')
     firmwareVersion.value = data.version
@@ -861,6 +872,7 @@ export const useGlobalStore = defineStore('global', () => {
     stopNormalMode,
     restartService,
     detectAntennas,
+    setWifiSessionTimeout,
     getConfiguredSensors,
     addNewSensor,
     updateSensorData,
