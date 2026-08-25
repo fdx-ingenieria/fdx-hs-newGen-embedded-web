@@ -1,3 +1,8 @@
+## [0.7.0] - 2026-08-25
+
+### Features
+
+- *(System)* Seccion para actaulizar largo de sesion wifi
 ## [0.6.1] - 2026-08-21
 
 ### Refactor
