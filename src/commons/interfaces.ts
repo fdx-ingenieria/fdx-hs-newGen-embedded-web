@@ -1,18 +1,5 @@
 import { LabelType, SensorQuality } from "./enums";
 
-// Request
-export interface IRequestQueue {
-  request: IRequest;
-  resolve: (value: unknown) => void;
-  reject: (value: unknown) => void;
-}
-
-export interface IRequest {
-  cmd: string;
-  arg: string;
-  data: any;
-}
-
 // Labels
 export interface ILabelData {
   equipment: string[];
@@ -51,7 +38,7 @@ export interface ISensorData {
   quality: SensorQuality;
   rssi: number;
   elapsed_time: number; // seconds since last reading
-  timestamp: number; // seconds since epoch unused
+  timestamp: number; // client epoch (s) when this reading was received; anchored locally to survive device clock skew
   config: ISensorConfig;
 }
 
@@ -92,13 +79,30 @@ export interface ISystem {
   password?: string;
   modbus_address: number;
   baud_rate: number;
-  bit_parity: number; 
+  bit_parity: number;
+}
+
+// Inventory orchestration timers (admin-gated, own endpoint /api/config/timers).
+// Cross-constraint enforced by the backend: measure_period_ms >= t_reader_on + t_reader_off.
+export interface ITimers {
+  t_reader_on: number;       // ms, 0 – 10_000
+  t_reader_off: number;      // ms, 0 – 300_000
+  measure_period_ms: number; // ms, 1_000 – 3_600_000
+  password?: string;
 }
 
 // Menu & Sidebars
 export interface IMenuItem {
   label: string;
   route?: string;
+}
+
+// Switchgear (Auto): active EPC group per antenna + live vote tally of the
+// voting window in progress (sorted by count desc, from the backend).
+export interface IAntennaGroup {
+  antenna: number;
+  group: string;
+  votes: Array<{ group: string; count: number }>;
 }
 
 // Modbus table
@@ -112,13 +116,13 @@ export interface IModbusTableEntry {
 
 // RFID Config
 export interface IReaderConfig {
-  region: number;
-  tag_encoding: number;
-  read_power: number; // cdBm 0 to 3300
-  write_power: number; // cdBm 0 to 3300
-  t_reader_on: number; // ms 0 to 10_000
-  t_reader_off: number; // ms 0 to 300_000
-  processing_interval: number; // ms 0 to 600_000
-  mv_avg_window_size: number; // 1 to 20
+  region: string;
+  read_pwr: number;  // cdBm 0 to 3300
+  write_pwr: number; // cdBm 0 to 3300
+  ants: string;      // active antennas, comma-separated e.g. "0,1,2,3"
+  q: string;         // Q-value algorithm: "AUTO", "Q0"–"Q15"
+  session: string;   // inventory session: "S0"–"S3"
+  tag_encoding: string;  // "FM0", "M2", "M4", "M8"
+  target: string;    // session target: "A" or "B"
   password?: string;
 }

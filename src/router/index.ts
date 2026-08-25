@@ -7,6 +7,7 @@ import Labels from '@/views/configuration/Labels.vue'
 import Sensors from '@/views/configuration/Sensors.vue'
 import Alarms from '@/views/configuration/Alarms.vue'
 import Modbus from '@/views/Modbus.vue'
+import LogsAdmin from '@/views/admin/LogsAdmin.vue'
 
 /**
  * DONT USE LAZY LOADING FOR ROUTES
@@ -59,6 +60,15 @@ const routes: Array<RouteRecordRaw > = [
     path: "/modbus",
     name: "Modbus",
     component: Modbus,
+    props: true,
+    meta: {}
+  },
+  {
+    // Hidden admin view: no sidebar entry, reached via the Ctrl+Shift+L shortcut
+    // (see App.vue) or by URL.
+    path: "/admin/logs",
+    name: "LogsAdmin",
+    component: LogsAdmin,
     props: true,
     meta: {}
   },
