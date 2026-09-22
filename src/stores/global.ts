@@ -511,16 +511,17 @@ export const useGlobalStore = defineStore('global', () => {
     return { serial_updated: systemRes.serial_updated }
   }
 
-  // Timers de orquestación del inventario (t_reader_on/off, measure_period_ms).
-  // Recurso propio /api/config/timers: los tres son admin-gated. El backend valida
-  // measure_period_ms >= t_reader_on + t_reader_off (400 si se viola, capturado por
-  // apiFetch). Devuelve `updated` (false con password incorrecto: nada se persiste).
+  // Timers de orquestación del inventario (t_reader_on/off, measure_period_s).
+  // Recurso propio /api/config/timers: los tres son admin-gated. El período va en
+  // segundos y los tiempos de lector en ms; el backend valida
+  // measure_period_s * 1000 >= t_reader_on + t_reader_off (400 si se viola, capturado
+  // por apiFetch). Devuelve `updated` (false con password incorrecto: nada se persiste).
   async function loadTimersData(): Promise<void> {
-    const res = await apiFetch<{ t_reader_on: number; t_reader_off: number; measure_period_ms: number }>('/api/config/timers')
+    const res = await apiFetch<{ t_reader_on: number; t_reader_off: number; measure_period_s: number }>('/api/config/timers')
     timersData.value = {
       t_reader_on: res.t_reader_on,
       t_reader_off: res.t_reader_off,
-      measure_period_ms: res.measure_period_ms,
+      measure_period_s: res.measure_period_s,
     }
   }
 
@@ -530,7 +531,7 @@ export const useGlobalStore = defineStore('global', () => {
       body: JSON.stringify({
         t_reader_on: data.t_reader_on,
         t_reader_off: data.t_reader_off,
-        measure_period_ms: data.measure_period_ms,
+        measure_period_s: data.measure_period_s,
         ...(data.password ? { password: data.password } : {}),
       }),
     })

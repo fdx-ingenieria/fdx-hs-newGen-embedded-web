@@ -194,8 +194,8 @@
   // Both sliders share one track (0 – 15 000 ms) so the two knobs sit on the same
   // visual scale; reader-on is just clamped to its lower ceiling (T_ON_MAX_MS).
   const measurePeriodSec = computed<number>({
-    get: () => Math.round((editableTimers.value.measure_period_ms ?? 30000) / 1000),
-    set: (value) => { editableTimers.value.measure_period_ms = Math.round(value * 1000) },
+    get: () => editableTimers.value.measure_period_s ?? 120,
+    set: (value) => { editableTimers.value.measure_period_s = Math.round(value) },
   })
 
   // reader-on shares the 0–15 000 track but locks at 10 000: the setter clamps so
@@ -214,9 +214,10 @@
   const validReaderOff = (ms: number): boolean => isValidInteger(ms) && ms >= T_READER_MIN_MS && ms <= T_OFF_MAX_MS
 
   // Constraint cruzada (espejo del backend): al menos un ciclo completo de inventario
-  // por ventana de medición. measure_period_ms se compara en ms con t_on + t_off.
+  // por ventana de medición. El período está en segundos y t_on/t_off en ms.
+  const measurePeriodMs = computed<number>(() => (editableTimers.value.measure_period_s ?? 0) * 1000)
   const crossConstraintOk = computed<boolean>(() =>
-    (editableTimers.value.measure_period_ms ?? 0) >=
+    measurePeriodMs.value >=
     (editableTimers.value.t_reader_on ?? 0) + (editableTimers.value.t_reader_off ?? 0))
 
   // Non-blocking recommendation (mirror of backend warn): a measure_period barely
@@ -228,7 +229,7 @@
   const periodBelowRecommended = computed<boolean>(() =>
     crossConstraintOk.value &&
     readerCycleMs.value > 0 &&
-    (editableTimers.value.measure_period_ms ?? 0) < 1.5 * readerCycleMs.value)
+    measurePeriodMs.value < 1.5 * readerCycleMs.value)
 
   const isSystemComplete = (): boolean => {
     const { serial_num, password } = editable.value
