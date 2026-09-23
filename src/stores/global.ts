@@ -363,14 +363,16 @@ export const useGlobalStore = defineStore('global', () => {
   async function loadSensors(): Promise<void> {
     // Backend devuelve solo sensores configurados; los descubiertos vía SSE no existen en el backend.
     // Hacer merge para no perder los sensores sin configurar que viven solo en memoria.
-    const raw = await apiFetch<Array<{ epc_id: string; name?: string; config: ISensorConfig }>>('/api/config/sensors')
-    const fromBackend = raw.map(s => ({ id: s.epc_id, EPC: s.name ?? s.epc_id, config: s.config }))
+    const raw = await apiFetch<Array<{ epc_id: string; name?: string; slot: number; config: ISensorConfig }>>('/api/config/sensors')
+    const fromBackend = raw.map(s => ({ id: s.epc_id, EPC: s.name ?? s.epc_id, slot: s.slot, config: s.config }))
     const backendIds = new Set(fromBackend.map(s => s.id))
     const unconfigured = availableSensors.value.filter(s => !backendIds.has(s.id) && !s.config.equipment)
     availableSensors.value = [
       ...fromBackend.map(bs => {
         const existing = availableSensors.value.find(s => s.id === bs.id)
-        return existing ? { ...existing, config: bs.config } : bs
+        // El slot va en el merge: un sensor descubierto por SSE y configurado después ya
+        // está en la lista y entraría por esta rama sin slot.
+        return existing ? { ...existing, slot: bs.slot, config: bs.config } : bs
       }),
       ...unconfigured,
     ]

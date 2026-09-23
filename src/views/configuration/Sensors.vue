@@ -19,8 +19,12 @@
   const showResetButton = ref(false)
   const MAX_CONFIGURED_SENSORS = 50
 
+  // Ordenados por slot, que es su dirección Modbus. El backend ya los devuelve así, pero
+  // el array del store también lo mutan los eventos SSE: mejor dicho que asumido.
   const configuredSensors = computed(() =>
-    getAvailableSensors.value.filter((s: ISensor) => s.config.equipment && s.config.position && s.config.location)
+    getAvailableSensors.value
+      .filter((s: ISensor) => s.config.equipment && s.config.position && s.config.location)
+      .sort((a: ISensor, b: ISensor) => (a.slot ?? 0) - (b.slot ?? 0))
   )
 
   const unconfiguredSensors = computed(() =>
@@ -307,7 +311,7 @@
           </div>
         </div>
         <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-brand fill-transparent mx-auto my-4" />
-        <SensorTable v-else :availableSensors="configuredSensors" :showlabels="true" @edit="editSensor" @reset="deleteSensor" :max="MAX_CONFIGURED_SENSORS" />
+        <SensorTable v-else :availableSensors="configuredSensors" :showlabels="true" :showslot="true" @edit="editSensor" @reset="deleteSensor" :max="MAX_CONFIGURED_SENSORS" />
       </div>
     </div>
   </section>

@@ -24,6 +24,9 @@ export interface ISensor {
   id: string;
   EPC: string;
   config: ISensorConfig;
+  // Modbus slot assigned by the device. Optional: a sensor discovered over SSE only
+  // lives in the browser and has no slot until it is registered.
+  slot?: number;
   data?: ISensorData;
   alarmed?: boolean
 }

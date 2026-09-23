@@ -18,6 +18,12 @@
       type: Boolean,
       default: false
     },
+    // Configured sensors: show the Modbus slot instead of the EPC-derived ID and order
+    // by it. Unconfigured sensors have no slot, so they keep the ID column.
+    showslot: {
+      type: Boolean,
+      default: false
+    },
     showreset: {
       type: Boolean,
       default: false
@@ -55,7 +61,9 @@
           || (props.showlabels && globalStore.getLabelName(LabelType.POSITION, sensor.config.position).toUpperCase().includes(str))
           || (props.showlabels && globalStore.getLabelName(LabelType.LOCATION, sensor.config.location).toUpperCase().includes(str))
       )
-      .sort((a, b) => a.id.toUpperCase().localeCompare(b.id.toUpperCase(), 'en', { sensitivity: 'base' }))
+      .sort((a, b) => props.showslot
+        ? (a.slot ?? 0) - (b.slot ?? 0)
+        : a.id.toUpperCase().localeCompare(b.id.toUpperCase(), 'en', { sensitivity: 'base' }))
   })
 
   const emit = defineEmits<{
@@ -102,7 +110,7 @@
     <table class="w-full text-sm text-left text-ink-soft whitespace-nowrap">
       <thead class="border-y border-line bg-panel-soft text-xs uppercase tracking-wider text-ink-faint">
         <tr>
-          <th scope="col" class="px-4 py-3">ID</th>
+          <th scope="col" class="px-4 py-3">{{ showslot ? 'Slot' : 'ID' }}</th>
           <th scope="col" class="px-4 py-3">EPC</th>
           <template v-if="showlabels">
             <th scope="col" class="px-4 py-3">{{ LabelType.EQUIPMENT }}</th>
@@ -119,7 +127,8 @@
         <tr @click="emit('edit', item.id)" v-for="item in localAvailableSensors"
           class="border-b border-line hover:bg-panel-strong" :key="`${item.id}`"
           :class="{'cursor-pointer': !readonly, '!bg-crit-soft hover:!brightness-95': item?.alarmed}">
-          <th scope="row" class="px-4 py-3 font-mono font-medium text-ink" v-html="searcHighlight(displayId(item.id))"></th>
+          <th v-if="showslot" scope="row" class="px-4 py-3 font-mono font-medium text-ink" :title="`Modbus slot ${item.slot}`">{{ item.slot }}</th>
+          <th v-else scope="row" class="px-4 py-3 font-mono font-medium text-ink" v-html="searcHighlight(displayId(item.id))"></th>
           <th scope="row" class="px-4 py-3 font-mono font-medium text-ink-soft" v-html="searcHighlight(item.EPC)"></th>
           <template v-if="showlabels">
             <td class="px-4 py-3" v-html="searcHighlight(globalStore.getLabelName(LabelType.EQUIPMENT, item.config.equipment))"></td>
