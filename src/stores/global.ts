@@ -416,6 +416,15 @@ export const useGlobalStore = defineStore('global', () => {
     availableSensors.value[idx].data = sensorData
   }
 
+  // Renumera los slots Modbus de todos los sensores por punto de medición (equipment,
+  // location, position) y cierra los huecos. Pensado para correrse una vez después de
+  // instalar: cambia la dirección Modbus de los sensores, así que la vista confirma antes.
+  async function reorderSensorSlots(): Promise<number> {
+    const res = await apiFetch<{ reordered: number }>('/api/config/sensors/slots/reorder', { method: 'POST' })
+    await loadSensors()
+    return res.reordered
+  }
+
   async function clearUnconfiguredSensors(): Promise<void> {
     await apiFetch('/api/action/sensors/clear', { method: 'POST' })
     availableSensors.value = availableSensors.value.filter(s => !!s.config.equipment)
@@ -838,6 +847,7 @@ export const useGlobalStore = defineStore('global', () => {
     updateSensors,
     deleteSensor,
     clearUnconfiguredSensors,
+    reorderSensorSlots,
     getAvailableAlarms,
     getConfiguredAlarms,
     loadAlarms,

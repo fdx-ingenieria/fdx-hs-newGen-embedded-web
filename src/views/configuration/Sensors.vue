@@ -90,6 +90,25 @@
       .finally(() => startingDiscoveryMode.value = false)
   }
 
+  // Renumbers the Modbus slots by measuring point and closes the holes. Meant to be run
+  // once after installing everything; from then on a sensor keeps its slot. Every sensor's
+  // Modbus address may change, so this confirms first.
+  const reorderingSlots = ref(false)
+  const reorderSlots = async () => {
+    if (!window.confirm(
+      'Renumber the Modbus slots of all configured sensors, ordered by equipment, location and position?\n\n'
+      + 'This changes the Modbus address of the sensors. Any SCADA or master polling this device has to be updated.'
+    )) return
+
+    reorderingSlots.value = true
+    try {
+      const count = await globalStore.reorderSensorSlots()
+      globalStore.notify(`Modbus slots reordered for ${count} sensor(s)`, 'success')
+    } finally {
+      reorderingSlots.value = false
+    }
+  }
+
   const clearUnconfiguredSensors = () => {
     loadingData.value = true
 
@@ -268,6 +287,23 @@
           <div class="flex items-center">
             <ListIcon class="mr-2 hidden h-6 text-ink-faint md:inline-flex" />
             <h3>Configured sensors</h3>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button type="button"
+              v-if="configuredSensors.length"
+              @click="reorderSlots()"
+              :disabled="loadingData || reorderingSlots"
+              title="Renumber the Modbus slots by equipment, location and position"
+              class="flex items-center gap-1 rounded-md border border-line bg-panel px-3 py-1 text-sm font-semibold text-ink-soft hover:bg-brand hover:text-white disabled:opacity-50">
+              <template v-if="reorderingSlots">
+                <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto" />
+                <span class="hidden xs:block">Reordering...</span>
+              </template>
+              <template v-else>
+                <ListIcon class="h-5"/>
+                <span class="hidden xs:block">Reorder slots</span>
+              </template>
+            </button>
           </div>
         </div>
         <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-brand fill-transparent mx-auto my-4" />
