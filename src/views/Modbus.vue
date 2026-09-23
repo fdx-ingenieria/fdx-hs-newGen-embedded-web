@@ -17,8 +17,8 @@
 </script>
 
 <template>
-  <section class="antialiased bg-gray-50">
-    <LoadingIcon v-if="loading" class="w-10 h-10 text-fdx-red mx-auto my-12 animate-spin fill-transparent" />
+  <section class="antialiased">
+    <LoadingIcon v-if="loading" class="w-10 h-10 text-brand mx-auto my-12 animate-spin fill-transparent" />
     <div v-if="!loading">
       <template v-for="table in getModbusTable">
         <SimpleTable :data="table" />

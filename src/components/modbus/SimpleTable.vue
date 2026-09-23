@@ -19,43 +19,41 @@
 </script>
 
 <template>
-  <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden mt-8 print:mt-0 print:-mx-6">
-    <div class="flex justify-between w-full cursor-pointer bg-fdx-dark text-white items-center py-2 px-4"
-      @click="show = !show">
-      <div class="flex">
-        <ListIcon class="h-6 hidden md:inline-flex mt-1 mr-2" />
-        <h3 class="text-xl font-semibold">{{ data.name }}</h3>
+  <div class="card relative mt-8 overflow-hidden print:mt-0 print:-mx-6 print:border-0 print:shadow-none">
+    <div class="panel-head cursor-pointer rounded-none" @click="show = !show">
+      <div class="flex items-center">
+        <ListIcon class="mr-2 hidden h-6 text-ink-faint md:inline-flex" />
+        <h3>{{ data.name }}</h3>
       </div>
-      <div class="flex space-x-1 -mx-2">
-        <PrintIcon @click.prevent="print" class="h-6 w-6 hover:scale-125" />
-        <ChevronUpIcon class="h-6 w-6 scale-110 hover:scale-125"
+      <div class="flex items-center gap-1 text-ink-soft">
+        <PrintIcon @click.prevent="print" class="h-6 w-6 hover:text-ink" />
+        <ChevronUpIcon class="h-6 w-6 hover:text-ink"
           :class="{'rotate-180': !show}" />
       </div>
     </div>
     <div class="overflow-x-auto">
-      <table v-if="show" class="w-full text-sm text-left text-gray-500 whitespace-nowrap print:whitespace-pre-line">
-        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+      <table v-if="show" class="w-full text-sm text-left text-ink-soft whitespace-nowrap print:whitespace-pre-line">
+        <thead class="border-b border-line bg-panel-soft text-xs uppercase tracking-wider text-ink-faint">
           <tr>
             <th v-for="column in data.columns" scope="col" class="px-4 py-3">{{ column }}</th>
           </tr>
         </thead>
         <tbody v-if="!data.commonRows">
-          <tr v-for="row in data.values" class="border-b hover:bg-gray-100">
-            <td v-for="value in row" class="px-4 py-3">{{ value }}</td>
+          <tr v-for="row in data.values" class="border-b border-line hover:bg-panel-strong">
+            <td v-for="value in row" class="px-4 py-3 font-mono">{{ value }}</td>
           </tr>
         </tbody>
         <tbody v-else>
           <template v-for="row, rowIndex in data.values">
-            <tr v-for="commonRow, commonRowIndex in data.commonRows" class="border-b hover:bg-gray-100" :key="`row_${rowIndex}`">
+            <tr v-for="commonRow, commonRowIndex in data.commonRows" class="border-b border-line hover:bg-panel-strong" :key="`row_${rowIndex}`">
               <template v-for="colValue, colIndex in row" :key="`col_${rowIndex}`">
-                <!-- <td v-if="colIndex === data.autoincrementColumn" class="px-4 py-3">{{ colValue as number + commonRowIndex }}</td> -->
-                <td v-if="data?.autoincrementColumn !== undefined && (colIndex === (data.name === 'Sensors' ? data.autoincrementColumn + 1 : data.autoincrementColumn))" class="px-4 py-3">
+                <td v-if="data?.autoincrementColumn !== undefined && (colIndex === (data.name === 'Sensors' ? data.autoincrementColumn + 1 : data.autoincrementColumn))" class="px-4 py-3 font-mono">
                   {{ colValue as number + commonRowIndex }}
                 </td>
 
-                <td v-else class="px-4 py-3">{{ colValue }}</td>
+                <td v-else class="px-4 py-3 font-mono">{{ colValue }}</td>
               </template>
-              <td v-for="commonColValue, commonColIndex in commonRow" class="px-4 py-3" :key="`ccol_${commonColIndex}`">{{ commonColValue }}</td>
+              <td v-for="commonColValue, commonColIndex in commonRow" class="px-4 py-3 font-mono" :key="`ccol_${commonColIndex}`">{{ commonColValue }}</td>
             </tr>
           </template>
         </tbody>

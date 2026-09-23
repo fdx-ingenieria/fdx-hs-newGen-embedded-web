@@ -1,27 +1,3 @@
-export enum SocketStatus {
-  CONNECTING = "Connecting",
-  OPEN = "Open",
-  CLOSING = "Closing",
-  CLOSED = "Closed",
-}
-
-export enum SocketCommands {
-  LABEL = 'label',
-  SENSOR_CONFIG = "sensor_config",
-  ALARM_CONFIG = 'alarm_config',
-  DISCOVERY = 'discovery',
-  NORMAL_MODE = 'normal_mode',
-  MODBUS_CONFIG = 'modbus_config',
-  MODBUS_TABLE = 'modbus_table',
-  NEW_SENSOR_DATA = 'new_sensor_data',
-  CLEAR_SENSORS_RAM = 'clean_sensors_RAM',
-  ALARM_DATA = 'alarm_data',
-  HS_CONFIG = 'hs_config',
-  READER_CONFIG = 'reader_config',
-  READER_TEMP = 'reader_temp',
-  FIRMWARE_VERSION = 'firmware_version'
-}
-
 export enum SensorQuality {
   OUT_OF_SERVICE = "Out of service",
   BAD = "Bad",
@@ -65,13 +41,17 @@ export const ReleFlag = [
 ]
 
 export const TagEncoding = [
-  { label: 'FM0', value: 0},
-  { label: 'MILLER 2', value: 1},
-  { label: 'MILLER 4', value: 2},
-  { label: 'MILLER 8', value: 3},
+  { label: 'FM0',      value: 'FM0' },
+  { label: 'Miller 2', value: 'M2'  },
+  { label: 'Miller 4', value: 'M4'  },
+  { label: 'Miller 8', value: 'M8'  },
 ];
 
 export const Region = [
-  { label: 'Europe', value: 8},
-  { label: 'North America', value: 1},
+  { label: 'North America', value: 'NA' },
+  { label: 'Europe',        value: 'EU' },
 ];
+
+export const ReaderQ       = ['AUTO', 'Q0', 'Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6', 'Q7', 'Q8', 'Q9', 'Q10', 'Q11', 'Q12', 'Q13', 'Q14', 'Q15'];
+export const ReaderSession = ['S0', 'S1', 'S2', 'S3'];
+export const ReaderTarget  = ['A', 'B'];

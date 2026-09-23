@@ -4,7 +4,9 @@
   import {
     AlarmIcon,
     LoadingIcon,
+    PlayIcon,
     SensorIcon,
+    StopIcon,
     ThermometerHighIcon,
     ThermometerLowIcon,
     BellRingIcon
@@ -18,36 +20,79 @@
   const {
     getConfiguredAlarms,
     getConfiguredSensors,
+    getAppModeIsSwitchgear,
+    getAntennaGroups,
+    getFastDetectionActive,
+    getFastDetectionRemainingS,
   } = storeToRefs(globalStore)
   const loading = ref(true)
   const activeTab = ref('sensors')
+  const togglingFastDetection = ref(false)
+
+  const startFastDetection = () => {
+    togglingFastDetection.value = true
+    globalStore.startFastDetection()
+      .catch(() => {})
+      .finally(() => togglingFastDetection.value = false)
+  }
+
+  const stopFastDetection = () => {
+    togglingFastDetection.value = true
+    globalStore.stopFastDetection()
+      .catch(() => {})
+      .finally(() => togglingFastDetection.value = false)
+  }
+
+  // mm:ss from the SSE-driven remaining seconds (server-driven countdown).
+  const fastDetectionCountdown = computed(() => {
+    const s = getFastDetectionRemainingS.value
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+  })
+
+  // Top candidates of the voting window in progress, e.g. "A4·5  B2·1".
+  const votesLine = (votes: Array<{ group: string; count: number }>): string =>
+    votes.slice(0, 2).map(v => `${v.group}·${v.count}`).join('  ')
+
+  // Manual lock: commit the leading candidate right now instead of waiting for
+  // the voting window. Per-antenna loading ref so only that button disables.
+  const lockingAntenna = ref(0)
+  const lockGroup = (antenna: number, group: string) => {
+    lockingAntenna.value = antenna
+    globalStore.lockAntennaGroup(antenna, group)
+      .catch(() => {})
+      .finally(() => lockingAntenna.value = 0)
+  }
 
   const getTabClass = (type: string): string => {
     if (type === activeTab.value) {
-      return 'border-fdx-red text-fdx-red active'
+      return 'border-brand text-brand active'
     }
-    return 'border-transparent hover:text-gray-600 hover:border-gray-300'
+    return 'border-transparent text-ink-faint hover:text-ink hover:border-line'
   }
 
   const temperatures = computed(() => {
-    // Order by temperature
-    const to_order: ISensorData[] = []
-    getConfiguredAlarms.value.forEach(alarm => {
-      alarm._sensors.forEach(sensor => {
-        if (sensor.data) {
-          to_order.push(sensor.data)
-        }
-      });
+    // Min/max sobre TODOS los sensores configurados (mismo set que la tabla), no
+    // solo los que pertenecen a una alarma. Fail-safe: un sensor fuera de servicio
+    // que tuvo lectura real SIGUE contando (si se calienta hasta perder señal no
+    // debe desaparecer de "Highest"). Solo se excluyen los que nunca leyeron.
+    const readings: ISensorData[] = []
+    getConfiguredSensors.value.forEach(sensor => {
+      const data = sensor.data
+      if (!data) return
+      if (!data.n_readings) return
+      if (typeof data.temp !== 'number' || Number.isNaN(data.temp)) return
+      readings.push(data)
     });
 
-    const ordered = to_order.sort((a, b) => {
-      if (a.temp && b.temp) {
-        return a.temp - b.temp
-      }
-      return 0
-    })
+    if (readings.length === 0) return { min: undefined, max: undefined }
 
-    return { min: ordered.shift() , max: ordered.pop() }
+    let min = readings[0]
+    let max = readings[0]
+    for (const r of readings) {
+      if (r.temp < min.temp) min = r
+      if (r.temp > max.temp) max = r
+    }
+    return { min, max }
   })
 
   const alarmed = computed(() => {
@@ -74,92 +119,160 @@
     await globalStore.loadLabels()
     await globalStore.loadSensors()
     await globalStore.loadAlarms()
+    await globalStore.loadAntennaGroups()
     loading.value = false
   })
 
   onUnmounted(() => {
-    if (globalStore.getNormaModeOn) globalStore.stopNormalMode()
+    if (globalStore.getNormalModeOn) globalStore.stopNormalMode()
   })
 </script>
 <template>
-  <div class="antialiased bg-gray-50">
+  <div>
     <div class="grid grid-cols-1 gap-4 my-4 mt-8 sm:grid-cols-2 xl:grid-cols-4">
-      <div class="relative flex items-center bg-white border rounded-sm overflow-hidden shadow">
-        <div class="p-4 bg-orange-400">
-          <AlarmIcon class="w-10 h-10 text-white" />
+      <!-- Active alarms -->
+      <div class="card flex items-center gap-4 p-4">
+        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-crit-soft text-crit">
+          <AlarmIcon class="h-8 w-8" />
         </div>
-        <LoadingIcon v-if="loading" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto" />
-        <div v-else class="px-4 text-gray-700">
-          <h3 class="text-sm tracking-wider font-semibold">Alarms</h3>
-          <p class="text-xl flex items-center">
-            <BellRingIcon class="w-5 h-5 mr-1" />
-            {{ alarmed.alarms.size }}
-            <small class="absolute bottom-0 right-2">{{ getConfiguredAlarms.length }} Total</small>
+        <LoadingIcon v-if="loading" class="mx-auto h-7 w-7 animate-spin fill-transparent text-brand" />
+        <div v-else class="min-w-0 flex-1">
+          <h3 class="field-label mb-0">Active alarms</h3>
+          <p class="flex items-baseline gap-2">
+            <span class="font-mono text-3xl font-bold leading-none text-ink">{{ alarmed.alarms.size }}</span>
+            <span class="text-xs text-ink-faint">/ {{ getConfiguredAlarms.length }} total</span>
+          </p>
+        </div>
+        <BellRingIcon v-if="!loading && alarmed.alarms.size" class="h-6 w-6 shrink-0 text-crit" />
+      </div>
+
+      <!-- Sensors in alarm -->
+      <div class="card flex items-center gap-4 p-4">
+        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-info-soft text-info">
+          <SensorIcon class="h-8 w-8" />
+        </div>
+        <LoadingIcon v-if="loading" class="mx-auto h-7 w-7 animate-spin fill-transparent text-brand" />
+        <div v-else class="min-w-0 flex-1">
+          <h3 class="field-label mb-0">Sensors in alarm</h3>
+          <p class="flex items-baseline gap-2">
+            <span class="font-mono text-3xl font-bold leading-none text-ink">{{ alarmed.sensors.size }}</span>
+            <span class="text-xs text-ink-faint">/ {{ getConfiguredSensors.length }} total</span>
           </p>
         </div>
       </div>
-      <div class="relative flex items-center bg-white border rounded-sm overflow-hidden shadow">
-        <div class="p-4 bg-green-500">
-          <SensorIcon class="w-10 h-10 text-white" />
+
+      <!-- Lowest temp -->
+      <div class="card flex items-center gap-4 p-4">
+        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-info-soft text-info">
+          <ThermometerLowIcon class="h-8 w-8" />
         </div>
-        <LoadingIcon v-if="loading" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto" />
-        <div v-else class="px-4 text-gray-700">
-          <h3 class="text-sm tracking-wider font-semibold">Sensors</h3>
-          <p class="text-xl flex items-center">
-            <BellRingIcon class="w-5 h-5 mr-1" />
-            {{ alarmed.sensors.size }}
-            <small class="absolute bottom-0 right-2">{{ getConfiguredSensors.length }} Total</small>
+        <LoadingIcon v-if="!temperatures.min" class="mx-auto h-7 w-7 animate-spin fill-transparent text-brand" />
+        <div v-else class="min-w-0 flex-1" title="Lowest">
+          <h3 class="field-label mb-0">Lowest temp</h3>
+          <p class="flex items-baseline gap-1">
+            <span class="font-mono text-3xl font-bold leading-none text-info">{{ temperatures.min?.temp.toFixed(1) }}</span>
+            <span class="text-sm font-semibold text-ink-faint">°C</span>
           </p>
+          <small class="block truncate font-mono text-xs text-ink-faint" :title="`EPC: ${temperatures.min?.id}`">{{ temperatures.min?.EPC }}</small>
         </div>
       </div>
-      <div class="relative flex items-center bg-white border rounded-sm overflow-hidden shadow">
-        <div class="p-4 bg-blue-500">
-          <ThermometerLowIcon class="w-10 h-10 text-white" />
+
+      <!-- Highest temp -->
+      <div class="card flex items-center gap-4 p-4">
+        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-crit-soft text-crit">
+          <ThermometerHighIcon class="h-8 w-8" />
         </div>
-        <LoadingIcon v-if="!temperatures.min" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto" />
-        <div v-else class="px-4 text-gray-700">
-          <h3 class="text-sm tracking-wider font-semibold">Lowest Temperature</h3>
-          <p class="text-xl flex items-center" title="Lower">
-            {{  temperatures.min?.temp.toFixed(1) }} <small class="ml-1 font-bold">°C</small>
-            <small class="absolute bottom-0 right-2 text-xs" :title="`EPC: ${temperatures.min?.EPC}`">{{  temperatures.min?.id }}</small>
+        <LoadingIcon v-if="!temperatures.max" class="mx-auto h-7 w-7 animate-spin fill-transparent text-brand" />
+        <div v-else class="min-w-0 flex-1" title="Highest">
+          <h3 class="field-label mb-0">Highest temp</h3>
+          <p class="flex items-baseline gap-1">
+            <span class="font-mono text-3xl font-bold leading-none text-crit">{{ temperatures.max?.temp.toFixed(1) }}</span>
+            <span class="text-sm font-semibold text-ink-faint">°C</span>
           </p>
-        </div>
-      </div>
-      <div class="relative flex items-center bg-white border rounded-sm overflow-hidden shadow">
-        <div class="p-4 bg-red-500">
-          <ThermometerHighIcon class="w-10 h-10 text-white" />
-        </div>
-        <LoadingIcon v-if="!temperatures.max" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto" />
-        <div v-else class="px-4 text-gray-700">
-          <h3 class="text-sm tracking-wider font-semibold">Highest Temperature</h3>
-          <p class="text-xl flex items-center" title="Higher">
-            {{  temperatures.max?.temp.toFixed(1) }} <small class="ml-1 font-bold">°C</small>
-            <small class="absolute bottom-0 right-2 text-xs" :title="`EPC: ${temperatures.max?.EPC}`">{{  temperatures.max?.id }}</small>
-          </p>
+          <small class="block truncate font-mono text-xs text-ink-faint" :title="`EPC: ${temperatures.max?.id}`">{{ temperatures.max?.EPC }}</small>
         </div>
       </div>
     </div>
-    <div class="border-1 rounded-lg border-gray-300 mb-4">
-      <div class="bg-white relative shadow-md sm:rounded-lg overflow-hidden">
-        <div class="text-sm font-semibold text-center text-gray-500 border-b border-gray-200">
-          <ul class="flex flex-wrap -mb-px">
-            <li class="mr-2">
-              <a
-              class="inline-block p-4 border-b-2 rounded-t-lg cursor-pointer"
-              :class="getTabClass('sensors')"
-                @click="activeTab = 'sensors'">Sensors</a>
-            </li>
-            <li class="mr-2">
-              <a
-                class="inline-block p-4 border-b-2 rounded-t-lg cursor-pointer"
-                :class="getTabClass('alarms')"
-                @click="activeTab = 'alarms'">Alarms</a>
-            </li>
-          </ul>
+
+    <!-- Switchgear (Auto) only: which EPC group is currently locked per antenna.
+         Irrelevant for normal installations, so it stays hidden otherwise. -->
+    <div v-if="getAppModeIsSwitchgear" class="card mb-4 p-4">
+      <div class="flex items-start justify-between gap-3 mb-1">
+        <h2 class="text-base font-semibold">Active groups</h2>
+        <!-- Fast detection: temporary aggressive timing (3 min, self-expiring on
+             the backend) so groups lock in seconds during commissioning. -->
+        <div v-if="getFastDetectionActive" class="flex items-center gap-2">
+          <span class="font-mono text-sm font-semibold text-warn/80" title="Fast detection time remaining">{{ fastDetectionCountdown }}</span>
+          <button
+            class="flex items-center gap-1 rounded-md border border-line bg-panel px-3 py-1 text-sm font-semibold text-crit hover:bg-crit hover:text-white disabled:opacity-50"
+            :disabled="togglingFastDetection"
+            @click="stopFastDetection">
+            <StopIcon class="h-4 w-4" />
+            Stop
+          </button>
         </div>
-        <AlarmsTable v-show="activeTab === 'alarms'" :availableAlarms="getConfiguredAlarms" :readonly="true" :max="20" />
-        <SensorTable v-show="activeTab === 'sensors'" :availableSensors="getConfiguredSensors" :readonly="true" :showlabels="true" :max="50" />
+        <button v-else
+          class="flex items-center gap-1 rounded-md border border-line bg-panel px-3 py-1 text-sm font-semibold text-ok hover:bg-ok hover:text-white disabled:opacity-50"
+          :disabled="togglingFastDetection"
+          title="Speed up group detection for 3 minutes (turns itself off)"
+          @click="startFastDetection">
+          <PlayIcon class="h-4 w-4" />
+          Fast detection
+        </button>
       </div>
+      <p class="text-sm text-ink-soft mb-1">
+        {{ getFastDetectionActive
+          ? 'Fast detection running — groups lock in seconds while it lasts.'
+          : 'EPC group currently locked per antenna.' }}
+      </p>
+      <p class="text-xs text-ink-faint mb-3">
+        A tag may not appear if its EPC could not be parsed correctly.
+      </p>
+      <!-- 2x2 on phones, one row of 4 from sm up (flex-wrap broke into 3+1). -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div v-for="entry in getAntennaGroups" :key="entry.antenna"
+          class="flex flex-col items-center justify-center min-h-16 px-3 py-2 rounded-lg border border-line bg-panel-soft">
+          <span class="text-xs text-ink-faint">Antenna {{ entry.antenna }}</span>
+          <span class="font-mono text-sm font-semibold" :class="entry.group ? 'text-accent/70' : 'text-ink-faint'">
+            {{ entry.group || '—' }}
+          </span>
+          <!-- Live tally of the voting window in progress: feedback while (or
+               before) a group locks, instead of a silent wait. -->
+          <span v-if="entry.votes?.length" class="font-mono text-[10px] text-warn/80"
+            title="Votes in the current detection window">
+            {{ votesLine(entry.votes) }}
+          </span>
+          <!-- Manual lock of the leading candidate, shown only when it differs
+               from what is locked. Plain shortcut: the next voting window can
+               still override it. -->
+          <button v-if="entry.votes?.length && entry.votes[0].group !== entry.group"
+            class="text-xs font-semibold text-accent hover:underline disabled:opacity-50"
+            :disabled="lockingAntenna === entry.antenna"
+            title="Lock this group now instead of waiting for the voting window"
+            @click="lockGroup(entry.antenna, entry.votes[0].group)">
+            Set {{ entry.votes[0].group }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4 overflow-hidden">
+      <div class="border-b border-line text-sm font-semibold text-ink-faint">
+        <ul class="flex flex-wrap px-2 -mb-px">
+          <li class="mr-2">
+            <a class="inline-block cursor-pointer rounded-t-lg border-b-2 px-4 py-3"
+              :class="getTabClass('sensors')"
+              @click="activeTab = 'sensors'">Sensors</a>
+          </li>
+          <li class="mr-2">
+            <a class="inline-block cursor-pointer rounded-t-lg border-b-2 px-4 py-3"
+              :class="getTabClass('alarms')"
+              @click="activeTab = 'alarms'">Alarms</a>
+          </li>
+        </ul>
+      </div>
+      <AlarmsTable v-show="activeTab === 'alarms'" :availableAlarms="getConfiguredAlarms" :readonly="true" :max="20" />
+      <SensorTable v-show="activeTab === 'sensors'" :availableSensors="getConfiguredSensors" :readonly="true" :showlabels="true" :max="50" />
     </div>
   </div>
 </template>

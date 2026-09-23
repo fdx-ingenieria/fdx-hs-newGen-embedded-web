@@ -17,5 +17,13 @@ export default defineConfig({
   },
   build: {
     sourcemap: true
+  },
+  server: {
+      proxy: {
+          '/api': {
+              target: 'http://192.168.10.1',
+              changeOrigin: true,
+          }
+      }
   }
 })
