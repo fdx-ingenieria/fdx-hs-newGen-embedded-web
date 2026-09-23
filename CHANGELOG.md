@@ -1,3 +1,14 @@
+## [0.8.0] - 2026-09-23
+
+### Features
+
+- Botón para reordenar slots de tabla modbus
+- Slot en tabla de sensores config y lo uso para ordenar
+
+### Refactor
+
+- Migro measure time a segundos
+
 ## [0.7.0] - 2026-08-25
 
 ### Features
