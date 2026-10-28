@@ -108,6 +108,7 @@ export const useGlobalStore = defineStore('global', () => {
     return 'Antenna state unknown: detection has not completed. The unit is not measuring.'
   })
   const firmwareVersion: Ref<string> = ref('')
+  const modbusContract: Ref<number | null> = ref(null)
   const showSideBar = ref(false)
   const notifications: Ref<Notification[]> = ref([])
   let _notifId = 0
@@ -125,6 +126,7 @@ export const useGlobalStore = defineStore('global', () => {
 
   // Getters
   const getFirmwareVersion = computed(() => firmwareVersion.value)
+  const getModbusContract = computed(() => modbusContract.value)
   const getAvailableLabels = computed(() => availableLabels.value)
   const getAvailableSensors = computed(() => availableSensors.value)
   const getDiscoveryModeOn = computed(() => discoveryModeOn.value)
@@ -733,8 +735,10 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   async function loadFirmwareVersion(): Promise<void> {
-    const data = await apiFetch<{ version: string }>('/api/system/version')
+    // modbus_contract is absent on firmware older than 3.0.0.
+    const data = await apiFetch<{ version: string; modbus_contract?: number }>('/api/system/version')
     firmwareVersion.value = data.version
+    modbusContract.value = data.modbus_contract ?? null
   }
 
   // Admin log download. Backend: POST /api/admin/logs { service, severity, password }
@@ -891,6 +895,7 @@ export const useGlobalStore = defineStore('global', () => {
     updateSensorData,
     firmwareVersion,
     getFirmwareVersion,
+    getModbusContract,
     loadFirmwareVersion,
     fetchLogText,
     setLogLevel,

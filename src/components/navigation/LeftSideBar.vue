@@ -73,6 +73,7 @@
     <div class="absolute bottom-0 left-0 z-20 w-full border-t border-line bg-panel px-4 py-3 font-mono text-xs text-ink-faint lg:block">
       <small class="block">FW: {{ globalStore.getFirmwareVersion || 'N/A' }}</small>
       <small class="block">WA: v{{ version }}</small>
+      <small v-if="globalStore.getModbusContract !== null" class="block">MB: v{{ globalStore.getModbusContract }}</small>
     </div>
   </aside>
 </template>
