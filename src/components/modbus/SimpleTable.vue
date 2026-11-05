@@ -20,13 +20,16 @@
 
 <template>
   <div class="card relative mt-8 overflow-hidden print:mt-0 print:-mx-6 print:border-0 print:shadow-none">
-    <div class="panel-head cursor-pointer rounded-none" @click="show = !show">
+    <div class="panel-head cursor-pointer rounded-none" @click="show = !show"
+      role="button" tabindex="0" :aria-expanded="show" @keydown.enter.space.prevent="show = !show">
       <div class="flex items-center">
         <ListIcon class="mr-2 hidden h-6 text-ink-faint md:inline-flex" />
         <h3>{{ data.name }}</h3>
       </div>
       <div class="flex items-center gap-1 text-ink-soft">
-        <PrintIcon @click.prevent="print" class="h-6 w-6 hover:text-ink" />
+        <button type="button" @click.stop="print" aria-label="Print table" class="rounded-md hover:text-ink [@media(pointer:coarse)]:p-2">
+          <PrintIcon class="h-6 w-6" />
+        </button>
         <ChevronUpIcon class="h-6 w-6 hover:text-ink"
           :class="{'rotate-180': !show}" />
       </div>

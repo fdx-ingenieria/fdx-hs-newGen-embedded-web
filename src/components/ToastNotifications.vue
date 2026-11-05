@@ -15,7 +15,8 @@ const toastClass: Record<NotificationType, string> = {
 
 <template>
   <Teleport to="body">
-    <div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 w-80 pointer-events-none">
+    <div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 w-[min(20rem,calc(100vw-2rem))] pointer-events-none"
+      role="status" aria-live="polite">
       <TransitionGroup name="toast">
         <div
           v-for="n in store.notifications"
@@ -26,7 +27,8 @@ const toastClass: Record<NotificationType, string> = {
           <span class="flex-1 text-sm font-medium break-words leading-snug">{{ n.message }}</span>
           <button
             @click="store.dismissNotification(n.id)"
-            class="shrink-0 opacity-70 hover:opacity-100 mt-0.5"
+            aria-label="Dismiss notification"
+            class="shrink-0 opacity-70 hover:opacity-100 -m-2.5 mt-[-0.5rem] p-2.5"
           >
             <CloseIcon class="w-4 h-4" />
           </button>

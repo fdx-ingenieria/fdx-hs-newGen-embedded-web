@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { PropType, ref } from 'vue';
+  import { PropType, ref, watch } from 'vue';
   import { IMenuItem } from '@/commons';
   import { ChevronUpIcon } from '@/components/icons';
   import { RouteLocationMatched } from 'vue-router';
@@ -29,14 +29,17 @@
     return props.matched?.some((item) => item.name === name);
   };
 
+  // Open the group whenever one of its pages is the current route.
   const showItems = ref(false);
+  watch(() => props.items.some(i => isActive(i.route)), active => { if (active) showItems.value = true }, { immediate: true });
 </script>
 <template>
   <template v-if="!items.length">
     <li class="cursor-pointer">
       <button @click="$router.push({ name: route})"
         :disabled="!route"
-        class="group flex w-full items-center rounded-lg p-2.5 text-sm font-medium text-ink-soft hover:bg-panel-strong hover:text-ink disabled:opacity-50"
+        :aria-current="isActive(route) ? 'page' : undefined"
+        class="group flex w-full items-center rounded-lg p-2.5 [@media(pointer:coarse)]:py-3 text-sm font-medium text-ink-soft hover:bg-panel-strong hover:text-ink disabled:opacity-50"
         :class="{'!bg-brand-soft !text-brand font-semibold': isActive(route)}">
         <slot></slot>
         <span class="ml-3">{{ label }}</span>
@@ -47,7 +50,8 @@
     <li class="cursor-pointer">
       <button type="button"
         @click="showItems = !showItems"
-        class="group flex w-full items-center rounded-lg p-2.5 text-sm font-medium text-ink-soft hover:bg-panel-strong hover:text-ink"
+        :aria-expanded="showItems"
+        class="group flex w-full items-center rounded-lg p-2.5 [@media(pointer:coarse)]:py-3 text-sm font-medium text-ink-soft hover:bg-panel-strong hover:text-ink"
         :class="{'!text-brand': isActive(route)}">
         <slot></slot>
         <span class="flex-1 ml-3 text-left whitespace-nowrap">{{ label }}</span>
@@ -57,7 +61,8 @@
         <li v-for="item in items">
           <button @click="$router.push({ name: item.route})"
             :disabled="!item.route"
-            class="group flex w-full items-center rounded-lg p-2 pl-6 text-sm font-medium text-ink-soft hover:bg-panel-strong hover:text-ink disabled:opacity-50"
+            :aria-current="isActive(item.route) ? 'page' : undefined"
+            class="group flex w-full items-center rounded-lg p-2 pl-6 [@media(pointer:coarse)]:py-3 text-sm font-medium text-ink-soft hover:bg-panel-strong hover:text-ink disabled:opacity-50"
             :class="{'!bg-brand-soft !text-brand font-semibold': isActive(item.route)}">
             {{ item.label }}
           </button>
