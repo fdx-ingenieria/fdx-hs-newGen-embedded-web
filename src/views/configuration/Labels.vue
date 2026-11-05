@@ -1,6 +1,8 @@
 <script setup lang="ts">
   import { ILabelData, LabelType } from '@/commons';
-  import { AlertIcon, EditIcon, ListIcon, LoadingIcon, SendIcon } from '@/components/icons';
+  import { CloseIcon, LoadingIcon, SendIcon } from '@/components/icons';
+  import { PRESETS, PresetKey, applyLabelPreset } from '@/commons/installPresets';
+  import { vLongPress } from '@/composables/longPress';
   import LabelTable from '@/components/labels/LabelTable.vue';
   import { useGlobalStore } from '@/stores/global'
   import { storeToRefs } from 'pinia';
@@ -11,7 +13,7 @@
 
   let sizeWatcher:any = null
   const availableLabels: Ref<ILabelData> = ref({ equipment: [], location: [], position: [] })
-  const activeTab = ref('equipment')
+  const activeTab = ref<string>(LabelType.EQUIPMENT)
   const hasUnsavedChanges = ref(false)
   const isLargeScreen = ref(false)
   const loadingData = ref(true)
@@ -65,6 +67,19 @@
       .finally(() => savingData.value = false)
   }
 
+  const showPresets = ref(false)
+  const loadPreset = (key: PresetKey) => {
+    availableLabels.value = applyLabelPreset(availableLabels.value, key)
+    hasUnsavedChanges.value = true
+    showPresets.value = false
+    globalStore.notify('Preset loaded: review the names and save', 'success')
+  }
+
+  const discardChanges = () => {
+    availableLabels.value = JSON.parse(JSON.stringify(globalStore.getAvailableLabels))
+    hasUnsavedChanges.value = false
+  }
+
   const getTabClass = (type: LabelType) => {
     if (type === activeTab.value) {
       return 'border-brand text-brand active'
@@ -83,7 +98,7 @@
   }
 
   onBeforeRouteLeave((_to, _from, next) => {
-    if (hasUnsavedChanges.value && !window.confirm('Abandon ship without saving? Your changes might get lost at sea!')) {
+    if (hasUnsavedChanges.value && !window.confirm('Leave without saving your label changes?')) {
       return
     }
     next()
@@ -95,8 +110,13 @@
     sizeWatcher.addEventListener('change', handleMqlChange)
     window.addEventListener("beforeunload", preventUnsaved)
 
-    await globalStore.loadLabels()
-      .then(() => loadingData.value = false)
+    try {
+      await globalStore.loadLabels()
+    } catch {
+      // apiFetch already showed the error.
+    } finally {
+      loadingData.value = false
+    }
   })
 
   onUnmounted(() => {
@@ -107,74 +127,72 @@
 
 <template>
   <section class="antialiased">
-    <div class="mx-auto mb-12">
-      <div v-if="!isLargeScreen" class="card overflow-hidden">
-        <div class="text-sm font-semibold text-center text-ink-faint border-b border-line">
-          <ul class="flex flex-wrap -mb-px">
-            <li class="mr-2">
-              <a class="inline-block p-4 border-b-2 rounded-t-lg cursor-pointer"
-                :class="getTabClass(LabelType.EQUIPMENT)"
-                @click="activeTab = LabelType.EQUIPMENT">Equipment</a>
-            </li>
-            <li class="mr-2">
-              <a class="inline-block p-4 border-b-2 rounded-t-lg cursor-pointer"
-                :class="getTabClass(LabelType.LOCATION)"
-                @click="activeTab = LabelType.LOCATION">Location</a>
-            </li>
-            <li class="mr-2">
-              <a class="inline-block p-4 border-b-2 rounded-t-lg cursor-pointer"
-                :class="getTabClass(LabelType.POSITION)"
-                @click="activeTab = LabelType.POSITION">Position</a>
-            </li>
-          </ul>
+    <div class="mx-auto mb-6">
+      <!-- Ctrl+Shift+double click (or long press) opens the hidden installation presets. -->
+      <p class="mb-4 select-none text-sm text-ink-soft [-webkit-touch-callout:none]"
+        v-on:dblclick.shift.ctrl="showPresets = !showPresets"
+        v-long-press="() => showPresets = !showPresets">
+        Names shown for each slot. Sensors and alarms store the slot number, so renaming a slot renames it everywhere.
+      </p>
+
+      <div v-if="showPresets" class="card mb-4 p-4">
+        <div class="mb-1 flex items-center justify-between gap-2">
+          <h3 class="text-base font-semibold text-ink">Installation presets</h3>
+          <button type="button" class="rounded-md p-1 text-ink-faint hover:text-ink" aria-label="Close presets"
+            @click="showPresets = false"><CloseIcon class="h-5 w-5" /></button>
         </div>
-        <transition-group name="slide-down-fade" appear tag="div" class="overflow-x-auto">
-          <template v-for="labelType in LabelType" :key="labelType">
-            <div v-if="activeTab === labelType">
-              <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-4" />
-              <LabelTable v-else :availableLabels="availableLabels[labelType]" :labelType="labelType" @edit="editLabel" @add="addLabel" @removeLast="removeLastLabel" />
-            </div>
-          </template>
-        </transition-group>
-      </div>
-      <div v-else class="grid grid-cols-2 xl:grid-cols-3 gap-6">
-        <div v-for="labelType in LabelType" class="card overflow-hidden">
-          <div class="panel-head rounded-none">
-            <div class="flex items-center">
-              <ListIcon class="mr-2 w-6 text-ink-faint" />
-              <h3>{{ labelType.toLocaleUpperCase() }}</h3>
-            </div>
-          </div>
-          <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-4" />
-          <LabelTable v-else :availableLabels="availableLabels[labelType]" :labelType="labelType" @edit="editLabel" @add="addLabel" @removeLast="removeLastLabel" />
-        </div>
-      </div>
-      <div v-if="hasUnsavedChanges"
-        class="fixed bottom-0 w-full p-4 text-info border-t-4 border-info/40 bg-info-soft"
-        :class="{'text-crit border-crit/40 bg-crit-soft': hasAnyDuplicateLabel}">
-        <div class="ml-3 text-sm font-medium flex items-center">
-          <template v-if="hasAnyDuplicateLabel">
-            <AlertIcon class="w-4 mr-1" />
-            Oops, duplicate labels! Please fix them before saving.
-          </template>
-          <template v-else>
-            <EditIcon class="w-4 mr-1" />
-            Oops, unsaved changes alert! Time to save the day!
-          </template>
-          <button class="btn-primary !text-xs !px-3 ml-3"
-            @click="saveLabel()"
-            :disabled="savingData || hasAnyDuplicateLabel"
-            type="button" >
-            <template v-if="savingData">
-              <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto mr-1" />
-              Saving...
-            </template>
-            <template v-else>
-              <SendIcon class="w-4 mr-1" />
-              Save
-            </template>
+        <p class="mb-3 text-sm text-ink-faint">Fills the three lists with the names used in the field. Nothing is saved until you press Save labels.</p>
+        <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <button v-for="p in PRESETS" :key="p.key" type="button" @click="loadPreset(p.key)"
+            class="rounded-lg border border-line bg-panel-soft p-3 text-left hover:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+            <span class="block font-semibold text-ink">{{ p.title }}</span>
+            <span class="mt-1 block text-sm text-ink-soft">{{ p.labels.equipment.join(', ') }}</span>
+            <span class="block text-sm text-ink-soft">{{ p.labels.location.join(', ') }}</span>
+            <span class="block text-sm text-ink-soft">{{ p.labels.position.join(', ') }}</span>
           </button>
         </div>
+      </div>
+
+      <div v-if="!isLargeScreen" class="card overflow-hidden">
+        <div class="flex border-b border-line px-2 text-sm font-semibold" role="tablist">
+          <button v-for="labelType in LabelType" :key="labelType" type="button" role="tab"
+            :aria-selected="activeTab === labelType"
+            class="flex-1 border-b-2 px-3 py-3 capitalize"
+            :class="getTabClass(labelType)"
+            @click="activeTab = labelType">
+            {{ labelType }}
+            <span v-if="hasDuplicateLabel(availableLabels[labelType])" class="ml-1 text-crit" aria-label="has duplicates">!</span>
+          </button>
+        </div>
+        <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-4" />
+        <LabelTable v-else :availableLabels="availableLabels[activeTab as LabelType]" :labelType="activeTab as LabelType"
+          @edit="editLabel" @add="addLabel" @removeLast="removeLastLabel" />
+      </div>
+      <div v-else class="grid grid-cols-3 gap-4">
+        <div v-for="labelType in LabelType" :key="labelType" class="card overflow-hidden">
+          <div class="panel-head">
+            <h3 class="capitalize">{{ labelType }}</h3>
+            <span class="font-mono text-xs text-ink-faint">{{ Math.max(0, availableLabels[labelType].length - 1) }} slots</span>
+          </div>
+          <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-4" />
+          <LabelTable v-else :availableLabels="availableLabels[labelType]" :labelType="labelType"
+            @edit="editLabel" @add="addLabel" @removeLast="removeLastLabel" />
+        </div>
+      </div>
+
+      <!-- Sticks to the bottom of the view while there is something to save. -->
+      <div v-if="hasUnsavedChanges"
+        class="card sticky bottom-4 mt-4 flex flex-wrap items-center gap-3 border-l-4 p-3"
+        :class="hasAnyDuplicateLabel ? 'border-l-crit' : 'border-l-accent'" role="status">
+        <p class="flex-1 text-sm font-medium" :class="hasAnyDuplicateLabel ? 'text-crit' : 'text-ink'">
+          {{ hasAnyDuplicateLabel ? 'Fix the duplicate names before saving.' : 'You have unsaved label changes.' }}
+        </p>
+        <button type="button" class="btn-ghost" :disabled="savingData" @click="discardChanges()">Discard</button>
+        <button type="button" class="btn-primary" :disabled="savingData || hasAnyDuplicateLabel" @click="saveLabel()">
+          <LoadingIcon v-if="savingData" class="h-4 w-4 animate-spin fill-transparent" />
+          <SendIcon v-else class="w-4" />
+          Save labels
+        </button>
       </div>
     </div>
   </section>
