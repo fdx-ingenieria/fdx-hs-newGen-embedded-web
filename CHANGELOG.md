@@ -1,9 +1,38 @@
+## [1.0.0] - 2026-11-05
+
+### Features
+
+- Modo mobile en tablets en cualquier orientación
+- Sidebars, toasts y tablas modbus usables al tacto
+- Long press para abrir los menús ocultos desde la tablet
+- *(NavBar)* El logo recarga la webapp desde el inicio
+- *(LogsAdmin)* Rediseño la view y descargo logs por rango de tiempo
+- *(Sensors)* Tarjetas en mobile, quick setup y borrar todos
+- *(Labels)* Rediseño la view y agrego presets ocultos de instalación
+- *(Alarms)* Rediseño la view y el form, borrar todas y presets ocultos
+- *(Overview)* KPIs compactos en mobile y carga sin bloquear
+
+### Bug Fixes
+
+- *(Breadcrumb)* Nombres del menú y home que navega al overview
+- Sensores alarmados según la ubicación de cada alarma
+
+### Refactor
+
+- *(ModeIndicator)* Extraigo el modo del equipo a un composable
+
+### Styling
+
+- Centro System y RFID reader y simplifico textos y la 404
+
+### Miscellaneous Tasks
+
+- Corrijo versión mínima de firmware en comentario de modbus_contract
 ## [0.9.0] - 2026-10-28
 
 ### Features
 
 - Muestro versión de contrato modbus en la sidebar
-
 ## [0.8.0] - 2026-09-23
 
 ### Features
@@ -14,7 +43,6 @@
 ### Refactor
 
 - Migro measure time a segundos
-
 ## [0.7.0] - 2026-08-25
 
 ### Features
