@@ -1,24 +1,11 @@
 <script setup lang="ts">
   import { useGlobalStore } from '@/stores/global';
-  import { BookmarkIcon, CabinetIcon, NetworkConnectedIcon, NetworkDisconnectedIcon, SearchIcon } from '@/components/icons';
-  import { computed } from 'vue';
+  import { NetworkConnectedIcon, NetworkDisconnectedIcon } from '@/components/icons';
+  import { useDeviceMode } from '@/composables/deviceMode';
 
   const globalStore = useGlobalStore();
-
-  // Un solo estado efectivo, no una combinación: coincide 1 a 1 con la rama que
-  // toma el backend en el loop de medición (main_sm.cpp) — Discovery manda
-  // siempre que está activo, Auto (switchgear) solo aplica si no hay Discovery.
-  // Colores suavizados (opacidad reducida sobre los tokens semánticos) para que
-  // el ícono siga siendo identificable sin gritar.
-  const mode = computed(() => {
-    if (globalStore.getDiscoveryModeOn) {
-      return { icon: SearchIcon, colorClass: 'text-warn/70', title: 'Discovery mode: all detected tags are processed' };
-    }
-    if (globalStore.getAppModeIsSwitchgear) {
-      return { icon: CabinetIcon, colorClass: 'text-accent/70', title: 'Auto mode: sensor groups are auto-registered and tracked per antenna (switchgear)' };
-    }
-    return { icon: BookmarkIcon, colorClass: 'text-ok/70', title: 'Manual mode: only registered sensors are processed' };
-  });
+  // Muted semantic colors so the icon stays recognizable without shouting.
+  const mode = useDeviceMode();
 </script>
 
 <template>
