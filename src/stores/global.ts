@@ -790,7 +790,7 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   async function loadFirmwareVersion(): Promise<void> {
-    // modbus_contract is absent on firmware older than 3.0.0.
+    // modbus_contract is absent on firmware older than 2.10.0.
     const data = await apiFetch<{ version: string; modbus_contract?: number }>('/api/system/version')
     firmwareVersion.value = data.version
     modbusContract.value = data.modbus_contract ?? null
