@@ -1,5 +1,6 @@
 import { IAntennaGroup, ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ITimers, ISensorData, IAlarm, IAlarmData, IAlarmField, IModbusTableEntry, IReaderConfig, SensorQuality } from '@/commons'
 import { defineStore } from 'pinia'
+import type { PresetAlarm } from '@/commons/installPresets'
 import { Ref, computed, ref } from 'vue'
 
 export type NotificationType = 'success' | 'error' | 'warning'
@@ -493,7 +494,7 @@ export const useGlobalStore = defineStore('global', () => {
     })
   }
 
-  async function updateAlarm(slot: number, data: IAlarm): Promise<void> {
+  async function putAlarm(slot: number, data: IAlarm): Promise<void> {
     await apiFetch(`/api/config/alarms/${slot}`, {
       method: 'PUT',
       body: JSON.stringify({
@@ -506,15 +507,48 @@ export const useGlobalStore = defineStore('global', () => {
         field_pairs: data.fields.map(f => ({ location: f.location, equipment: f.equipment })),
       }),
     })
+  }
+
+  async function updateAlarm(slot: number, data: IAlarm): Promise<void> {
+    await putAlarm(slot, data)
     // backend = fuente de verdad: re-leemos para reflejar lo realmente persistido
     await loadAlarms()
     notify('Alarm saved', 'success')
+  }
+
+  // Installation preset: slots 0..N-1 get the preset, every other used slot is cleared.
+  async function applyAlarmPreset(alarms: PresetAlarm[]): Promise<void> {
+    const leftovers = availableAlarms.value.filter(a => a.id >= alarms.length && (a.name || a.fields.length))
+    try {
+      for (let slot = 0; slot < alarms.length; slot++) {
+        const a = alarms[slot]
+        await putAlarm(slot, {
+          id: slot, name: a.name, alarm_type: a.alarm_type, set_point: a.set_point, reset_point: 0, relay_flag: 0,
+          fields: [{ equipment: a.equipment, location: a.location }], sensors: [], _sensors: [],
+        })
+      }
+      for (const a of leftovers) await apiFetch(`/api/config/alarms/${a.id}`, { method: 'DELETE' })
+      notify(`Preset applied: ${alarms.length} alarms`, 'success')
+    } finally {
+      await loadAlarms()
+    }
   }
 
   async function resetAlarm(slot: number): Promise<void> {
     await apiFetch(`/api/config/alarms/${slot}`, { method: 'DELETE' })
     await loadAlarms()
     notify('Alarm deleted', 'success')
+  }
+
+  // No bulk endpoint: clears every slot that holds a name or locations, one request each.
+  async function deleteAllAlarms(): Promise<void> {
+    const slots = availableAlarms.value.filter(a => a.name || a.fields.length).map(a => a.id)
+    try {
+      for (const slot of slots) await apiFetch(`/api/config/alarms/${slot}`, { method: 'DELETE' })
+      notify(`${slots.length} alarm(s) deleted`, 'success')
+    } finally {
+      await loadAlarms()  // show what the device really holds, even after a partial failure
+    }
   }
 
   async function loadSystemData(): Promise<void> {
@@ -926,6 +960,8 @@ export const useGlobalStore = defineStore('global', () => {
     loadFirmwareVersion,
     checkLogDownload,
     deleteAllSensors,
+    deleteAllAlarms,
+    applyAlarmPreset,
     setLogLevel,
     streamLogTail,
   }

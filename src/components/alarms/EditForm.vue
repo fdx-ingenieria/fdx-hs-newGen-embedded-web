@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, Ref, watch } from 'vue';
+  import { computed, ref, Ref, watch } from 'vue';
   import { AlarmType, IAlarm, IAlarmField, isValidInteger, ReleFlag } from '@/commons';
   import { useGlobalStore } from '@/stores/global';
   import { AlertIcon, LoadingIcon, PlusIcon, RemoveIcon } from '../icons';
@@ -19,6 +19,16 @@
   watch(() => props.alarm.id, () => localValue.value = JSON.parse(JSON.stringify(props.alarm)))
 
   const HYSTERESIS_TYPE = 4
+  const RELAY_OPTIONS = ReleFlag.map((_, i) => i)
+
+  // Native pickers ignore display:none on <option>, so slot 0 and empty slots are filtered out.
+  const labelOptions = (type: 'equipment' | 'location') => computed(() =>
+    (globalStore.getAvailableLabels[type] ?? [])
+      .map((label: string, index: number) => ({ label, index }))
+      .filter(o => o.index > 0 && !!o.label)
+  )
+  const equipmentOptions = labelOptions('equipment')
+  const locationOptions = labelOptions('location')
 
   const validSetPoint = (value: number): boolean => {
     if (!isValidInteger(value)) return false
@@ -76,167 +86,119 @@
 </script>
 
 <template>
-  <div class="overflow-x-auto">
-    <h3 class="mb-4 border-b border-line pb-2 text-lg font-semibold text-ink">
-      Edit alarm
+  <div class="desktop:overflow-x-auto">
+    <h3 class="mb-4 flex items-baseline gap-2 border-b border-line pb-2 text-lg font-semibold text-ink">
+      Alarm slot <span class="font-mono">{{ alarm.id }}</span>
     </h3>
-    <div class="grid gap-4 mb-4 p-1">
+    <div class="grid gap-5 mb-4 p-1">
       <div>
-        <label class="field-label">ID</label>
-        <input type="text" :value="alarm.id"
-          class="input"
-          disabled>
+        <label class="field-label" for="alarm-name">Name</label>
+        <input id="alarm-name" type="text" v-model="localValue.name" maxlength="20" class="input"
+          placeholder="e.g. Phase R overtemp">
+        <p v-show="!localValue.name" class="mt-1.5 text-sm text-crit">Give the alarm a name to save it.</p>
       </div>
+
       <div>
-        <label class="field-label">Name</label>
-        <input type="text"
-          v-model="localValue.name"
-          maxlength="20"
-          class="input">
-        <p v-show="!localValue.name" class="mt-2 text-sm text-crit">
-          <span class="font-semibold">Oops!</span> This is required!
-        </p>
-      </div>
-      <div>
-        <label class="field-label">Function</label>
-        <select v-model="localValue.alarm_type"
-          class="input">
-          <option v-for="(item, index) in AlarmType" :value="index">{{ item }}</option>
+        <label class="field-label" for="alarm-function">Function</label>
+        <select id="alarm-function" v-model="localValue.alarm_type" class="input">
+          <option v-for="(item, index) in AlarmType" :value="index">{{ index ? item : 'Not set (alarm off)' }}</option>
         </select>
-        <p v-show="!localValue.alarm_type" class="mt-2 text-sm text-warn"><span
-            class="font-semibold">Warning:</span> The alarm will remain deactivated.</p>
-        <p v-show="localValue.alarm_type === HYSTERESIS_TYPE" class="mt-2 text-sm text-ink-faint">
-          ON/OFF control with hysteresis (two set points).
-        </p>
+        <p v-show="!localValue.alarm_type" class="mt-1.5 text-sm text-warn">The alarm stays off until a function is chosen.</p>
       </div>
-      <div v-if="localValue.alarm_type !== HYSTERESIS_TYPE">
-        <label class="field-label">Set Point</label>
-        <div class="relative">
-          <input class="input pr-10"
-            type="number"
-            min="-40"
-            max="120"
-            step="1"
-            v-model.number="localValue.set_point"
-            placeholder="Set point value">
-          <span class="absolute inset-y-0 right-3 flex items-center text-sm text-ink-faint">°C</span>
-        </div>
-        <p v-show="!validSetPoint(localValue.set_point)" class="mt-2 text-sm text-crit"><span class="font-semibold">Oops!</span> This value should be between -40 and 120.</p>
-      </div>
+
+      <!-- Hysteresis: low to high, left to right, like a scale. -->
       <div v-if="localValue.alarm_type === HYSTERESIS_TYPE">
+        <div class="mb-3 flex h-9 overflow-hidden rounded-lg border border-line text-xs font-semibold" aria-hidden="true">
+          <span class="flex flex-1 items-center justify-center bg-panel-soft text-ink-soft">Off</span>
+          <span class="flex flex-1 items-center justify-center border-x border-dashed border-line bg-warn-soft text-warn">Holds state</span>
+          <span class="flex flex-1 items-center justify-center bg-crit-soft text-crit">On</span>
+        </div>
+        <div class="relative -mt-2 mb-3 h-4 font-mono text-xs text-ink-soft" aria-hidden="true">
+          <span class="absolute left-1/3 -translate-x-1/2">{{ localValue.reset_point }} °C</span>
+          <span class="absolute left-2/3 -translate-x-1/2">{{ localValue.set_point }} °C</span>
+        </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="field-label">Activation Set Point (ON)</label>
+            <label class="field-label" for="alarm-reset">Off below</label>
             <div class="relative">
-              <input class="input pr-10"
-                type="number"
-                min="-40"
-                max="120"
-                step="1"
-                v-model.number="localValue.set_point"
-                placeholder="ON value">
-              <span class="absolute inset-y-0 right-3 flex items-center text-sm text-ink-faint">°C</span>
+              <input id="alarm-reset" class="input pr-10" type="number" min="-40" max="120" step="1"
+                v-model.number="localValue.reset_point">
+              <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-ink-faint">°C</span>
             </div>
-            <p class="mt-1 text-xs text-ink-faint">Relay activates when value is greater than this set point.</p>
-            <p v-show="!validSetPoint(localValue.set_point)" class="mt-1 text-sm text-crit"><span class="font-semibold">Oops!</span> Must be between -40 and 120.</p>
           </div>
           <div>
-            <label class="field-label">Deactivation Set Point (OFF)</label>
+            <label class="field-label" for="alarm-set">On above</label>
             <div class="relative">
-              <input class="input pr-10"
-                type="number"
-                min="-40"
-                max="120"
-                step="1"
-                v-model.number="localValue.reset_point"
-                placeholder="OFF value">
-              <span class="absolute inset-y-0 right-3 flex items-center text-sm text-ink-faint">°C</span>
+              <input id="alarm-set" class="input pr-10" type="number" min="-40" max="120" step="1"
+                v-model.number="localValue.set_point">
+              <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-ink-faint">°C</span>
             </div>
-            <p class="mt-1 text-xs text-ink-faint">Relay deactivates when value is lower than this set point.</p>
-            <p v-show="!validResetPoint(localValue.reset_point, localValue.set_point)" class="mt-1 text-sm text-crit"><span class="font-semibold">Oops!</span> Must be below the ON set point.</p>
           </div>
         </div>
-        <div v-show="!validResetPoint(localValue.reset_point, localValue.set_point) && validSetPoint(localValue.set_point) && validSetPoint(localValue.reset_point)"
-          class="mt-3 flex items-center gap-2 p-3 text-sm text-warn rounded-lg bg-warn-soft border border-warn/30">
-          <span class="font-semibold">⚠ Warning:</span> OFF set point must be lower than ON set point.
-        </div>
-        <div v-show="validResetPoint(localValue.reset_point, localValue.set_point)"
-          class="mt-3 flex items-center gap-2 p-3 text-sm text-info rounded-lg bg-info-soft border border-info/30">
-          ℹ Hysteresis: {{ localValue.set_point - localValue.reset_point }} °C
-        </div>
+        <p v-if="!validSetPoint(localValue.set_point) || !validSetPoint(localValue.reset_point)" class="mt-2 text-sm text-crit">
+          Both values must be between -40 and 120 °C.
+        </p>
+        <p v-else-if="!validResetPoint(localValue.reset_point, localValue.set_point)" class="mt-2 text-sm text-crit">
+          "Off below" must be lower than "On above".
+        </p>
+        <p v-else class="mt-2 text-sm text-ink-soft">
+          The relay turns on above {{ localValue.set_point }} °C and stays on until the temperature drops below
+          {{ localValue.reset_point }} °C ({{ localValue.set_point - localValue.reset_point }} °C band).
+        </p>
       </div>
-      <div>
-        <label class="field-label">Rele</label>
-        <select v-model="localValue.relay_flag"
-          class="input">
-          <option v-for="(item, index) in ReleFlag" :value="index">{{ item }}</option>
-        </select>
-      </div>
-      <div>
-        <label class="field-label">Fields</label>
 
-        <div class="relative overflow-x-auto rounded-lg border border-line">
-          <table class="w-full text-sm text-left text-ink-soft">
-            <thead class="border-b border-line bg-panel-soft text-xs uppercase tracking-wider text-ink-faint">
-              <tr>
-                <th scope="col" class="px-2 py-3">#</th>
-                <th scope="col" class="px-2 py-3">Equipment</th>
-                <th scope="col" class="px-2 py-3">Location</th>
-                <th scope="col" class="px-2 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(field, index) in localValue.fields" class="border-b border-line">
-                <th scope="row" class="px-2 py-2 font-mono font-medium text-ink whitespace-nowrap">
-                  {{ index + 1 }}
-                </th>
-                <td class="px-2 py-2">
-                  <select v-model="field.equipment"
-                    class="input !py-1.5">
-                    <option v-for="(item, index) in globalStore.getAvailableLabels.equipment" :value="index" :class="{'hidden': !index || !item}">{{ item }}</option>
-                  </select>
-                </td>
-                <td class="px-2 py-2">
-                  <select v-model="field.location"
-                    class="input !py-1.5">
-                    <option v-for="(item, index) in globalStore.getAvailableLabels.location" :value="index" :class="{'hidden': !index || !item }">{{ item }}</option>
-                  </select>
-                </td>
-                <td class="px-1 py-2">
-                  <button class="flex px-1 py-1 font-semibold text-crit hover:brightness-110 focus:outline-none disabled:opacity-50"
-                    @click="removeFieldRow(index)"
-                    type="button">
-                    <RemoveIcon class="w-5" />
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr v-if="!noRepeatedFields()" class="bg-crit-soft">
-                <td colspan="4" class="px-2 py-2">
-                  <div class="flex items-centr text-sm text-crit">
-                    <AlertIcon class="w-4 mr-1" />
-                    Oops, duplicate fields! Please fix them before saving.
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td colspan="4" class="px-2 py-2">
-                  <button class="btn-primary mx-auto my-2"
-                    @click="addFieldRow()"
-                    :disabled="!noRepeatedFields()"
-                    type="button">
-                    <PlusIcon class="w-5 mr-1" />
-                    Add new row
-                  </button>
-                </td>
-              </tr>
-            </tfoot>
-          </table>
+      <div v-else-if="localValue.alarm_type">
+        <label class="field-label" for="alarm-setpoint">Set point</label>
+        <div class="relative sm:w-1/2">
+          <input id="alarm-setpoint" class="input pr-10" type="number" min="-40" max="120" step="1"
+            v-model.number="localValue.set_point">
+          <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-ink-faint">°C</span>
         </div>
+        <p v-show="!validSetPoint(localValue.set_point)" class="mt-1.5 text-sm text-crit">Must be between -40 and 120 °C.</p>
+      </div>
+
+      <div>
+        <span class="field-label" id="alarm-relay-label">Relay</span>
+        <div class="grid grid-cols-3 gap-1 rounded-lg border border-line bg-panel-soft p-1" role="radiogroup" aria-labelledby="alarm-relay-label">
+          <button v-for="index in RELAY_OPTIONS" :key="index" type="button" role="radio"
+            :aria-checked="localValue.relay_flag === index"
+            class="rounded-md py-2 text-sm font-semibold [@media(pointer:coarse)]:py-2.5"
+            :class="localValue.relay_flag === index ? 'bg-panel text-ink shadow-sm ring-1 ring-line' : 'text-ink-faint hover:text-ink'"
+            @click="localValue.relay_flag = index">
+            {{ index ? `Relay ${index}` : 'No relay' }}
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <span class="field-label">Locations watched</span>
+        <ul class="space-y-2">
+          <li v-for="(field, index) in localValue.fields" :key="index" class="flex items-center gap-2">
+            <select v-model="field.equipment" class="input min-w-0 flex-1" :aria-label="`Equipment of location ${index + 1}`">
+              <option :value="undefined" disabled>Equipment</option>
+              <option v-for="o in equipmentOptions" :key="o.index" :value="o.index">{{ o.label }}</option>
+            </select>
+            <select v-model="field.location" class="input min-w-0 flex-1" :aria-label="`Location ${index + 1}`">
+              <option :value="undefined" disabled>Location</option>
+              <option v-for="o in locationOptions" :key="o.index" :value="o.index">{{ o.label }}</option>
+            </select>
+            <button type="button" @click="removeFieldRow(index)" :aria-label="`Remove location ${index + 1}`"
+              class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-ink-faint hover:bg-crit-soft hover:text-crit [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11">
+              <RemoveIcon class="w-5" />
+            </button>
+          </li>
+        </ul>
+        <p v-if="!localValue.fields.length" class="text-sm text-ink-faint">No locations yet: the alarm cannot trigger.</p>
+        <p v-if="!noRepeatedFields()" class="mt-2 flex items-center text-sm text-crit">
+          <AlertIcon class="mr-1 w-4" /> The same location is listed twice.
+        </p>
+        <p v-else-if="!validFields(localValue.fields)" class="mt-2 text-sm text-crit">Pick equipment and location on every row.</p>
+        <button type="button" class="btn-ghost mt-2" @click="addFieldRow()" :disabled="!noRepeatedFields()">
+          <PlusIcon class="w-5" /> Add location
+        </button>
       </div>
     </div>
-    <div class="flex items-center space-x-4">
+    <div class="flex items-center space-x-4 mobile:sticky mobile:bottom-0 mobile:-mx-4 mobile:-mb-6 mobile:border-t mobile:border-line mobile:bg-panel mobile:px-4 mobile:pb-4 mobile:pt-3">
       <button class="btn-primary mb-2"
         @click="saveSlot()"
         :disabled="!isComplete() || saving"
