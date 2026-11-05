@@ -1,4 +1,4 @@
-import { IAntennaGroup, ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ITimers, ISensorData, IAlarm, IAlarmData, IModbusTableEntry, IReaderConfig, SensorQuality } from '@/commons'
+import { IAntennaGroup, ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ITimers, ISensorData, IAlarm, IAlarmData, IAlarmField, IModbusTableEntry, IReaderConfig, SensorQuality } from '@/commons'
 import { defineStore } from 'pinia'
 import { Ref, computed, ref } from 'vue'
 
@@ -310,17 +310,32 @@ export const useGlobalStore = defineStore('global', () => {
     connected.value = false
   }
 
+  // Sensors watched by an alarm: same equipment+location as one of its fields (the backend's rule).
+  const fieldKey = (equipment: number | undefined, location: number | undefined) => `${equipment}-${location}`
+  function sensorsOf(fields: IAlarmField[]): ISensor[] {
+    const keys = new Set(fields.map(f => fieldKey(f.equipment, f.location)))
+    return availableSensors.value.filter(s => keys.has(fieldKey(s.config.equipment, s.config.location)))
+  }
+
+  // loadSensors() replaces the sensor objects, so alarms re-resolve theirs instead of keeping stale references.
+  function relinkAlarmSensors(): void {
+    availableAlarms.value.forEach(alarm => {
+      alarm._sensors = sensorsOf(alarm.fields)
+      alarm.sensors = alarm._sensors.map(s => s.id)
+    })
+  }
+
   function updateAlarmsData(data: IAlarmData[]) {
-    // El backend solo reporta is_alarmed por slot (no estado por-sensor): un sensor
-    // se considera alarmado si pertenece a alguna alarma activa. Reseteamos primero
-    // y luego hacemos OR sobre las alarmas (un sensor puede estar en varias).
-    availableSensors.value.forEach(sensor => { sensor.alarmed = false })
+    // The backend reports is_alarmed per slot only: a sensor is alarmed if any active alarm watches its location.
+    const activeKeys = new Set<string>()
     getConfiguredAlarms.value.forEach(alarm => {
       const status = data.find(item => item.id === alarm.id)
       alarm.status = status || undefined
-      if (status?.state) {
-        alarm._sensors?.forEach(sensor => { sensor.alarmed = true })
-      }
+      if (status?.state) alarm.fields.forEach(f => activeKeys.add(fieldKey(f.equipment, f.location)))
+    })
+    availableSensors.value.forEach(sensor => {
+      const alarmed = activeKeys.has(fieldKey(sensor.config.equipment, sensor.config.location))
+      if (sensor.alarmed !== alarmed) sensor.alarmed = alarmed
     })
   }
 
@@ -378,6 +393,7 @@ export const useGlobalStore = defineStore('global', () => {
       }),
       ...unconfigured,
     ]
+    relinkAlarmSensors()
   }
 
   async function updateSensors(data: ISensor[]): Promise<void> {
@@ -453,11 +469,7 @@ export const useGlobalStore = defineStore('global', () => {
 
     availableAlarms.value = raw.map(a => {
       const fields = a.config.field_pairs.map(fp => ({ location: fp.location, equipment: fp.equipment }))
-      // El backend no expone la lista de sensores por alarma: se reconstruye
-      // asociando los sensores cuyo equipment+location coincide con un field_pair.
-      const _sensors = availableSensors.value.filter(sensor =>
-        fields.some(f => f.equipment === sensor.config.equipment && f.location === sensor.config.location)
-      )
+      const _sensors = sensorsOf(fields)
       return {
         id: a.slot,
         name: a.config.name,
