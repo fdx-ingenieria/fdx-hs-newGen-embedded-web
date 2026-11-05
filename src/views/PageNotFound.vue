@@ -1,30 +1,14 @@
 <script setup lang="ts"></script>
 
 <template>
-  <div class="flex absolute w-full h-full bg-app app-grid text-center">
-    <div class="lg:px-24 m-auto lg:py-24 md:py-20 md:px-44 px-4 py-24 w-full max-w-screen-xl items-center flex justify-center flex-col-reverse lg:flex-row md:gap-28 gap-16">
-      <div class="xl:pt-24 w-full xl:w-1/2 relative pb-12 lg:pb-0">
-        <div class="relative">
-          <div class="absolute h-full">
-            <div class="">
-              <h1 class="my-2 text-ink font-bold lg:text-4xl text-2xl">
-                Oops, it seems you've stumbled upon the gateway to the great void.
-              </h1>
-              <p class="my-8">
-                <a href="/" class="btn-primary px-8 py-4">
-                  Let's start over!
-                </a>
-              </p>
-            </div>
-          </div>
-          <div class="text-line m-auto">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="currentColor" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 10"><text font-family="Consolas" dominant-baseline="middle" text-anchor="middle" font-size="12" font-weight="bold" transform="scale(1.2)" x="42%" y="50%">404</text></svg>
-          </div>
-        </div>
-      </div>
+  <section class="flex min-h-[60vh] items-center justify-center px-4">
+    <div class="card max-w-md p-6 text-center">
+      <p class="font-mono text-sm font-semibold text-ink-faint">404</p>
+      <h1 class="mt-1 text-xl font-semibold text-ink">Page not found</h1>
+      <p class="mt-2 text-sm text-ink-soft">This address does not match any page of the device.</p>
+      <router-link :to="{ name: 'Overview' }" class="btn-primary mt-5">Go to overview</router-link>
     </div>
-  </div>
+  </section>
 </template>
 
 <style scoped></style>
-

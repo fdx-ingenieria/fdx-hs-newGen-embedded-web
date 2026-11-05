@@ -258,7 +258,7 @@
   }
 
   onBeforeRouteLeave((_to, _from, next) => {
-    if (hasUnsavedChanges.value && !window.confirm('Abandon ship without saving? Your changes might get lost at sea!')) {
+    if (hasUnsavedChanges.value && !window.confirm('Leave without saving your system changes?')) {
       return
     }
     next()
@@ -277,7 +277,7 @@
 
 <template>
   <section class="antialiased">
-    <div class="mx-auto space-y-4">
+    <div class="mx-auto max-w-3xl space-y-4">
       <!-- System card: admin settings (serial + inventory timing). The admin password
            and the save/restart buttons live at the very bottom, shared by serial and
            timers (both are admin-gated by the same credential). -->
@@ -324,7 +324,7 @@
                       v-model.number="readerOnModel">
                   </div>
                   <p class="mt-1 text-sm text-ink-faint">100 – 5 000 ms. Active irradiation time per inventory cycle.</p>
-                  <p v-show="!validReaderOn(editableTimers.t_reader_on)" class="mt-1 text-sm text-crit"><span class="font-semibold">Oops!</span> This value should be between 100 and 5 000 ms.</p>
+                  <p v-show="!validReaderOn(editableTimers.t_reader_on)" class="mt-1 text-sm text-crit">Must be between 100 and 5 000 ms.</p>
                 </div>
 
                 <!-- T reader off: slider + numeric, 0–20 000 ms -->
@@ -339,7 +339,7 @@
                       v-model.number="editableTimers.t_reader_off">
                   </div>
                   <p class="mt-1 text-sm text-ink-faint">100 – 15 000 ms. Rest time between inventory cycles.</p>
-                  <p v-show="!validReaderOff(editableTimers.t_reader_off)" class="mt-1 text-sm text-crit"><span class="font-semibold">Oops!</span> This value should be between 100 and 15 000 ms.</p>
+                  <p v-show="!validReaderOff(editableTimers.t_reader_off)" class="mt-1 text-sm text-crit">Must be between 100 and 15 000 ms.</p>
                 </div>
 
                 <!-- Measure period: numeric only (1 s – 1 h no escala en slider) -->
@@ -350,7 +350,7 @@
                     v-model.number="measurePeriodSec"
                     placeholder="Seconds between measurement windows">
                   <p class="mt-1 text-sm text-ink-faint">1 – 3600 s. How often readings are drained into a measurement.</p>
-                  <p v-show="!validMeasurePeriod(measurePeriodSec)" class="mt-1 text-sm text-crit"><span class="font-semibold">Oops!</span> This value should be between 1 and 3600 seconds.</p>
+                  <p v-show="!validMeasurePeriod(measurePeriodSec)" class="mt-1 text-sm text-crit">Must be between 1 and 3600 seconds.</p>
                 </div>
 
                 <!-- Constraint cruzada: measure_period >= t_on + t_off -->
@@ -440,7 +440,7 @@
           </button>
         </div>
         <p v-show="!validWifiSession" class="mt-2 text-sm text-crit">
-          <span class="font-semibold">Oops!</span> This value should be between {{ WIFI_SESSION_MIN }} and {{ WIFI_SESSION_MAX }} minutes.
+          Must be between {{ WIFI_SESSION_MIN }} and {{ WIFI_SESSION_MAX }} minutes.
         </p>
       </div>
 
@@ -529,7 +529,7 @@
                 step="1"
                 v-model.number="editable.modbus_address"
                 placeholder="Modbus direction value">
-              <p v-show="!validDirModbus(editable.modbus_address)" class="mt-2 text-sm text-crit"><span class="font-semibold">Oops!</span> This value should be between 1 and 247.</p>
+              <p v-show="!validDirModbus(editable.modbus_address)" class="mt-2 text-sm text-crit">Must be between 1 and 247.</p>
             </div>
             <div>
               <label class="field-label">Baud rate</label>

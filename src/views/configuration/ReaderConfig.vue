@@ -94,7 +94,7 @@
   }
 
   onBeforeRouteLeave((_to, _from, next) => {
-    if (hasUnsavedChanges.value && !window.confirm('Abandon ship without saving? Your changes might get lost at sea!')) {
+    if (hasUnsavedChanges.value && !window.confirm('Leave without saving your reader changes?')) {
       return
     }
     next()
@@ -112,8 +112,9 @@
 
 <template>
   <section class="antialiased">
-    <div class="mx-auto">
+    <div class="mx-auto max-w-3xl">
       <div class="card overflow-hidden py-4 px-4 md:px-6">
+        <h2 class="mb-4 text-base font-semibold">RFID reader</h2>
         <LoadingIcon v-if="!editable.region" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-12" />
         <template v-else>
 
@@ -146,7 +147,7 @@
                   v-model.number="editable.read_pwr"
                   placeholder="Read power in cdBm">
                 <p class="mt-2 text-sm text-ink-faint">0 – 3300 cdBm.</p>
-                <p v-show="!validReadWritePowerValue(editable.read_pwr)" class="mt-2 text-sm text-crit"><span class="font-semibold">Oops!</span> Value out of range.</p>
+                <p v-show="!validReadWritePowerValue(editable.read_pwr)" class="mt-2 text-sm text-crit">Value out of range.</p>
               </div>
               <div>
                 <label class="field-label">Write power (cdBm)</label>
@@ -155,7 +156,7 @@
                   v-model.number="editable.write_pwr"
                   placeholder="Write power in cdBm">
                 <p class="mt-2 text-sm text-ink-faint">0 – 3300 cdBm.</p>
-                <p v-show="!validReadWritePowerValue(editable.write_pwr)" class="mt-2 text-sm text-crit"><span class="font-semibold">Oops!</span> Value out of range.</p>
+                <p v-show="!validReadWritePowerValue(editable.write_pwr)" class="mt-2 text-sm text-crit">Value out of range.</p>
               </div>
               <div>
                 <label class="field-label">Active antennas</label>
