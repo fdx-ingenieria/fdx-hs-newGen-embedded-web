@@ -741,26 +741,32 @@ export const useGlobalStore = defineStore('global', () => {
     modbusContract.value = data.modbus_contract ?? null
   }
 
-  // Admin log download. Backend: POST /api/admin/logs { service, severity, password }
-  // → text/plain (the filtered log). Own fetch (not apiFetch) because the response is
-  // plain text, not JSON, and we want to tell the 403 (wrong password) apart from a
-  // 400 (unknown service / bad severity / file not readable). Returns the raw text so
-  // the caller can either save it directly or merge several services before saving.
-  async function fetchLogText(service: string, severity: string, password: string): Promise<string> {
-    const res = await fetch('/api/admin/logs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ service, severity, password }),
-    })
-    if (res.status === 403) {
-      notify('Wrong password: logs were not downloaded', 'error')
-      throw new Error('unauthorized')
+  // Validates a log download (password, service, range) before the native form post that
+  // saves it to disk. Aborts as soon as headers arrive: only the status matters here.
+  async function checkLogDownload(service: string, severity: string, rangeS: number, password: string): Promise<boolean> {
+    const controller = new AbortController()
+    try {
+      const res = await fetch('/api/admin/logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ service, severity, range_s: rangeS, password }),
+        signal: controller.signal,
+      })
+      if (res.status === 403) {
+        notify('Wrong password: logs were not downloaded', 'error')
+        return false
+      }
+      if (!res.ok) {
+        notify(`[${res.status}] Could not download logs for "${service}"`, 'error')
+        return false
+      }
+      return true
+    } catch {
+      notify('Could not reach the device to download logs', 'error')
+      return false
+    } finally {
+      controller.abort()
     }
-    if (!res.ok) {
-      notify(`[${res.status}] Could not download logs for "${service}"`, 'error')
-      throw new Error('log download failed')
-    }
-    return res.text()
   }
 
   // Set the runtime (session-only) log level of a service ('fdx-hs' | 'fdx-api').
@@ -897,7 +903,7 @@ export const useGlobalStore = defineStore('global', () => {
     getFirmwareVersion,
     getModbusContract,
     loadFirmwareVersion,
-    fetchLogText,
+    checkLogDownload,
     setLogLevel,
     streamLogTail,
   }
