@@ -397,15 +397,18 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   async function updateSensors(data: ISensor[]): Promise<void> {
-    // El backend no tiene POST masivo: se envía un sensor por request.
-    for (const sensor of data) {
-      await apiFetch('/api/config/sensors', {
-        method: 'POST',
-        body: JSON.stringify({ epc_id: sensor.id, config: sensor.config }),
-      })
+    // No bulk POST: one request per sensor; reload even after a partial failure.
+    try {
+      for (const sensor of data) {
+        await apiFetch('/api/config/sensors', {
+          method: 'POST',
+          body: JSON.stringify({ epc_id: sensor.id, config: sensor.config }),
+        })
+      }
+      notify(data.length === 1 ? 'Sensor saved' : `${data.length} sensors saved`, 'success')
+    } finally {
+      await loadSensors()
     }
-    await loadSensors()
-    notify('Sensors saved', 'success')
   }
 
   async function updateSensor(data: ISensor): Promise<void> {
@@ -421,6 +424,12 @@ export const useGlobalStore = defineStore('global', () => {
     await apiFetch(`/api/config/sensors/${id}`, { method: 'DELETE' })
     await loadSensors()
     notify('Sensor deleted', 'success')
+  }
+
+  async function deleteAllSensors(): Promise<void> {
+    await apiFetch('/api/config/sensors', { method: 'DELETE' })
+    await loadSensors()
+    notify('All configured sensors deleted', 'success')
   }
 
   function addNewSensor(newSensor: ISensor): void {
@@ -916,6 +925,7 @@ export const useGlobalStore = defineStore('global', () => {
     getModbusContract,
     loadFirmwareVersion,
     checkLogDownload,
+    deleteAllSensors,
     setLogLevel,
     streamLogTail,
   }

@@ -1,37 +1,36 @@
 <script setup lang="ts">
   import { ISensorData, SensorQuality } from '@/commons';
-  import { PropType } from 'vue';
+  import { PropType, computed } from 'vue';
 
- defineProps({
+  const props = defineProps({
     sensorData: {
       type: Object as PropType<ISensorData>,
       required: true
     }
   })
 
-  const getQualityClass = (quality: SensorQuality | undefined): string => {
-    const classMap: Record<SensorQuality, string> = {
-      [SensorQuality.OUT_OF_SERVICE]: 'bg-crit-soft text-crit',
-      [SensorQuality.BAD]: 'bg-warn-soft text-warn',
-      [SensorQuality.REGULAR]: 'bg-idle-soft text-ink-soft',
-      [SensorQuality.GOOD]: 'bg-info-soft text-info',
-      [SensorQuality.EXCELLENT]: 'bg-ok-soft text-ok'
-    };
-
-    return quality
-      ? classMap[quality]
-      : '';
+  // Bar count carries the quality, color only reinforces it.
+  const LEVELS: Record<SensorQuality, { bars: number, cls: string }> = {
+    [SensorQuality.OUT_OF_SERVICE]: { bars: 0, cls: 'text-crit' },
+    [SensorQuality.BAD]: { bars: 1, cls: 'text-warn' },
+    [SensorQuality.REGULAR]: { bars: 2, cls: 'text-ink-soft' },
+    [SensorQuality.GOOD]: { bars: 3, cls: 'text-info' },
+    [SensorQuality.EXCELLENT]: { bars: 4, cls: 'text-ok' },
   };
+
+  const level = computed(() =>
+    (props.sensorData.quality && LEVELS[props.sensorData.quality]) || { bars: 0, cls: 'text-ink-faint' })
 </script>
 
 <template>
-  <span class="relative mr-2 rounded-full px-2.5 py-0.5 text-xs font-semibold"
-    :class="getQualityClass(sensorData.quality)">
-    {{ sensorData.quality }}
-    <small class="absolute -top-3 -right-2 rounded-full px-1 py-0.5 font-mono ring-1 ring-panel"
-      :class="getQualityClass(sensorData.quality)" title="RSSI">
-      {{ sensorData.rssi }}
-    </small>
+  <span class="inline-flex items-center gap-1.5 whitespace-nowrap"
+    :title="`${sensorData.quality ?? 'Unknown'}, RSSI ${sensorData.rssi} dBm`">
+    <svg viewBox="0 0 15 12" class="h-3 w-[15px] shrink-0" :class="level.cls" aria-hidden="true">
+      <rect v-for="i in 4" :key="i" :x="(i - 1) * 4" :y="12 - i * 3" width="3" :height="i * 3" rx="0.5"
+        :class="i <= level.bars ? 'fill-current' : 'fill-line'" />
+    </svg>
+    <span class="text-xs font-semibold" :class="level.cls">{{ sensorData.quality }}</span>
+    <span class="font-mono text-xs text-ink-faint">{{ sensorData.rssi }} dBm</span>
   </span>
 </template>
 

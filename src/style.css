@@ -143,6 +143,10 @@ html.dark {
   }
   .panel-head h3 { @apply text-base font-semibold tracking-wide text-ink; }
 
+  /* Alarmed card (sensor or alarm, mobile mode): same red treatment everywhere. */
+  .card-alarmed { @apply border-crit/50 bg-crit-soft !border-l-4 !border-l-crit; }
+  .alarm-flag { @apply flex shrink-0 items-center gap-1 text-sm font-semibold text-crit; }
+
   /* Status pill */
   .pill {
     @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold

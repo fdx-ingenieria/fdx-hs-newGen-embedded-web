@@ -1,14 +1,16 @@
 <script setup lang="ts">
   import { ISensor } from '@/commons';
-  import { RefreshIcon, SendIcon, ListIcon, PlayIcon, StopIcon, AlertIcon, LoadingIcon, ChevronUpIcon, RemoveIcon } from '@/components/icons';
+  import { RefreshIcon, ListIcon, PlayIcon, StopIcon, LoadingIcon, ChevronUpIcon, RemoveIcon } from '@/components/icons';
   import SensorTable from '@/components/sensors/SensorTable.vue';
+  import SensorEditForm from '@/components/sensors/SensorEditForm.vue';
+  import QuickSetup from '@/components/sensors/QuickSetup.vue';
   import RightSideBar from '@/components/navigation/RightSideBar.vue';
   import { useGlobalStore } from '@/stores/global'
   import { storeToRefs } from 'pinia';
   import { onMounted, Ref, ref, onUnmounted, computed } from 'vue'
 
   const globalStore = useGlobalStore()
-  const { getAvailableSensors, getAvailableLabels } = storeToRefs(globalStore)
+  const { getAvailableSensors } = storeToRefs(globalStore)
   const showRightSideBar = ref(false)
   const loadingData = ref(true)
   const startingDiscoveryMode = ref(false)
@@ -16,7 +18,9 @@
   const savingData = ref(false)
   const editableSensor: Ref<ISensor> = ref({ id: '', EPC: '', config: { equipment: 0, position: 0, location: 0 }})
   const showUnconfiguredTable = ref(true)
-  const showResetButton = ref(false)
+  const editingNew = ref(false)
+  const showQuickSetup = ref(false)
+  const editKey = ref(0)
   const MAX_CONFIGURED_SENSORS = 50
 
   // Ordenados por slot, que es su dirección Modbus. El backend ya los devuelve así, pero
@@ -42,32 +46,19 @@
   }
 
   const editSensor = (id: string) => {
-    let sensor = getAvailableSensors.value.find((item: ISensor) => item.id === id)
-
+    const sensor = getAvailableSensors.value.find((item: ISensor) => item.id === id)
     if (!sensor) return
 
     // Deep copy prevents the reactivity of the original object
     editableSensor.value = JSON.parse(JSON.stringify(sensor))
-    showResetButton.value = !isUnconfigured(editableSensor.value)
+    editingNew.value = isUnconfigured(sensor)
+    editKey.value++
     showRightSideBar.value = true
   }
 
-  const isComplete = (editableSensor: ISensor) => {
-    const { equipment, position, location } = editableSensor.config
-
-    if (isUnconfigured(editableSensor) && isLimitReached.value) return false
-
-    return !!equipment && !!position && !!location
-  }
-
-  const saveSensor = () => {
-    if (!isComplete(editableSensor.value)) return
-    save()
-  }
-
-  const save = () => {
+  const save = (sensor: ISensor) => {
     savingData.value = true
-    const { id, EPC, config } = editableSensor.value
+    const { id, EPC, config } = sensor
 
     globalStore.updateSensor({ id, EPC, config })
       .then(() => showRightSideBar.value = false)
@@ -88,10 +79,18 @@
     globalStore.stopDiscoveryMode()
       .finally(() => stoppingDiscoveryMode.value = false)
   }
-  const startDiscoveryMode = () => {
+  // Set on mount; discovery waits for it so a late normal-mode reply cannot switch discovery back off.
+  let normalModeReady: Promise<void> = Promise.resolve()
+  const startDiscoveryMode = async () => {
     startingDiscoveryMode.value = true
-    globalStore.startDiscoveryMode()
-      .finally(() => startingDiscoveryMode.value = false)
+    try {
+      await normalModeReady
+      await globalStore.startDiscoveryMode()
+    } catch {
+      // apiFetch already showed the error.
+    } finally {
+      startingDiscoveryMode.value = false
+    }
   }
 
   // Renumbers the Modbus slots by measuring point and closes the holes. Meant to be run
@@ -113,6 +112,22 @@
     }
   }
 
+  const deletingAll = ref(false)
+  const deleteAllSensors = async () => {
+    const n = configuredSensors.value.length
+    if (!window.confirm(
+      `Delete all ${n} configured sensors?\n\n`
+      + 'They stop being monitored and their Modbus slots are freed. Tags still in range show up again as unconfigured.'
+    )) return
+
+    deletingAll.value = true
+    try {
+      await globalStore.deleteAllSensors()
+    } finally {
+      deletingAll.value = false
+    }
+  }
+
   const clearUnconfiguredSensors = () => {
     loadingData.value = true
 
@@ -120,24 +135,16 @@
       .finally(() => loadingData.value = false)
   }
 
-  const checkDuplicate = (editableSensor: ISensor): boolean => {
-    if (!isComplete(editableSensor)) return false
-    const { equipment, position, location } = editableSensor.config
-    return !!getAvailableSensors.value.filter(sensor =>
-      sensor.id !== editableSensor.id
-        && sensor.config.equipment === equipment
-        && sensor.config.position === position
-        && sensor.config.location === location
-    ).length
-  }
-
   onMounted(async () => {
-    // Important, we need to load the labels before sensors
-    await globalStore.startNormalMode()
-    await globalStore.loadLabels()
-    await globalStore.loadSensors()
-
-    loadingData.value = false
+    normalModeReady = globalStore.startNormalMode().catch(() => {})
+    try {
+      await globalStore.loadLabels()  // labels before sensors
+      await globalStore.loadSensors()
+    } catch {
+      // apiFetch already showed the error.
+    } finally {
+      loadingData.value = false
+    }
   })
 
   onUnmounted(() => {
@@ -151,167 +158,88 @@
 
 <template>
   <section class="antialiased">
-    <RightSideBar :show="showRightSideBar">
-      <h3 class="mb-6 border-b border-line pb-2 text-lg font-semibold text-ink">
-        Edit sensor
-      </h3>
-      <div class="grid gap-4 mb-4">
-        <div>
-          <label class="field-label">id</label>
-          <input type="text" :value="editableSensor.id" class="input" disabled>
-        </div>
-        <div>
-          <label class="field-label">epc</label>
-          <input type="text" :value="editableSensor.EPC" class="input" disabled>
-        </div>
-        <div>
-          <label class="field-label">Equipment</label>
-          <select v-model="editableSensor.config.equipment" class="input">
-            <option v-for="(item, index) in getAvailableLabels.equipment" :value="index" :class="{'hidden': !item}">{{ item }}</option>
-          </select>
-          <p v-show="!editableSensor.config.equipment" class="mt-2 text-sm text-crit"><span class="font-semibold">Oops!</span> This is required!</p>
-        </div>
-        <div>
-          <label class="field-label">Location</label>
-          <select v-model="editableSensor.config.location" class="input">
-            <option v-for="(item, index) in getAvailableLabels.location" :value="index" :class="{'hidden': !item}">{{ item }}</option>
-          </select>
-          <p v-show="!editableSensor.config.location" class="mt-2 text-sm text-crit"><span class="font-semibold">Oops!</span> This is required!</p>
-        </div>
-        <div>
-          <label class="field-label">Position</label>
-          <select v-model="editableSensor.config.position" class="input">
-            <option v-for="(item, index) in getAvailableLabels.position" :value="index" :class="{'hidden': !item}">{{ item }}</option>
-          </select>
-          <p v-show="!editableSensor.config.position" class="mt-2 text-sm text-crit"><span class="font-semibold">Oops!</span> This is required!</p>
-        </div>
-      </div>
-      <div v-if="isLimitReached && isUnconfigured(editableSensor)" class="flex items-center p-4 mb-4 text-warn rounded-lg bg-warn-soft mt-2" role="alert">
-        <AlertIcon class="flex-none w-5 mr-3" />
-        <div class="ml-3 text-sm font-medium">
-          Hey, you've reached the limit of {{ MAX_CONFIGURED_SENSORS }} sensors.
-        </div>
-      </div>
-      <div v-if="checkDuplicate(editableSensor)" class="flex items-center p-4 mb-4 text-warn rounded-lg bg-warn-soft mt-2" role="alert">
-        <AlertIcon class="flex-none w-5 mr-3" />
-        <div class="ml-3 text-sm font-medium">
-          You are about to save a configuration that is already stored for another sensor. Continuing will overwrite the existing configuration. Are you sure?
-        </div>
-      </div>
-      <div class="flex items-center space-x-4">
-        <button class="btn-primary mb-2"
-          @click="saveSensor()"
-          :disabled="!isComplete(editableSensor) || savingData"
-          type="button" >
-          <template v-if="savingData">
-            <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto mr-1" />
-            Saving...
-          </template>
-          <template v-else>
-            <SendIcon class="w-4 mr-1" />
-            Save
-          </template>
-        </button>
-        <button class="btn-danger mb-2"
-          v-if="showResetButton"
-          @click="deleteSensor(editableSensor.id)"
-          :disabled="savingData"
-          type="button" >
-          <RemoveIcon class="w-5 mr-1" />
-          Delete
-        </button>
-        <button class="btn-ghost mb-2"
-          @click="showRightSideBar = false"
-          :disabled="savingData"
-          type="button" >Cancel</button>
-      </div>
+    <RightSideBar :show="showRightSideBar" @close="showRightSideBar = false">
+      <SensorEditForm v-if="showRightSideBar" :key="editKey"
+        :sensor="editableSensor"
+        :is-new="editingNew"
+        :limit-reached="isLimitReached"
+        :max="MAX_CONFIGURED_SENSORS"
+        :saving="savingData"
+        @save="save"
+        @delete="deleteSensor"
+        @cancel="showRightSideBar = false" />
+    </RightSideBar>
+    <RightSideBar :show="showQuickSetup" @close="showQuickSetup = false">
+      <QuickSetup v-if="showQuickSetup" :unconfigured="unconfiguredSensors" :configured="configuredSensors"
+        :max="MAX_CONFIGURED_SENSORS" @close="showQuickSetup = false" />
     </RightSideBar>
     <div class="mx-auto">
       <div class="card overflow-hidden mt-8">
-        <div class="panel-head rounded-none">
-          <div class="flex items-center">
-            <ListIcon class="mr-2 hidden h-6 text-ink-faint md:inline-flex" />
-            <h3>Unconfigured sensors</h3>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <button type="button"
-              v-if="unconfiguredSensors.length"
-              @click="clearUnconfiguredSensors()"
-              :disabled="loadingData || startingDiscoveryMode"
-              class="flex items-center gap-1 rounded-md border border-line bg-panel px-3 py-1 text-sm font-semibold text-warn hover:bg-warn hover:text-white disabled:opacity-50">
-              <template v-if="loadingData">
-                <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto" />
-                <span class="hidden xs:block">Loading...</span>
-              </template>
-              <template v-else>
-                <RefreshIcon class="h-5"/>
-                <span class="hidden xs:block">Clear</span>
-              </template>
+        <!-- Phones: title row, then the main action full width, then the secondary ones. -->
+        <div class="panel-head flex-wrap gap-y-2">
+          <h3 class="flex min-w-0 flex-1 items-baseline gap-2">
+            Unconfigured sensors
+            <span class="font-mono text-sm font-normal text-ink-faint">{{ unconfiguredSensors.length }}</span>
+          </h3>
+          <button type="button" @click="showUnconfiguredTable = !showUnconfiguredTable"
+            :aria-expanded="showUnconfiguredTable" aria-label="Show or hide unconfigured sensors"
+            class="rounded-md p-1 text-ink-soft hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:order-last [@media(pointer:coarse)]:p-2">
+            <ChevronUpIcon class="h-5 w-5" :class="{'rotate-180': !showUnconfiguredTable}" />
+          </button>
+          <div class="grid w-full grid-cols-2 gap-1.5 sm:flex sm:w-auto sm:items-center">
+            <button v-if="globalStore.getDiscoveryModeOn || stoppingDiscoveryMode" type="button" class="btn-danger col-span-2 sm:order-last !px-3 !py-1.5 [@media(pointer:coarse)]:!py-2.5"
+              :disabled="loadingData || stoppingDiscoveryMode" @click="stopDiscoveryMode">
+              <LoadingIcon v-if="stoppingDiscoveryMode" class="h-4 w-4 animate-spin fill-transparent" />
+              <StopIcon v-else class="h-4" /> Stop discovery
             </button>
-            <button type="button"
-              v-if="globalStore.getNormalModeOn || startingDiscoveryMode"
-              @click="startDiscoveryMode"
-              :disabled="loadingData || startingDiscoveryMode"
-              class="flex items-center gap-1 rounded-md border border-line bg-panel px-3 py-1 text-sm font-semibold text-ok hover:bg-ok hover:text-white disabled:opacity-50">
-              <template v-if="startingDiscoveryMode">
-                <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto" />
-                <span class="hidden xs:block">Starting...</span>
-              </template>
-              <template v-else>
-                <PlayIcon class="h-5"/>
-                <span class="hidden xs:block">Start</span>
-              </template>
+            <button v-else type="button" class="btn-primary col-span-2 sm:order-last !px-3 !py-1.5 [@media(pointer:coarse)]:!py-2.5"
+              :disabled="loadingData || startingDiscoveryMode" @click="startDiscoveryMode">
+              <LoadingIcon v-if="startingDiscoveryMode" class="h-4 w-4 animate-spin fill-transparent" />
+              <PlayIcon v-else class="h-4" /> Start discovery
             </button>
-            <button type="button"
-              v-if="globalStore.getDiscoveryModeOn || stoppingDiscoveryMode"
-              @click="stopDiscoveryMode"
-              :disabled="loadingData || stoppingDiscoveryMode"
-              class="flex items-center gap-1 rounded-md border border-line bg-panel px-3 py-1 text-sm font-semibold text-crit hover:bg-crit hover:text-white disabled:opacity-50">
-              <template v-if="stoppingDiscoveryMode">
-                <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto" />
-                <span class="hidden xs:block">Stopping...</span>
-              </template>
-              <template v-else>
-                <StopIcon class="h-5"/>
-                <span class="hidden xs:block">Stop</span>
-              </template>
+            <button type="button" class="btn-ghost !px-3 !py-1.5 [@media(pointer:coarse)]:!py-2.5" :class="{'col-span-2': !unconfiguredSensors.length}"
+              title="Place several tags at once on a location x position grid" @click="showQuickSetup = true">
+              <ListIcon class="h-4" /> Quick setup
             </button>
-            <ChevronUpIcon class="h-6 w-6 cursor-pointer text-ink-soft hover:text-ink"
-              :class="{'rotate-180': !showUnconfiguredTable}"
-              @click="showUnconfiguredTable = !showUnconfiguredTable" />
+            <button v-if="unconfiguredSensors.length" type="button" class="btn-ghost !px-3 !py-1.5 [@media(pointer:coarse)]:!py-2.5"
+              :disabled="loadingData || startingDiscoveryMode" @click="clearUnconfiguredSensors()">
+              <LoadingIcon v-if="loadingData" class="h-4 w-4 animate-spin fill-transparent" />
+              <RefreshIcon v-else class="h-4" /> Clear list
+            </button>
           </div>
         </div>
         <template v-if="showUnconfiguredTable">
           <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-brand fill-transparent mx-auto my-4" />
-          <SensorTable v-else :availableSensors="unconfiguredSensors" :discovery="globalStore.getDiscoveryModeOn" @edit="editSensor" />
+          <SensorTable v-else :availableSensors="unconfiguredSensors" :discovery="globalStore.getDiscoveryModeOn"
+            empty-text="No new tags. Start discovery to list the tags in range of the antennas."
+            @edit="editSensor" />
         </template>
       </div>
       <div class="card overflow-hidden mt-8">
-        <div class="panel-head rounded-none">
-          <div class="flex items-center">
-            <ListIcon class="mr-2 hidden h-6 text-ink-faint md:inline-flex" />
-            <h3>Configured sensors</h3>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <button type="button"
-              v-if="configuredSensors.length"
-              @click="reorderSlots()"
-              :disabled="loadingData || reorderingSlots"
+        <div class="panel-head flex-wrap gap-y-2">
+          <h3 class="flex min-w-0 flex-1 items-baseline gap-2">
+            Configured sensors
+            <span class="font-mono text-sm font-normal text-ink-faint">{{ configuredSensors.length }} / {{ MAX_CONFIGURED_SENSORS }}</span>
+          </h3>
+          <div v-if="configuredSensors.length" class="grid w-full grid-cols-2 gap-1.5 sm:flex sm:w-auto sm:items-center">
+            <button type="button" class="btn-ghost !px-3 !py-1.5 [@media(pointer:coarse)]:!py-2.5"
+              :disabled="loadingData || reorderingSlots || deletingAll"
               title="Renumber the Modbus slots by equipment, location and position"
-              class="flex items-center gap-1 rounded-md border border-line bg-panel px-3 py-1 text-sm font-semibold text-ink-soft hover:bg-brand hover:text-white disabled:opacity-50">
-              <template v-if="reorderingSlots">
-                <LoadingIcon class="w-4 h-4 animate-spin fill-transparent mx-auto" />
-                <span class="hidden xs:block">Reordering...</span>
-              </template>
-              <template v-else>
-                <ListIcon class="h-5"/>
-                <span class="hidden xs:block">Reorder slots</span>
-              </template>
+              @click="reorderSlots()">
+              <LoadingIcon v-if="reorderingSlots" class="h-4 w-4 animate-spin fill-transparent" />
+              <ListIcon v-else class="h-4" /> Reorder slots
+            </button>
+            <button type="button" class="btn-ghost !text-crit !px-3 !py-1.5 [@media(pointer:coarse)]:!py-2.5"
+              :disabled="loadingData || reorderingSlots || deletingAll" @click="deleteAllSensors()">
+              <LoadingIcon v-if="deletingAll" class="h-4 w-4 animate-spin fill-transparent" />
+              <RemoveIcon v-else class="h-4" /> Delete all
             </button>
           </div>
         </div>
         <LoadingIcon v-if="loadingData" class="w-8 h-8 animate-spin text-brand fill-transparent mx-auto my-4" />
-        <SensorTable v-else :availableSensors="configuredSensors" :showlabels="true" :showslot="true" @edit="editSensor" @reset="deleteSensor" :max="MAX_CONFIGURED_SENSORS" />
+        <SensorTable v-else :availableSensors="configuredSensors" :showlabels="true" :showslot="true"
+          empty-text="No sensors configured yet. Pick a tag from the list above to set it up."
+          @edit="editSensor" @reset="deleteSensor" :max="MAX_CONFIGURED_SENSORS" />
       </div>
     </div>
   </section>
