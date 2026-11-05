@@ -9,7 +9,9 @@
   const route = useRoute();
   const router = useRouter();
   const globalStore = useGlobalStore();
-  const isSmallScreen = ref(window.innerWidth < 1024);
+  // Touch screens get the overlay drawer at any width, like phones.
+  const isOverlayNav = () => window.innerWidth < 1024 || window.matchMedia('(pointer: coarse)').matches;
+  const isSmallScreen = ref(isOverlayNav());
   const options = [
   {
       label: 'System',
@@ -34,7 +36,7 @@
   ]
 
   const updateScreenSize = () => {
-    isSmallScreen.value = window.innerWidth < 1024;
+    isSmallScreen.value = isOverlayNav();
   };
 
   onMounted(() => {
@@ -49,11 +51,11 @@
   });
 </script>
 <template>
-  <div class="fixed lg:hidden top-0 left-0 right-0 z-10 w-full bg-slate-950/60 h-full print:hidden"
+  <div class="fixed desktop:lg:hidden top-0 left-0 right-0 z-10 w-full bg-slate-950/60 h-full print:hidden"
     v-if="globalStore.showSideBar"
     @click="globalStore.showSideBar = false">
   </div>
-  <aside class="fixed top-0 left-0 z-40 w-64 h-screen pt-16 bg-panel border-r border-line print:hidden"
+  <aside id="sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen [height:100dvh] pt-16 bg-panel border-r border-line print:hidden"
     :class="{'translate-x-0': globalStore.showSideBar, '-translate-x-full': !globalStore.showSideBar}"
     aria-label="Sidenav">
     <div class="overflow-y-auto py-4 px-3 h-full">

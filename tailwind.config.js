@@ -1,4 +1,5 @@
 /** @type {import('tailwindcss').Config} */
+import plugin from 'tailwindcss/plugin'
 
 // Helper: a token backed by a CSS variable holding "R G B" channels, so Tailwind
 // opacity modifiers (bg-panel/50, ring-accent/30, …) keep working.
@@ -61,5 +62,11 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // Mobile mode = narrow screen OR touch screen (wide tablets too); desktop = the exact complement with a mouse.
+    plugin(({ addVariant }) => {
+      addVariant('mobile', '@media (max-width: 767px), (pointer: coarse)')
+      addVariant('desktop', '@media (min-width: 768px) and (pointer: fine), (min-width: 768px) and (pointer: none)')
+    }),
+  ],
 }

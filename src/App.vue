@@ -36,7 +36,7 @@
     <LeftSideBar />
     <ToastNotifications />
     <main class="p-4 h-auto pt-20"
-      :class="{'lg:ml-64': globalStore.showSideBar}">
+      :class="{'desktop:lg:ml-64': globalStore.showSideBar}">
       <Breadcrumb />
       <!-- Antenna fault: shown on every view, not just System, because it stops the
            unit measuring altogether — a toast on one screen would be missed. -->
