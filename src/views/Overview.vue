@@ -26,6 +26,8 @@
     getFastDetectionRemainingS,
   } = storeToRefs(globalStore)
   const loading = ref(true)
+  // Alarms that can trigger: a function and at least one location (empty slots don't count).
+  const alarmsInUse = computed(() => getConfiguredAlarms.value.filter(a => a.fields.length).length)
   const activeTab = ref('sensors')
   const togglingFastDetection = ref(false)
 
@@ -114,13 +116,19 @@
 
   onMounted(async () => {
     loading.value = true
-    // Important, we need to load the labels before sensors
-    await globalStore.startNormalMode()
-    await globalStore.loadLabels()
-    await globalStore.loadSensors()
-    await globalStore.loadAlarms()
-    await globalStore.loadAntennaGroups()
-    loading.value = false
+    // Mode switch runs alongside: a slow reply must not keep the page empty.
+    globalStore.startNormalMode().catch(() => {})
+    try {
+      // Labels before sensors, sensors before alarms (alarms resolve their sensors).
+      await globalStore.loadLabels()
+      await globalStore.loadSensors()
+      await globalStore.loadAlarms()
+      await globalStore.loadAntennaGroups()
+    } catch {
+      // apiFetch already showed the error; show whatever loaded.
+    } finally {
+      loading.value = false
+    }
   })
 
   onUnmounted(() => {
@@ -129,48 +137,48 @@
 </script>
 <template>
   <div>
-    <div class="grid grid-cols-1 gap-4 my-4 mt-8 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="grid grid-cols-2 gap-4 my-4 mt-8 max-sm:mt-4 max-sm:gap-2 xl:grid-cols-4">
       <!-- Active alarms -->
-      <div class="card flex items-center gap-4 p-4">
-        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-crit-soft text-crit">
+      <div class="card flex items-center gap-4 p-4 max-sm:gap-2 max-sm:p-3">
+        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl max-sm:hidden bg-crit-soft text-crit">
           <AlarmIcon class="h-8 w-8" />
         </div>
         <LoadingIcon v-if="loading" class="mx-auto h-7 w-7 animate-spin fill-transparent text-brand" />
         <div v-else class="min-w-0 flex-1">
           <h3 class="field-label mb-0">Active alarms</h3>
           <p class="flex items-baseline gap-2">
-            <span class="font-mono text-3xl font-bold leading-none text-ink">{{ alarmed.alarms.size }}</span>
-            <span class="text-xs text-ink-faint">/ {{ getConfiguredAlarms.length }} total</span>
+            <span class="font-mono text-3xl max-sm:text-2xl font-bold leading-none text-ink">{{ alarmed.alarms.size }}</span>
+            <span class="text-xs text-ink-faint">/ {{ alarmsInUse }} in use</span>
           </p>
         </div>
         <BellRingIcon v-if="!loading && alarmed.alarms.size" class="h-6 w-6 shrink-0 text-crit" />
       </div>
 
       <!-- Sensors in alarm -->
-      <div class="card flex items-center gap-4 p-4">
-        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-info-soft text-info">
+      <div class="card flex items-center gap-4 p-4 max-sm:gap-2 max-sm:p-3">
+        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl max-sm:hidden bg-info-soft text-info">
           <SensorIcon class="h-8 w-8" />
         </div>
         <LoadingIcon v-if="loading" class="mx-auto h-7 w-7 animate-spin fill-transparent text-brand" />
         <div v-else class="min-w-0 flex-1">
           <h3 class="field-label mb-0">Sensors in alarm</h3>
           <p class="flex items-baseline gap-2">
-            <span class="font-mono text-3xl font-bold leading-none text-ink">{{ alarmed.sensors.size }}</span>
+            <span class="font-mono text-3xl max-sm:text-2xl font-bold leading-none text-ink">{{ alarmed.sensors.size }}</span>
             <span class="text-xs text-ink-faint">/ {{ getConfiguredSensors.length }} total</span>
           </p>
         </div>
       </div>
 
       <!-- Lowest temp -->
-      <div class="card flex items-center gap-4 p-4">
-        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-info-soft text-info">
+      <div class="card flex items-center gap-4 p-4 max-sm:gap-2 max-sm:p-3">
+        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl max-sm:hidden bg-info-soft text-info">
           <ThermometerLowIcon class="h-8 w-8" />
         </div>
         <LoadingIcon v-if="!temperatures.min" class="mx-auto h-7 w-7 animate-spin fill-transparent text-brand" />
         <div v-else class="min-w-0 flex-1" title="Lowest">
           <h3 class="field-label mb-0">Lowest temp</h3>
           <p class="flex items-baseline gap-1">
-            <span class="font-mono text-3xl font-bold leading-none text-info">{{ temperatures.min?.temp.toFixed(1) }}</span>
+            <span class="font-mono text-3xl max-sm:text-2xl font-bold leading-none text-info">{{ temperatures.min?.temp.toFixed(1) }}</span>
             <span class="text-sm font-semibold text-ink-faint">°C</span>
           </p>
           <small class="block truncate font-mono text-xs text-ink-faint" :title="`EPC: ${temperatures.min?.id}`">{{ temperatures.min?.EPC }}</small>
@@ -178,15 +186,15 @@
       </div>
 
       <!-- Highest temp -->
-      <div class="card flex items-center gap-4 p-4">
-        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-crit-soft text-crit">
+      <div class="card flex items-center gap-4 p-4 max-sm:gap-2 max-sm:p-3">
+        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl max-sm:hidden bg-crit-soft text-crit">
           <ThermometerHighIcon class="h-8 w-8" />
         </div>
         <LoadingIcon v-if="!temperatures.max" class="mx-auto h-7 w-7 animate-spin fill-transparent text-brand" />
         <div v-else class="min-w-0 flex-1" title="Highest">
           <h3 class="field-label mb-0">Highest temp</h3>
           <p class="flex items-baseline gap-1">
-            <span class="font-mono text-3xl font-bold leading-none text-crit">{{ temperatures.max?.temp.toFixed(1) }}</span>
+            <span class="font-mono text-3xl max-sm:text-2xl font-bold leading-none text-crit">{{ temperatures.max?.temp.toFixed(1) }}</span>
             <span class="text-sm font-semibold text-ink-faint">°C</span>
           </p>
           <small class="block truncate font-mono text-xs text-ink-faint" :title="`EPC: ${temperatures.max?.id}`">{{ temperatures.max?.EPC }}</small>
@@ -258,21 +266,24 @@
 
     <div class="card mb-4 overflow-hidden">
       <div class="border-b border-line text-sm font-semibold text-ink-faint">
-        <ul class="flex flex-wrap px-2 -mb-px">
+        <ul class="flex flex-wrap px-2 -mb-px" role="tablist">
           <li class="mr-2">
-            <a class="inline-block cursor-pointer rounded-t-lg border-b-2 px-4 py-3"
+            <button type="button" role="tab" :aria-selected="activeTab === 'sensors'"
+              class="inline-block cursor-pointer rounded-t-lg border-b-2 px-4 py-3"
               :class="getTabClass('sensors')"
-              @click="activeTab = 'sensors'">Sensors</a>
+              @click="activeTab = 'sensors'">Sensors</button>
           </li>
           <li class="mr-2">
-            <a class="inline-block cursor-pointer rounded-t-lg border-b-2 px-4 py-3"
+            <button type="button" role="tab" :aria-selected="activeTab === 'alarms'"
+              class="inline-block cursor-pointer rounded-t-lg border-b-2 px-4 py-3"
               :class="getTabClass('alarms')"
-              @click="activeTab = 'alarms'">Alarms</a>
+              @click="activeTab = 'alarms'">Alarms</button>
           </li>
         </ul>
       </div>
       <AlarmsTable v-show="activeTab === 'alarms'" :availableAlarms="getConfiguredAlarms" :readonly="true" :max="20" />
-      <SensorTable v-show="activeTab === 'sensors'" :availableSensors="getConfiguredSensors" :readonly="true" :showlabels="true" :max="50" />
+      <SensorTable v-show="activeTab === 'sensors'" :availableSensors="getConfiguredSensors" :readonly="true" :showlabels="true" :max="50"
+        empty-text="No sensors configured yet. Set them up in Configuration, Sensors." />
     </div>
   </div>
 </template>
