@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { vLongPress } from '@/composables/longPress';
   import { IReaderConfig, Region, TagEncoding, ReaderQ, ReaderSession, ReaderTarget, isValidInteger } from '@/commons';
   import { CloseIcon, LoadingIcon, RefreshIcon, SendIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global'
@@ -121,7 +122,8 @@
             <div>
               <label
                 v-on:dblclick.shift.ctrl="adminMode = !adminMode"
-                class="field-label !text-accent select-none cursor-default">Region</label>
+                v-long-press="() => adminMode = !adminMode"
+                class="field-label !text-accent select-none cursor-default [-webkit-touch-callout:none]">Region</label>
               <select
                 v-model="editable.region"
                 class="input !border-accent/40">

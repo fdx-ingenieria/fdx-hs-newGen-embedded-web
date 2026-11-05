@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { vLongPress } from '@/composables/longPress';
   import { ISystem, ITimers, ModbusBitParity, BaudRate, isValidInteger } from '@/commons';
   import { AlertIcon, LoadingIcon, RefreshIcon, SearchIcon, SendIcon } from '@/components/icons';
   import { useGlobalStore } from '@/stores/global'
@@ -282,7 +283,7 @@
            timers (both are admin-gated by the same credential). -->
       <div class="card overflow-hidden py-4 px-4 md:px-6 select-none"
         v-on:dblclick.shift.ctrl="adminMode = !adminMode">
-        <h2 class="text-base font-semibold mb-4">System</h2>
+        <h2 v-long-press="() => adminMode = !adminMode" class="text-base font-semibold mb-4 [-webkit-touch-callout:none]">System</h2>
         <LoadingIcon v-if="editable.baud_rate === undefined" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-12" />
         <template v-else>
           <!-- Non-admin: serial is read-only -->
