@@ -351,14 +351,16 @@
                     <span class="col-span-full flex items-center pt-1 text-sm font-medium text-ink md:col-auto md:pr-2 md:pt-0">{{ l.label }}</span>
                     <template v-for="p in positions" :key="key(l.index, p.index)">
                       <button v-if="sensorAt[key(l.index, p.index)]" type="button"
-                        class="flex min-h-[4.5rem] min-w-0 flex-col items-start rounded-lg border border-line border-l-4 bg-panel px-2 py-1.5 text-left hover:bg-panel-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-accent md:min-h-[5.5rem] md:px-3 md:py-2"
+                        class="relative flex min-h-[4.5rem] min-w-0 flex-col items-start rounded-lg border border-line border-l-4 bg-panel px-2 py-1.5 text-left hover:bg-panel-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-accent md:min-h-[5.5rem] md:px-3 md:py-2"
                         :class="[LEVEL_CELL[level(statsById[sensorAt[key(l.index, p.index)].id])],
                           selectedId === sensorAt[key(l.index, p.index)].id ? 'ring-2 ring-accent' : '']"
                         :aria-label="`${l.label} ${p.label}: ${LEVEL_LABEL[level(statsById[sensorAt[key(l.index, p.index)].id])]}`"
                         @click="selectedId = sensorAt[key(l.index, p.index)].id">
-                        <span class="flex w-full flex-wrap items-baseline justify-between gap-x-2">
+                        <span v-if="cellStat(key(l.index, p.index))" class="absolute right-2 top-1.5 font-mono text-[11px] text-ink-soft md:right-3 md:top-2"
+                          title="Antenna of the last read">Ant {{ cellStat(key(l.index, p.index))!.antenna }}</span>
+                        <span class="flex w-full flex-wrap items-baseline gap-x-2 pr-10">
                           <span class="text-sm font-semibold text-ink">{{ sensorAt[key(l.index, p.index)].EPC }}</span>
-                          <span v-if="suspect(statsById[sensorAt[key(l.index, p.index)].id])" class="text-[11px] font-semibold text-crit">Check tag</span>
+                          <span v-if="suspect(statsById[sensorAt[key(l.index, p.index)].id])" class="whitespace-nowrap text-[11px] font-semibold text-crit">Check tag</span>
                         </span>
                         <template v-if="cellStat(key(l.index, p.index))">
                           <span class="flex w-full items-baseline justify-between gap-2">
@@ -427,7 +429,10 @@
                     <span class="text-base font-semibold text-ink">{{ tagName(t) }}</span>
                     <span class="font-mono text-sm font-semibold" :class="LEVEL_TEXT[level(t)]">{{ t.reads }}<span class="text-xs text-ink-faint">/{{ rounds }}</span></span>
                   </span>
-                  <SignalBars :rssi="t.rssi" />
+                  <span class="flex w-full flex-wrap items-center justify-between gap-x-2">
+                    <SignalBars :rssi="t.rssi" />
+                    <span class="font-mono text-[11px] text-ink-soft" title="Antenna of the last read">Ant {{ t.antenna }}</span>
+                  </span>
                 </button>
               </div>
               <p v-else class="rounded-lg border border-dashed border-line px-3 py-3 text-sm text-ink-faint">
