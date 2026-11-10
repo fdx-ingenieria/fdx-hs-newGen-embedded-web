@@ -61,12 +61,17 @@
 
   const ratio = (t: IInstallTag | undefined) => (t && rounds.value ? Math.min(1, t.reads / rounds.value) : 0)
 
+  const ratioLevel = (r: number): Level =>
+    r >= GOOD_RATIO ? 'good' : r >= FAIR_RATIO ? 'fair' : r >= WEAK_RATIO ? 'weak' : 'poor'
+
   function level(t: IInstallTag | undefined): Level {
     if (!t || !t.reads) return 'none'
     if (!rounds.value) return 'good'
-    const r = ratio(t)
-    return r >= GOOD_RATIO ? 'good' : r >= FAIR_RATIO ? 'fair' : r >= WEAK_RATIO ? 'weak' : 'poor'
+    return ratioLevel(ratio(t))
   }
+
+  // Same color scale for the on-chip RSSI, as a share of its 0..31 range.
+  const tagRssiLevel = (t: IInstallTag): Level => ratioLevel(t.tag_rssi / TAG_RSSI_MAX)
 
   const suspect = (t: IInstallTag | undefined) =>
     !!t && t.reads >= 3 && t.tag_rssi >= SUSPECT_TAG_RSSI && t.invalid_temp / t.reads > SUSPECT_INVALID_RATIO
@@ -312,7 +317,7 @@
             </span>
             <span class="flex items-center gap-1.5">
               <span class="h-1 w-5 rounded-full bg-ok"></span>
-              Thin bar: power at the tag (on-chip RSSI)
+              Thin bar: power at the tag (on-chip RSSI), same colors over its 0 to 31 range
             </span>
           </div>
 
@@ -386,7 +391,7 @@
                           <span v-if="cellStat(key(l.index, p.index))!.tag_rssi" class="mt-1.5 block h-1 w-full overflow-hidden rounded-full bg-panel-strong"
                             :title="`Power at the tag (on-chip RSSI): ${cellStat(key(l.index, p.index))!.tag_rssi} / ${TAG_RSSI_MAX}`">
                             <span class="block h-full rounded-full"
-                              :class="cellStat(key(l.index, p.index))!.tag_rssi >= SUSPECT_TAG_RSSI ? 'bg-ok' : 'bg-warn'"
+                              :class="LEVEL_DOT[tagRssiLevel(cellStat(key(l.index, p.index))!)]"
                               :style="{ width: tagRssiPct(cellStat(key(l.index, p.index))!) }"></span>
                           </span>
                         </template>
@@ -500,7 +505,7 @@
                     </dt>
                     <dd class="mt-1 h-2 overflow-hidden rounded-full bg-panel-strong">
                       <div class="h-full rounded-full"
-                        :class="selectedTag.tag_rssi >= SUSPECT_TAG_RSSI ? 'bg-ok' : 'bg-warn'"
+                        :class="LEVEL_DOT[tagRssiLevel(selectedTag)]"
                         :style="{ width: tagRssiPct(selectedTag) }"></div>
                     </dd>
                   </div>
