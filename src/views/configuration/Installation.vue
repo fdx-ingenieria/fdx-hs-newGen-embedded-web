@@ -12,15 +12,17 @@
   // how many inventory rounds it answered. Measuring, alarms and Modbus pause meanwhile.
 
   const POLL_MS = 1000
+  // Share of rounds a tag answered: green from 90 %, yellow from 50 %, orange from 30 %, red below.
   const GOOD_RATIO = 0.9
   const FAIR_RATIO = 0.5
+  const WEAK_RATIO = 0.3
   // On-chip RSSI code from which the tag gets enough power; invalid temperatures above it point at the tag itself.
   const SUSPECT_TAG_RSSI = 12
   const SUSPECT_INVALID_RATIO = 0.3
   const TAG_RSSI_MAX = 31
   const MAX_CONFIGURED_SENSORS = 50
 
-  type Level = 'good' | 'fair' | 'poor' | 'none'
+  type Level = 'good' | 'fair' | 'weak' | 'poor' | 'none'
 
   const globalStore = useGlobalStore()
   const router = useRouter()
@@ -63,7 +65,7 @@
     if (!t || !t.reads) return 'none'
     if (!rounds.value) return 'good'
     const r = ratio(t)
-    return r >= GOOD_RATIO ? 'good' : r >= FAIR_RATIO ? 'fair' : 'poor'
+    return r >= GOOD_RATIO ? 'good' : r >= FAIR_RATIO ? 'fair' : r >= WEAK_RATIO ? 'weak' : 'poor'
   }
 
   const suspect = (t: IInstallTag | undefined) =>
@@ -71,25 +73,29 @@
 
   const LEVEL_CELL: Record<Level, string> = {
     good: 'border-l-ok',
-    fair: 'border-l-warn',
+    fair: 'border-l-yellow-400',
+    weak: 'border-l-warn',
     poor: 'border-l-crit',
     none: 'border-l-idle',
   }
   const LEVEL_DOT: Record<Level, string> = {
     good: 'bg-ok',
-    fair: 'bg-warn',
+    fair: 'bg-yellow-400',
+    weak: 'bg-warn',
     poor: 'bg-crit',
     none: 'bg-idle',
   }
   const LEVEL_TEXT: Record<Level, string> = {
     good: 'text-ok',
-    fair: 'text-warn',
+    fair: 'text-yellow-600 dark:text-yellow-300',
+    weak: 'text-warn',
     poor: 'text-crit',
     none: 'text-ink-faint',
   }
   const LEVEL_LABEL: Record<Level, string> = {
     good: 'Reads every round',
     fair: 'Misses some rounds',
+    weak: 'Misses many rounds',
     poor: 'Misses most rounds',
     none: 'Not read',
   }
@@ -300,9 +306,9 @@
           </p>
 
           <div class="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-soft" aria-label="Color legend">
-            <span v-for="lv in (['good', 'fair', 'poor', 'none'] as Level[])" :key="lv" class="flex items-center gap-1.5">
+            <span v-for="lv in (['good', 'fair', 'weak', 'poor', 'none'] as Level[])" :key="lv" class="flex items-center gap-1.5">
               <span class="h-3 w-1 rounded-sm" :class="LEVEL_DOT[lv]"></span>
-              {{ LEVEL_LABEL[lv] }}<template v-if="lv === 'good'"> (90 % or more)</template><template v-else-if="lv === 'fair'"> (50 to 90 %)</template>
+              {{ LEVEL_LABEL[lv] }}<template v-if="lv === 'good'"> (90 % or more)</template><template v-else-if="lv === 'fair'"> (50 to 90 %)</template><template v-else-if="lv === 'weak'"> (30 to 50 %)</template><template v-else-if="lv === 'poor'"> (under 30 %)</template>
             </span>
             <span class="flex items-center gap-1.5">
               <span class="h-1 w-5 rounded-full bg-ok"></span>
