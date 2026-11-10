@@ -1,12 +1,12 @@
 <script setup lang="ts">
-  import { PropType, computed, ref, watch } from 'vue';
+  import { PropType, computed, ref } from 'vue';
   import { ISensor } from '@/commons';
   import { useGlobalStore } from '@/stores/global';
+  import { usePlacement } from '@/composables/placement';
   import { CloseIcon, LoadingIcon, SearchIcon, SendIcon } from '@/components/icons';
   import SensorSignal from './SensorSignal.vue';
 
-  // Bulk registration: pick an equipment, then tap a tag to drop it into the highlighted
-  // location x position cell (the cursor jumps to the next empty one).
+  // Bulk registration on the location x position grid; the placement itself is shared with Installation.
   const props = defineProps({
     unconfigured: { type: Array as PropType<ISensor[]>, required: true },
     configured: { type: Array as PropType<ISensor[]>, required: true },
@@ -15,73 +15,14 @@
   const emit = defineEmits<{ close: [] }>()
 
   const globalStore = useGlobalStore()
-
-  const options = (list: string[] | undefined) =>
-    (list ?? []).map((label, index) => ({ label, index })).filter(o => o.index > 0 && !!o.label)
-  const equipments = computed(() => options(globalStore.getAvailableLabels.equipment))
-  const locations = computed(() => options(globalStore.getAvailableLabels.location))
-  const positions = computed(() => options(globalStore.getAvailableLabels.position))
-
-  const equipment = ref(equipments.value[0]?.index ?? 0)
-  // Pending placements per equipment (equipment -> cell key -> sensor id), kept across equipment switches.
-  const assignments = ref<Record<number, Record<string, string>>>({})
-  const assigned = computed(() => assignments.value[equipment.value] ?? {})
-  const cursor = ref<string | null>(null)
   const saving = ref(false)
   const startingDiscovery = ref(false)
 
-  const key = (location: number, position: number) => `${location}-${position}`
-  const cells = computed(() => locations.value.flatMap(l => positions.value.map(p => key(l.index, p.index))))
+  const {
+    equipments, locations, positions, equipment, key, cursor,
+    taken, assigned, place, unassign, selectCell, pending, pendingFor, assignedIds, save: savePlacements,
+  } = usePlacement(computed(() => props.configured), computed(() => props.unconfigured.map(s => s.id)), props.max)
 
-  // Cells already holding a configured sensor of this equipment: shown, never overwritten here.
-  const taken = computed(() => {
-    const map: Record<string, ISensor> = {}
-    props.configured
-      .filter(s => s.config.equipment === equipment.value)
-      .forEach(s => { map[key(s.config.location, s.config.position)] = s })
-    return map
-  })
-
-  const isFree = (cell: string) => !taken.value[cell] && !assigned.value[cell]
-  const nextFree = (from: string | null): string | null => {
-    const list = cells.value
-    const start = from ? list.indexOf(from) + 1 : 0
-    return list.slice(start).find(isFree) ?? list.find(isFree) ?? null
-  }
-
-  // Labels can change underneath (another client, a preset): fall back to the first equipment.
-  watch(equipments, list => {
-    if (!list.some(e => e.index === equipment.value)) equipment.value = list[0]?.index ?? 0
-  })
-
-  // Drop placements whose tag is no longer unconfigured (cleared, or configured elsewhere).
-  watch(() => props.unconfigured.map(s => s.id).join(','), () => {
-    const alive = new Set(props.unconfigured.map(s => s.id))
-    let changed = false
-    const next: Record<number, Record<string, string>> = {}
-    for (const eq of Object.keys(assignments.value).map(Number)) {
-      next[eq] = {}
-      for (const [cell, id] of Object.entries(assignments.value[eq])) {
-        if (alive.has(id)) next[eq][cell] = id
-        else changed = true
-      }
-    }
-    if (changed) {
-      assignments.value = next
-      if (!cursor.value || !isFree(cursor.value)) cursor.value = nextFree(null)
-    }
-  })
-
-  // Switching equipment keeps its placements; the cursor goes to its first empty cell.
-  watch(equipment, () => { cursor.value = nextFree(null) }, { immediate: true })
-
-  const setAssigned = (cells: Record<string, string>) => {
-    assignments.value = { ...assignments.value, [equipment.value]: cells }
-  }
-  const pendingFor = (eq: number) => Object.keys(assignments.value[eq] ?? {}).length
-
-  const assignedIds = computed(() => new Set(
-    Object.values(assignments.value).flatMap(cells => Object.values(cells))))
   // Sorted by name, not signal: live RSSI reordering would move tags under the finger.
   const tray = computed(() => props.unconfigured
     .filter(s => !assignedIds.value.has(s.id))
@@ -89,30 +30,6 @@
     .sort((a, b) => a.EPC.localeCompare(b.EPC)))
 
   const sensorById = (id: string) => props.unconfigured.find(s => s.id === id)
-  const room = computed(() => props.max - props.configured.length)
-  const pending = computed(() => Object.keys(assignments.value).reduce((n, eq) => n + pendingFor(Number(eq)), 0))
-
-  function place(cell: string | null, sensorId: string): void {
-    if (!cell || taken.value[cell]) return
-    if (!assigned.value[cell] && pending.value >= room.value) {
-      globalStore.notify(`Sensor limit reached (${props.max})`, 'warning')
-      return
-    }
-    setAssigned({ ...assigned.value, [cell]: sensorId })
-    cursor.value = nextFree(cell)
-  }
-
-  function unassign(cell: string): void {
-    const next = { ...assigned.value }
-    delete next[cell]
-    setAssigned(next)
-    cursor.value = cell
-  }
-
-  function selectCell(cell: string): void {
-    if (taken.value[cell]) return
-    cursor.value = cell
-  }
 
   // Desktop extra: drag a tag onto any free cell.
   function onDragStart(e: DragEvent, id: string): void {
@@ -133,20 +50,10 @@
   }
 
   async function save(): Promise<void> {
-    const list: ISensor[] = []
-    for (const eq of Object.keys(assignments.value).map(Number)) {
-      const cells = assignments.value[eq]
-      for (const cell of Object.keys(cells)) {
-        const sensor = sensorById(cells[cell])
-        if (!sensor) continue
-        const [location, position] = cell.split('-').map(Number)
-        list.push({ id: sensor.id, EPC: sensor.EPC, config: { equipment: eq, location, position } })
-      }
-    }
-    if (!list.length) return
+    if (!pending.value) return
     saving.value = true
     try {
-      await globalStore.updateSensors(list)
+      await savePlacements(id => sensorById(id)?.EPC ?? id)
       emit('close')
     } finally {
       saving.value = false
