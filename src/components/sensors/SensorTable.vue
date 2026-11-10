@@ -58,6 +58,9 @@
   })
 
   const globalStore = useGlobalStore()
+
+  // Always one decimal, so 23 shows as 23.0 and the column keeps its width.
+  const fmtTemp = (t: number | undefined) => (typeof t === 'number' && !Number.isNaN(t) ? t.toFixed(1) : '–')
   const isMobile = useIsMobile()
   const searchText = ref('')
 
@@ -133,7 +136,7 @@
           <span v-if="showdata" class="flex w-full flex-wrap items-baseline gap-x-3 gap-y-1">
             <template v-if="item.data">
               <span class="block shrink-0 font-mono leading-none text-ink" title="Average temperature">
-                <span class="text-2xl font-bold">{{ item.data.avg_temp }}</span>
+                <span class="text-2xl font-bold">{{ fmtTemp(item.data.avg_temp) }}</span>
                 <span class="text-sm text-ink-faint"> °C ±{{ item.data.std_dev }}</span>
               </span>
               <SensorSignal :sensor-data="item.data" class="shrink-0" />
@@ -178,7 +181,7 @@
           <template v-if="showdata">
             <template v-if="item.data">
               <td class="px-4 py-3">
-                <small title="Average temperature" class="flex items-center font-mono text-xs text-ink"><ThermometerIcon class="h-4 mr-1 text-ink-faint" />{{ item.data?.avg_temp }}</small>
+                <small title="Average temperature" class="flex items-center font-mono text-xs text-ink"><ThermometerIcon class="h-4 mr-1 text-ink-faint" />{{ fmtTemp(item.data?.avg_temp) }}</small>
                 <small title='Standard deviation' class="flex items-center font-mono text-ink-faint"><BellCurveIcon class="w-3 h-3 mx-1" />{{ item.data?.std_dev }}</small>
               </td>
               <td class="px-4 py-3 text-center">
