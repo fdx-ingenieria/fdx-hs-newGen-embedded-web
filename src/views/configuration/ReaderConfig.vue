@@ -114,17 +114,17 @@
   <section class="antialiased">
     <div class="mx-auto max-w-3xl">
       <div class="card overflow-hidden py-4 px-4 md:px-6">
-        <h2 class="mb-4 text-base font-semibold">RFID reader</h2>
+        <!-- Ctrl+Shift+double click (or long press) on the section name opens the advanced settings. -->
+        <h2 class="mb-4 select-none text-base font-semibold [-webkit-touch-callout:none]"
+          v-on:dblclick.shift.ctrl="adminMode = !adminMode"
+          v-long-press="() => adminMode = !adminMode">RFID reader</h2>
         <LoadingIcon v-if="!editable.region" class="w-8 h-8 animate-spin text-fdx-red fill-transparent mx-auto my-12" />
         <template v-else>
 
           <div class="grid gap-4 mb-4">
             <!-- Region (always visible, editable) -->
             <div>
-              <label
-                v-on:dblclick.shift.ctrl="adminMode = !adminMode"
-                v-long-press="() => adminMode = !adminMode"
-                class="field-label !text-accent select-none cursor-default [-webkit-touch-callout:none]">Region</label>
+              <label class="field-label">Region</label>
               <select
                 v-model="editable.region"
                 class="input !border-accent/40">
