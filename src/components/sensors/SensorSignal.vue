@@ -1,35 +1,40 @@
 <script setup lang="ts">
   import { ISensorData, SensorQuality } from '@/commons';
   import { PropType, computed } from 'vue';
+  import { useGlobalStore } from '@/stores/global';
+  import SignalBars from './SignalBars.vue';
 
   const props = defineProps({
     sensorData: {
       type: Object as PropType<ISensorData>,
       required: true
-    }
+    },
+    stacked: { type: Boolean, default: false },
   })
 
-  // Bar count carries the quality, color only reinforces it.
-  const LEVELS: Record<SensorQuality, { bars: number, cls: string }> = {
-    [SensorQuality.OUT_OF_SERVICE]: { bars: 0, cls: 'text-crit' },
-    [SensorQuality.BAD]: { bars: 1, cls: 'text-warn' },
-    [SensorQuality.REGULAR]: { bars: 2, cls: 'text-ink-soft' },
-    [SensorQuality.GOOD]: { bars: 3, cls: 'text-info' },
-    [SensorQuality.EXCELLENT]: { bars: 4, cls: 'text-ok' },
+  // Discovery windows hold about one round, so quality says nothing there: show the signal meter instead.
+  // Outside discovery quality is just its colored word; bars would read as signal strength.
+  const QUALITY_CLASS: Record<SensorQuality, string> = {
+    [SensorQuality.OUT_OF_SERVICE]: 'text-crit',
+    [SensorQuality.BAD]: 'text-warn',
+    [SensorQuality.REGULAR]: 'text-ink-soft',
+    [SensorQuality.GOOD]: 'text-info',
+    [SensorQuality.EXCELLENT]: 'text-ok',
   };
 
-  const level = computed(() =>
-    (props.sensorData.quality && LEVELS[props.sensorData.quality]) || { bars: 0, cls: 'text-ink-faint' })
+  const globalStore = useGlobalStore()
+  const bySignal = computed(() => globalStore.getDiscoveryModeOn)
+  const qualityClass = computed(() => (props.sensorData.quality && QUALITY_CLASS[props.sensorData.quality]) || 'text-ink-faint')
 </script>
 
 <template>
-  <span class="inline-flex items-center gap-1.5 whitespace-nowrap"
-    :title="`${sensorData.quality ?? 'Unknown'}, RSSI ${sensorData.rssi} dBm`">
-    <svg viewBox="0 0 15 12" class="h-3 w-[15px] shrink-0" :class="level.cls" aria-hidden="true">
-      <rect v-for="i in 4" :key="i" :x="(i - 1) * 4" :y="12 - i * 3" width="3" :height="i * 3" rx="0.5"
-        :class="i <= level.bars ? 'fill-current' : 'fill-line'" />
-    </svg>
-    <span class="text-xs font-semibold" :class="level.cls">{{ sensorData.quality }}</span>
+  <!-- stacked: two left-aligned lines like the other table columns; inline: one line for cards. -->
+  <span class="whitespace-nowrap" :class="stacked ? 'flex flex-col items-start gap-0.5' : 'inline-flex items-baseline gap-1.5'">
+    <template v-if="bySignal">
+      <SignalBars :rssi="sensorData.rssi" :show-dbm="false" />
+    </template>
+    <span v-else class="text-xs font-semibold" :class="qualityClass"
+      :title="`Read quality: ${sensorData.quality ?? 'Unknown'}, RSSI ${sensorData.rssi} dBm`">{{ sensorData.quality }}</span>
     <span class="font-mono text-xs text-ink-faint">{{ sensorData.rssi }} dBm</span>
   </span>
 </template>

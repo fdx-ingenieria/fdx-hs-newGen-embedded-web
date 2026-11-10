@@ -161,7 +161,7 @@
             <th scope="col" class="px-4 py-3">{{ LabelType.POSITION }}</th>
           </template>
           <th v-if="showdata" scope="col" class="px-4 py-3">Temp</th>
-          <th v-if="showdata" scope="col" class="px-4 py-3 text-center">Signal</th>
+          <th v-if="showdata" scope="col" class="px-4 py-3">{{ globalStore.getDiscoveryModeOn ? 'Signal' : 'Quality' }}</th>
           <th v-if="showdata" scope="col" class="px-4 py-3">Updated</th>
           <th v-show="!readonly" scope="col" class="px-4 py-3"><span class="sr-only">Actions</span></th>
         </tr>
@@ -184,8 +184,8 @@
                 <small title="Average temperature" class="flex items-center font-mono text-xs text-ink"><ThermometerIcon class="h-4 mr-1 text-ink-faint" />{{ fmtTemp(item.data?.avg_temp) }}</small>
                 <small title='Standard deviation' class="flex items-center font-mono text-ink-faint"><BellCurveIcon class="w-3 h-3 mx-1" />{{ item.data?.std_dev }}</small>
               </td>
-              <td class="px-4 py-3 text-center">
-                <SensorSignal v-if="item.data" :sensor-data="item.data" />
+              <td class="px-4 py-3">
+                <SensorSignal v-if="item.data" :sensor-data="item.data" stacked />
               </td>
               <td v-if="showdata" scope="col" class="px-4 py-3">
                 <small title="Number of readings" class="flex items-center font-mono text-xs text-ink-soft"><FlagIcon class="w-4 h-4 mr-1 text-ink-faint" />{{ item.data?.n_readings }}</small>

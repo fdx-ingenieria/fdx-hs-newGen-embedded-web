@@ -269,6 +269,13 @@ export const useGlobalStore = defineStore('global', () => {
       fastDetectionActive.value = data.active
       fastDetectionRemainingS.value = data.remaining_s
     })
+    eventSource.addEventListener('mode', (event) => {
+      // Device-wide: a discovery started from another client shows here too.
+      const data: { mode: 'DISCOVERY' | 'MANUAL'; app_mode: 'normal' | 'switchgear' } = JSON.parse(event.data)
+      discoveryModeOn.value = data.mode === 'DISCOVERY'
+      normalModeOn.value = data.mode !== 'DISCOVERY'
+      appModeIsSwitchgear.value = data.app_mode === 'switchgear'
+    })
     eventSource.addEventListener('reader_temp', (event) => {
       const data = JSON.parse(event.data)
       boardTemp.value = data.temperature_c
