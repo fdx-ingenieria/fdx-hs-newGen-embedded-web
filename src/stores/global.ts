@@ -1,4 +1,4 @@
-import { IAntennaGroup, ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ITimers, ISensorData, IAlarm, IAlarmData, IAlarmField, IModbusTableEntry, IReaderConfig, SensorQuality } from '@/commons'
+import { IAntennaGroup, IInstallStatus, ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ITimers, ISensorData, IAlarm, IAlarmData, IAlarmField, IModbusTableEntry, IReaderConfig, SensorQuality } from '@/commons'
 import { defineStore } from 'pinia'
 import type { PresetAlarm } from '@/commons/installPresets'
 import { Ref, computed, ref } from 'vue'
@@ -76,6 +76,9 @@ export const useGlobalStore = defineStore('global', () => {
   // countdown needs no local timer and can never drift from the backend.
   const fastDetectionActive: Ref<boolean> = ref(false)
   const fastDetectionRemainingS: Ref<number> = ref(0)
+  // Installation mode window, pushed by the SSE stream; the stats come from GET /api/data/install.
+  const installActive: Ref<boolean> = ref(false)
+  const installRemainingS: Ref<number> = ref(0)
   const boardTemp: Ref<number | string> = ref('N/A')
   // Antennas the reader found on its last detection, straight from the reader
   // status in the SSE stream. -1 means "not known yet" (no status received, or a
@@ -160,6 +163,8 @@ export const useGlobalStore = defineStore('global', () => {
   const getAntennaGroups = computed(() => antennaGroups.value)
   const getFastDetectionActive = computed(() => fastDetectionActive.value)
   const getFastDetectionRemainingS = computed(() => fastDetectionRemainingS.value)
+  const getInstallActive = computed(() => installActive.value)
+  const getInstallRemainingS = computed(() => installRemainingS.value)
   const getConfiguredSensors = computed(() => availableSensors.value.filter(sensor => !!sensor.config.equipment))
   const getAvailableAlarms = computed(() => availableAlarms.value)
   const getConfiguredAlarms = computed(() => availableAlarms.value.filter(alarm => !!alarm.alarm_type))
@@ -275,6 +280,11 @@ export const useGlobalStore = defineStore('global', () => {
       discoveryModeOn.value = data.mode === 'DISCOVERY'
       normalModeOn.value = data.mode !== 'DISCOVERY'
       appModeIsSwitchgear.value = data.app_mode === 'switchgear'
+    })
+    eventSource.addEventListener('install_mode', (event) => {
+      const data: { active: boolean; remaining_s: number } = JSON.parse(event.data)
+      installActive.value = data.active
+      installRemainingS.value = data.remaining_s
     })
     eventSource.addEventListener('reader_temp', (event) => {
       const data = JSON.parse(event.data)
@@ -719,6 +729,30 @@ export const useGlobalStore = defineStore('global', () => {
     fastDetectionRemainingS.value = 0
   }
 
+  // Installation mode: measuring, alarms and Modbus pause while it runs. Polling
+  // loadInstallStats() is what keeps it alive; it ends 2 min after the last poll.
+  async function startInstallMode(): Promise<void> {
+    await apiFetch('/api/action/install/start', { method: 'POST' })
+    installActive.value = true
+  }
+
+  async function stopInstallMode(): Promise<void> {
+    await apiFetch('/api/action/install/stop', { method: 'POST' })
+    installActive.value = false
+    installRemainingS.value = 0
+  }
+
+  async function resetInstallStats(): Promise<void> {
+    await apiFetch('/api/action/install/reset', { method: 'POST' })
+  }
+
+  async function loadInstallStats(): Promise<IInstallStatus> {
+    const status = await apiFetch<IInstallStatus>('/api/data/install')
+    installActive.value = status.active
+    installRemainingS.value = status.remaining_s
+    return status
+  }
+
   async function lockAntennaGroup(antenna: number, group: string): Promise<void> {
     // Manually lock a group as the antenna's active group right now, instead of
     // waiting for the voting window to close. Plain shortcut: the next voting
@@ -972,6 +1006,12 @@ export const useGlobalStore = defineStore('global', () => {
     getFastDetectionRemainingS,
     startFastDetection,
     stopFastDetection,
+    getInstallActive,
+    getInstallRemainingS,
+    startInstallMode,
+    stopInstallMode,
+    resetInstallStats,
+    loadInstallStats,
     lockAntennaGroup,
     startNormalMode,
     stopNormalMode,

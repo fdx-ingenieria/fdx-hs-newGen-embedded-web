@@ -11,6 +11,7 @@
     Sensors: ['Configuration', 'Sensors'],
     Alarms: ['Configuration', 'Alarms'],
     ReaderConfig: ['Configuration', 'RFID Config'],
+    Installation: ['Configuration', 'Sensors', 'Installation'],
     Modbus: ['Modbus'],
     LogsAdmin: ['Logs'],
   }

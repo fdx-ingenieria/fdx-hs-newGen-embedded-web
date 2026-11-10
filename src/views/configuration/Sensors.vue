@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ISensor } from '@/commons';
-  import { RefreshIcon, ListIcon, SearchIcon, StopIcon, LoadingIcon, ChevronUpIcon, RemoveIcon } from '@/components/icons';
+  import { RefreshIcon, ListIcon, SearchIcon, StopIcon, LoadingIcon, ChevronUpIcon, RemoveIcon, WrenchIcon } from '@/components/icons';
   import SensorTable from '@/components/sensors/SensorTable.vue';
   import SensorEditForm from '@/components/sensors/SensorEditForm.vue';
   import QuickSetup from '@/components/sensors/QuickSetup.vue';
@@ -197,11 +197,15 @@
               <LoadingIcon v-if="startingDiscoveryMode" class="h-4 w-4 animate-spin fill-transparent" />
               <SearchIcon v-else class="h-4" /> Discovery
             </button>
-            <button type="button" class="btn-ghost !px-3 !py-1.5 [@media(pointer:coarse)]:!py-2.5" :class="{'col-span-2': !unconfiguredSensors.length}"
+            <button type="button" class="btn-ghost !px-3 !py-1.5 [@media(pointer:coarse)]:!py-2.5"
               title="Place several tags at once on a location x position grid" @click="showQuickSetup = true">
               <ListIcon class="h-4" /> Quick setup
             </button>
-            <button v-if="unconfiguredSensors.length" type="button" class="btn-ghost !px-3 !py-1.5 [@media(pointer:coarse)]:!py-2.5"
+            <router-link :to="{ name: 'Installation' }" class="btn-ghost !px-3 !py-1.5 [@media(pointer:coarse)]:!py-2.5"
+              title="Check how reliably every tag is read with the production timing, and place tags while you test">
+              <WrenchIcon class="h-4" /> Installation
+            </router-link>
+            <button v-if="unconfiguredSensors.length" type="button" class="btn-ghost col-span-2 !px-3 !py-1.5 [@media(pointer:coarse)]:!py-2.5"
               :disabled="loadingData || startingDiscoveryMode" @click="clearUnconfiguredSensors()">
               <LoadingIcon v-if="loadingData" class="h-4 w-4 animate-spin fill-transparent" />
               <RefreshIcon v-else class="h-4" /> Clear list

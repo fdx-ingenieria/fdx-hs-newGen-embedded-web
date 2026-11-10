@@ -26,3 +26,14 @@ export const highlightMatch = (text: string | undefined | null, term: string): s
   }
   return out + escapeHtml(raw.slice(i))
 }
+
+// Short tag name from its EPC, same rule as the backend's EpcId::displayName(): the last
+// 4 bytes as ASCII when they hold exactly four letters or digits, else the hex itself.
+export function epcDisplayName(hex: string): string {
+  const take = hex.length < 8 ? hex.length & ~1 : 8
+  const tail = hex.slice(hex.length - take)
+  if (!/^[0-9a-fA-F]*$/.test(tail)) return hex
+  let ascii = ''
+  for (let i = 0; i + 1 < tail.length; i += 2) ascii += String.fromCharCode(parseInt(tail.slice(i, i + 2), 16))
+  return (ascii.match(/[0-9A-Za-z]/g) ?? []).length === 4 ? ascii : hex
+}

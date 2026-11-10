@@ -26,7 +26,7 @@
   const isActive = (name: string | undefined): boolean => {
     if (!name) return false;
 
-    return props.matched?.some((item) => item.name === name);
+    return props.matched?.some((item) => item.name === name || item.meta?.parent === name);
   };
 
   // Open the group whenever one of its pages is the current route.

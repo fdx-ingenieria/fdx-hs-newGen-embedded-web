@@ -109,6 +109,27 @@ export interface IAntennaGroup {
   votes: Array<{ group: string; count: number }>;
 }
 
+// Installation mode: per-tag read stats since the last start or reset.
+export interface IInstallTag {
+  epc_id: string;
+  name?: string;     // absent on older firmware
+  reads: number;
+  invalid_temp: number;
+  rssi: number;      // dBm, last read
+  rssi_min: number;
+  rssi_max: number;
+  tag_rssi: number;  // Magnus on-chip RSSI code 0..31, 0 when never reported
+  antenna: number;
+  last_seen_s: number;
+}
+
+export interface IInstallStatus {
+  active: boolean;
+  remaining_s: number;
+  rounds: number;
+  tags: IInstallTag[];
+}
+
 // Modbus table
 export interface IModbusTableEntry {
   name: string;

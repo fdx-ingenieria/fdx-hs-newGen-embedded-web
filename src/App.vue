@@ -4,12 +4,19 @@
   import LeftSideBar from './components/navigation/LeftSideBar.vue';
   import ToastNotifications from './components/ToastNotifications.vue';
   import { AlertIcon } from './components/icons';
-  import { onMounted, onBeforeUnmount } from 'vue';
-  import { useRouter } from 'vue-router';
+  import { computed, onMounted, onBeforeUnmount } from 'vue';
+  import { useRoute, useRouter } from 'vue-router';
   import { useGlobalStore } from './stores/global';
 
   const globalStore = useGlobalStore()
   const router = useRouter()
+  const route = useRoute()
+
+  // The Installation view shows its own status; every other view gets the banner.
+  const showInstallBanner = computed(() => globalStore.getInstallActive && route.name !== 'Installation')
+  async function stopInstall(): Promise<void> {
+    try { await globalStore.stopInstallMode() } catch { /* apiFetch already showed the error */ }
+  }
 
   // Hidden admin logs view: reachable only via Ctrl+Shift+L (no sidebar entry).
   function onKeydown(e: KeyboardEvent): void {
@@ -47,6 +54,17 @@
           {{ globalStore.readerFaultMessage }}
           Detection retries automatically.
         </div>
+      </div>
+      <div v-if="showInstallBanner" role="status"
+        class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-warn/40 bg-warn-soft px-4 py-3 text-sm text-ink">
+        <span class="min-w-0 flex-1">
+          <span class="font-semibold text-warn">Installation mode is on.</span>
+          Measuring, alarms and Modbus are paused until it stops.
+        </span>
+        <span class="flex gap-2">
+          <router-link :to="{ name: 'Installation' }" class="btn-ghost !px-3 !py-1.5">Open</router-link>
+          <button type="button" class="btn-danger !px-3 !py-1.5" @click="stopInstall">Stop</button>
+        </span>
       </div>
       <router-view v-slot="{ Component }">
         <component :is="Component" />

@@ -6,6 +6,7 @@ import ReaderConfig from '@/views/configuration/ReaderConfig.vue'
 import Labels from '@/views/configuration/Labels.vue'
 import Sensors from '@/views/configuration/Sensors.vue'
 import Alarms from '@/views/configuration/Alarms.vue'
+import Installation from '@/views/configuration/Installation.vue'
 import Modbus from '@/views/Modbus.vue'
 import LogsAdmin from '@/views/admin/LogsAdmin.vue'
 
@@ -55,6 +56,14 @@ const routes: Array<RouteRecordRaw > = [
     component: Alarms,
     props: true,
     meta: {}
+  },
+  {
+    // Opened only from the Sensors view; `parent` keeps Sensors highlighted in the menu.
+    path: "/configuration/installation",
+    name: "Installation",
+    component: Installation,
+    props: true,
+    meta: { parent: 'Sensors' }
   },
   {
     path: "/modbus",
