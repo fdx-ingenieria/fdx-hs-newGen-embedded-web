@@ -9,7 +9,7 @@
 </script>
 
 <template>
-  <div class="inline-flex h-9 items-center gap-2 rounded-lg border border-line bg-panel-soft px-2.5">
+  <div class="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-panel-soft px-2 xs:gap-2 xs:px-2.5">
     <!-- El title va en un <span> envolvente, no en el ícono: el atributo title
          no dispara el tooltip nativo de forma confiable sobre un <svg> inline. -->
     <span :title="globalStore.connected ? 'Connected' : 'Disconnected — reconnecting...'" class="inline-flex">
