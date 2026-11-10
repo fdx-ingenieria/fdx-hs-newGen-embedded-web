@@ -2,7 +2,7 @@
   import { PropType, computed, ref, watch } from 'vue';
   import { ISensor } from '@/commons';
   import { useGlobalStore } from '@/stores/global';
-  import { CloseIcon, LoadingIcon, PlayIcon, SendIcon } from '@/components/icons';
+  import { CloseIcon, LoadingIcon, SearchIcon, SendIcon } from '@/components/icons';
   import SensorSignal from './SensorSignal.vue';
 
   // Bulk registration: pick an equipment, then tap a tag to drop it into the highlighted
@@ -222,7 +222,7 @@
       <button v-if="!globalStore.getDiscoveryModeOn" type="button" class="btn-primary !px-3 !py-1.5"
         :disabled="startingDiscovery" @click="startDiscovery">
         <LoadingIcon v-if="startingDiscovery" class="h-4 w-4 animate-spin fill-transparent" />
-        <PlayIcon v-else class="h-4" /> Start discovery
+        <SearchIcon v-else class="h-4" /> Discovery
       </button>
       <span v-else class="flex items-center gap-1.5 text-xs text-ink-soft">
         <LoadingIcon class="h-3.5 w-3.5 animate-spin fill-transparent text-ok" /> Listening

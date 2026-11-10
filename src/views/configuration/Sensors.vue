@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ISensor } from '@/commons';
-  import { RefreshIcon, ListIcon, PlayIcon, StopIcon, LoadingIcon, ChevronUpIcon, RemoveIcon } from '@/components/icons';
+  import { RefreshIcon, ListIcon, SearchIcon, StopIcon, LoadingIcon, ChevronUpIcon, RemoveIcon } from '@/components/icons';
   import SensorTable from '@/components/sensors/SensorTable.vue';
   import SensorEditForm from '@/components/sensors/SensorEditForm.vue';
   import QuickSetup from '@/components/sensors/QuickSetup.vue';
@@ -195,7 +195,7 @@
             <button v-else type="button" class="btn-primary col-span-2 sm:order-last !px-3 !py-1.5 [@media(pointer:coarse)]:!py-2.5"
               :disabled="loadingData || startingDiscoveryMode" @click="startDiscoveryMode">
               <LoadingIcon v-if="startingDiscoveryMode" class="h-4 w-4 animate-spin fill-transparent" />
-              <PlayIcon v-else class="h-4" /> Start discovery
+              <SearchIcon v-else class="h-4" /> Discovery
             </button>
             <button type="button" class="btn-ghost !px-3 !py-1.5 [@media(pointer:coarse)]:!py-2.5" :class="{'col-span-2': !unconfiguredSensors.length}"
               title="Place several tags at once on a location x position grid" @click="showQuickSetup = true">
