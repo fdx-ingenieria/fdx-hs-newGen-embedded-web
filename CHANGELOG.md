@@ -1,3 +1,14 @@
+## [1.1.2] - 2026-11-10
+
+### Features
+
+- *(Installation)* Four-level read scale with a 30 % orange band
+- *(Installation)* Color the on-chip RSSI bar with the read scale
+- *(Installation)* 6 min session countdown with a heat warning
+
+### Bug Fixes
+
+- *(NavBar)* Keep the reader temperature visible on narrow phones
 ## [1.1.1] - 2026-11-10
 
 ### Features
