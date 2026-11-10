@@ -1,3 +1,26 @@
+## [1.1.0] - 2026-11-10
+
+### Features
+
+- *(Sensors)* Always show temperature with one decimal
+- Separate quality from signal, show RSSI signal in discovery
+- Installation mode with a per-tag read map
+
+### Bug Fixes
+
+- Stop stacking repeated toasts and shorten success ones
+
+### Refactor
+
+- *(QuickSetup)* Extract tag placement into usePlacement
+
+### Documentation
+
+- Update the installation mode window to 6 min
+
+### Styling
+
+- Magnifier icon and shorter label on the discovery button
 ## [1.0.0] - 2026-11-05
 
 ### Features
