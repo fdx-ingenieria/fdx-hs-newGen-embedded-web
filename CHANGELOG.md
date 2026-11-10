@@ -1,3 +1,14 @@
+## [1.1.1] - 2026-11-10
+
+### Features
+
+- *(SensorTable)* Show the reading count on mobile cards
+- *(Installation)* Show the antenna in the corner of each cell
+
+### Bug Fixes
+
+- *(SensorSignal)* Show "Not read" for sensors missing a reading
+- *(ReaderConfig)* Open the advanced settings from the section title
 ## [1.1.0] - 2026-11-10
 
 ### Features
