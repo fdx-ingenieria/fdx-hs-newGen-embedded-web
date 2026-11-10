@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, onMounted, onUnmounted, ref } from 'vue';
+  import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
   import { onBeforeRouteLeave, useRouter } from 'vue-router';
   import { IInstallStatus, IInstallTag, ISensor, LabelType, epcDisplayName } from '@/commons';
   import { useGlobalStore } from '@/stores/global';
@@ -29,6 +29,10 @@
   const now = useNow()
   // Seconds clock of the last start or reset; the backend deadline is renewed by every poll, so it is no countdown.
   const countingSince = ref(0)
+  // The extended inventory with a short t_off heats the reader, so a session lasts this long unless extended.
+  const SESSION_S = 6 * 60
+  const sessionSince = ref(0)
+  const endedByTime = ref(false)
 
   const status = ref<IInstallStatus | null>(null)
   const starting = ref(true)
@@ -155,10 +159,23 @@
     }
   }
 
-  const elapsed = computed(() => {
-    const s = countingSince.value ? Math.max(0, now.value - countingSince.value) : 0
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+  const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+  const elapsed = computed(() => mmss(countingSince.value ? Math.max(0, now.value - countingSince.value) : 0))
+  const remainingS = computed(() => (sessionSince.value ? Math.max(0, SESSION_S - (now.value - sessionSince.value)) : SESSION_S))
+  const remaining = computed(() => mmss(remainingS.value))
+
+  // Ends the session on time to protect the reader; the backend window would also close it 6 min after the last poll.
+  watch(remainingS, async left => {
+    if (left > 0 || ended.value || !sessionSince.value || timer === undefined) return
+    stopPolling()
+    endedByTime.value = true
+    ended.value = true
+    try { await globalStore.stopInstallMode() } catch { /* apiFetch already showed the error */ }
   })
+
+  function extend(): void {
+    sessionSince.value = now.value
+  }
 
   // Stats of the sensor in a map cell, if it was read since the last reset.
   const cellStat = (cell: string): IInstallTag | undefined => {
@@ -201,9 +218,11 @@
   async function start(): Promise<void> {
     starting.value = true
     ended.value = false
+    endedByTime.value = false
     try {
       await globalStore.startInstallMode()
       countingSince.value = now.value
+      sessionSince.value = now.value
       startPolling()
     } catch {
       ended.value = true
@@ -247,7 +266,8 @@
   onMounted(async () => {
     if (!window.confirm(
       'Start installation mode?\n\n'
-      + 'Measuring, alarms, relays and Modbus pause while this view is open, and resume when you leave it.'
+      + 'Measuring, alarms, relays and Modbus pause while this view is open, and resume when you leave it.\n\n'
+      + 'The reader works harder in this mode and heats up, so it stops by itself after 6 minutes unless you extend it.'
     )) {
       router.push({ name: 'Sensors' })
       return
@@ -272,13 +292,20 @@
   <section class="antialiased">
     <div class="card mt-8 overflow-hidden">
       <div class="panel-head flex-wrap gap-y-2">
-        <h3 class="flex min-w-0 flex-1 items-baseline gap-3">
+        <h3 class="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3">
           Installation
-          <span v-if="status && !ended" class="font-mono text-sm font-normal text-ink-soft"
+          <span v-if="status && !ended" class="whitespace-nowrap font-mono text-sm font-normal text-ink-soft"
             title="Inventory rounds and time since the last start or reset">
             {{ rounds }} {{ rounds === 1 ? 'round' : 'rounds' }} in {{ elapsed }}
           </span>
         </h3>
+        <span v-if="status && !ended" class="flex w-full items-center justify-between gap-2 whitespace-nowrap font-mono text-sm sm:w-auto sm:justify-start"
+          :class="remainingS <= 60 ? 'font-semibold text-warn' : 'text-ink-soft'"
+          title="The session stops by itself so the reader does not overheat">
+          {{ remaining }} left
+          <button type="button" class="rounded-md border border-line bg-panel px-2 py-0.5 font-sans text-xs font-semibold text-ink hover:bg-panel-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:py-1.5"
+            @click="extend">Extend to 6:00</button>
+        </span>
         <div class="grid w-full grid-cols-2 gap-1.5 sm:flex sm:w-auto">
           <button type="button" class="btn-ghost !px-3 !py-1.5 [@media(pointer:coarse)]:!py-2.5"
             :disabled="ended || starting || resetting" @click="reset">
@@ -296,7 +323,10 @@
       <div class="p-4">
         <!-- Ended by expiry or from another client: offer a restart instead of a dead screen. -->
         <div v-if="ended" class="flex flex-wrap items-center gap-3 rounded-lg border border-line bg-panel-soft px-4 py-3">
-          <span class="flex-1 text-sm text-ink">Installation mode ended. Measuring is back to normal.</span>
+          <span class="flex-1 text-sm text-ink">
+            {{ endedByTime ? 'Installation mode stopped after 6 minutes to keep the reader from overheating.' : 'Installation mode ended.' }}
+            Measuring is back to normal.
+          </span>
           <button type="button" class="btn-primary" :disabled="starting" @click="start">
             <LoadingIcon v-if="starting" class="h-4 w-4 animate-spin fill-transparent" />
             <PlayIcon v-else class="h-4" /> Start again
@@ -304,6 +334,9 @@
         </div>
 
         <template v-else>
+          <p class="mb-2 max-w-3xl text-sm text-warn">
+            The reader works harder in this mode and heats up. It stops by itself when the time runs out; extend it only while you need it.
+          </p>
           <p class="mb-4 max-w-3xl text-sm text-ink-soft">
             Each cell counts the inventory rounds its tag answered since the last reset.
             Move a tag, close the cabinet and tap <span class="font-semibold text-ink">Reset counts</span>;
