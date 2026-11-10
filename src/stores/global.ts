@@ -730,7 +730,7 @@ export const useGlobalStore = defineStore('global', () => {
   }
 
   // Installation mode: measuring, alarms and Modbus pause while it runs. Polling
-  // loadInstallStats() is what keeps it alive; it ends 2 min after the last poll.
+  // loadInstallStats() is what keeps it alive; it ends 6 min after the last poll.
   async function startInstallMode(): Promise<void> {
     await apiFetch('/api/action/install/start', { method: 'POST' })
     installActive.value = true
