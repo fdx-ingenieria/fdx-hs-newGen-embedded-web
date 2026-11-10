@@ -140,9 +140,14 @@
                 <span class="text-sm text-ink-faint"> °C ±{{ item.data.std_dev }}</span>
               </span>
               <SensorSignal :sensor-data="item.data" class="shrink-0" />
-              <span class="ml-auto flex shrink-0 items-center font-mono text-xs text-ink-faint" title="Last update">
-                <ClockIcon class="mr-1 h-3 w-3" />
-                <SensorAge :timestamp="item.data.timestamp" suffix=" s ago" />
+              <span class="ml-auto flex shrink-0 items-center gap-3 font-mono text-xs">
+                <span class="flex items-center text-ink-soft" :title="`${item.data.n_readings} readings in the last window`">
+                  <FlagIcon class="mr-1 h-3.5 w-3.5 text-ink-faint" />{{ item.data.n_readings }}
+                </span>
+                <span class="flex items-center text-ink-faint" title="Last update">
+                  <ClockIcon class="mr-1 h-3 w-3" />
+                  <SensorAge :timestamp="item.data.timestamp" suffix=" s ago" />
+                </span>
               </span>
             </template>
             <LoadingIcon v-else class="w-4 animate-spin fill-transparent text-ok" />
