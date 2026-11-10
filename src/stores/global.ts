@@ -114,13 +114,33 @@ export const useGlobalStore = defineStore('global', () => {
   const notifications: Ref<Notification[]> = ref([])
   let _notifId = 0
 
+  // Toasts stay short on screen: a repeated message refreshes the one already shown instead of
+  // stacking (placing several sensors in a row), success fades sooner, and at most 3 are visible.
+  const TOAST_SUCCESS_MS = 2500
+  const TOAST_OTHER_MS = 5000
+  const TOAST_MAX_VISIBLE = 3
+  const toastTimers = new Map<number, ReturnType<typeof setTimeout>>()
+
+  function scheduleDismiss(id: number, type: NotificationType): void {
+    clearTimeout(toastTimers.get(id))
+    toastTimers.set(id, setTimeout(() => dismissNotification(id), type === 'success' ? TOAST_SUCCESS_MS : TOAST_OTHER_MS))
+  }
+
   function notify(message: string, type: NotificationType = 'error'): void {
+    const same = notifications.value.find(n => n.message === message && n.type === type)
+    if (same) {
+      scheduleDismiss(same.id, type)
+      return
+    }
     const id = ++_notifId
     notifications.value.push({ id, message, type })
-    setTimeout(() => dismissNotification(id), 5000)
+    while (notifications.value.length > TOAST_MAX_VISIBLE) dismissNotification(notifications.value[0].id)
+    scheduleDismiss(id, type)
   }
 
   function dismissNotification(id: number): void {
+    clearTimeout(toastTimers.get(id))
+    toastTimers.delete(id)
     const idx = notifications.value.findIndex(n => n.id === id)
     if (idx !== -1) notifications.value.splice(idx, 1)
   }
