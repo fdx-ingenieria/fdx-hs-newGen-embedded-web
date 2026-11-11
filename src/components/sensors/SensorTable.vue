@@ -6,6 +6,7 @@
   import SensorSignal from './SensorSignal.vue';
   import SensorAge from './SensorAge.vue';
   import { useIsMobile } from '@/composables/mediaMode';
+  import { useNow } from '@/composables/clock';
 
   const props = defineProps({
     availableSensors: {
@@ -62,6 +63,12 @@
   // Always one decimal, so 23 shows as 23.0 and the column keeps its width.
   const fmtTemp = (t: number | undefined) => (typeof t === 'number' && !Number.isNaN(t) ? t.toFixed(1) : '–')
   const isMobile = useIsMobile()
+  const now = useNow()
+  // Seconds until the next measurement, counted locally between SSE frames; null until the backend reports it.
+  const nextMeasureS = computed(() => {
+    const at = globalStore.getMeasureNextAt
+    return at ? Math.max(0, Math.ceil(at) - now.value) : null
+  })
   const searchText = ref('')
 
   const localAvailableSensors = computed(() => {
@@ -107,6 +114,10 @@
           </div>
         </div>
       </div>
+      <span v-if="showdata && nextMeasureS !== null" class="flex shrink-0 items-center font-mono text-xs text-ink-faint"
+        title="Time left until the next measurement">
+        <ClockIcon class="mr-1 h-3.5 w-3.5" />Next reading in {{ nextMeasureS }} s
+      </span>
     </div>
     <!-- Mobile mode: one card per sensor, name and reading first; a grid when the screen has room. -->
     <ul v-if="isMobile" class="grid gap-2 border-t border-line p-3"

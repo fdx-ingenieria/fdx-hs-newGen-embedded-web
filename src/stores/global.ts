@@ -79,6 +79,9 @@ export const useGlobalStore = defineStore('global', () => {
   // Installation mode window, pushed by the SSE stream; the stats come from GET /api/data/install.
   const installActive: Ref<boolean> = ref(false)
   const installRemainingS: Ref<number> = ref(0)
+  // Next measurement tick as a client epoch (s), from the `measure` SSE event; 0 until the first event.
+  const measureNextAt: Ref<number> = ref(0)
+  const measurePeriodS: Ref<number> = ref(0)
   const boardTemp: Ref<number | string> = ref('N/A')
   // Antennas the reader found on its last detection, straight from the reader
   // status in the SSE stream. -1 means "not known yet" (no status received, or a
@@ -165,6 +168,7 @@ export const useGlobalStore = defineStore('global', () => {
   const getFastDetectionRemainingS = computed(() => fastDetectionRemainingS.value)
   const getInstallActive = computed(() => installActive.value)
   const getInstallRemainingS = computed(() => installRemainingS.value)
+  const getMeasureNextAt = computed(() => measureNextAt.value)
   const getConfiguredSensors = computed(() => availableSensors.value.filter(sensor => !!sensor.config.equipment))
   const getAvailableAlarms = computed(() => availableAlarms.value)
   const getConfiguredAlarms = computed(() => availableAlarms.value.filter(alarm => !!alarm.alarm_type))
@@ -226,20 +230,22 @@ export const useGlobalStore = defineStore('global', () => {
     }
     eventSource.addEventListener('sensor_data', (event) => {
       const raw: Array<{ epc_id: string; name?: string; avg_temp: number; std_dev: number; avg_rssi: number; n_readings: number; quality: number; timestamp: number }> = JSON.parse(event.data)
+      const newestDeviceTs = raw.reduce((m, s) => Math.max(m, s.timestamp), 0)
       const sensors: ISensorData[] = raw.map(s => {
         const quality = QUALITY_BY_INDEX[s.quality] ?? SensorQuality.OUT_OF_SERVICE
         const prevData = availableSensors.value.find(x => x.id === s.epc_id)?.data
         const n_readings = quality === SensorQuality.OUT_OF_SERVICE
           ? (prevData?.n_readings ?? s.n_readings)
           : s.n_readings
-        // El SSE reemite el mismo snapshot cada 1s; el timestamp del device solo cambia
-        // cuando hay una lectura nueva (cada measure_period). Cuando cambia, anclamos al
-        // reloj del CLIENTE para que `now - timestamp` mida bien la antigüedad sin
-        // depender de que el reloj del device esté sincronizado.
+        // A new device timestamp means a new reading; age is anchored to the client clock, since the device clock may be skewed.
+        const firstSight = !lastDeviceTimestamp.has(s.epc_id)
         const isNewReading = s.timestamp > 0 && s.timestamp !== lastDeviceTimestamp.get(s.epc_id)
         if (isNewReading) lastDeviceTimestamp.set(s.epc_id, s.timestamp)
         const clientNow = Math.floor(Date.now() / 1000)
-        const timestamp = isNewReading ? clientNow : (prevData?.timestamp ?? clientNow)
+        // After a page load, date the reading from the last tick (device clock differences only) instead of "now".
+        const timestamp = firstSight && isNewReading && measureNextAt.value
+          ? Math.round(measureNextAt.value - measurePeriodS.value - (newestDeviceTs - s.timestamp))
+          : isNewReading ? clientNow : (prevData?.timestamp ?? clientNow)
         return {
           id: s.epc_id,
           EPC: s.name ?? s.epc_id,  // decoded 4-char name from backend; hex fallback
@@ -268,6 +274,11 @@ export const useGlobalStore = defineStore('global', () => {
       // tick del SSE (~1s), así se ve solo apenas se fija el grupo, sin
       // depender de un refresh manual de la página.
       antennaGroups.value = JSON.parse(event.data)
+    })
+    eventSource.addEventListener('measure', (event) => {
+      const data: { period_ms: number; next_in_ms: number } = JSON.parse(event.data)
+      measurePeriodS.value = data.period_ms / 1000
+      measureNextAt.value = Date.now() / 1000 + data.next_in_ms / 1000
     })
     eventSource.addEventListener('fast_detection', (event) => {
       const data: { active: boolean; remaining_s: number } = JSON.parse(event.data)
@@ -1010,6 +1021,7 @@ export const useGlobalStore = defineStore('global', () => {
     stopFastDetection,
     getInstallActive,
     getInstallRemainingS,
+    getMeasureNextAt,
     startInstallMode,
     stopInstallMode,
     resetInstallStats,
