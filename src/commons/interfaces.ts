@@ -87,11 +87,13 @@ export interface ISystem {
 
 // Inventory orchestration timers (admin-gated, own endpoint /api/config/timers).
 // The measure period is in seconds; the reader times stay in ms. Cross-constraint
-// enforced by the backend: measure_period_s * 1000 >= t_reader_on + t_reader_off.
+// enforced by the backend: measure_period_s * 1000 >= t_reader_on + t_reader_off
+// and oos_hold_s >= measure_period_s.
 export interface ITimers {
   t_reader_on: number;      // ms, 0 – 10_000
   t_reader_off: number;     // ms, 0 – 300_000
   measure_period_s: number; // s, 1 – 3_600
+  oos_hold_s: number;       // s, measure_period_s – 65_535
   password?: string;
 }
 

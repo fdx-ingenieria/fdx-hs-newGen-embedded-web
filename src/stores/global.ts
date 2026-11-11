@@ -622,11 +622,12 @@ export const useGlobalStore = defineStore('global', () => {
   // measure_period_s * 1000 >= t_reader_on + t_reader_off (400 si se viola, capturado
   // por apiFetch). Devuelve `updated` (false con password incorrecto: nada se persiste).
   async function loadTimersData(): Promise<void> {
-    const res = await apiFetch<{ t_reader_on: number; t_reader_off: number; measure_period_s: number }>('/api/config/timers')
+    const res = await apiFetch<{ t_reader_on: number; t_reader_off: number; measure_period_s: number; oos_hold_s: number }>('/api/config/timers')
     timersData.value = {
       t_reader_on: res.t_reader_on,
       t_reader_off: res.t_reader_off,
       measure_period_s: res.measure_period_s,
+      oos_hold_s: res.oos_hold_s,
     }
   }
 
@@ -637,6 +638,7 @@ export const useGlobalStore = defineStore('global', () => {
         t_reader_on: data.t_reader_on,
         t_reader_off: data.t_reader_off,
         measure_period_s: data.measure_period_s,
+        oos_hold_s: data.oos_hold_s,
         ...(data.password ? { password: data.password } : {}),
       }),
     })

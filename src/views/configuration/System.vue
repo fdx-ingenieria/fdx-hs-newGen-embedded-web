@@ -211,6 +211,15 @@
     return sec >= MIN_PERIOD_S && sec <= MAX_PERIOD_S
   }
 
+  // OOS alarm hold: edited in minutes, stored in seconds (uint16 on the backend).
+  const OOS_HOLD_MAX_S = 65_535
+  const oosHoldMin = computed<number>({
+    get: () => (editableTimers.value.oos_hold_s ?? 1800) / 60,
+    set: (value) => { editableTimers.value.oos_hold_s = Math.round(value * 60) },
+  })
+  const validOosHold = (sec: number): boolean =>
+    isValidInteger(sec) && sec >= (editableTimers.value.measure_period_s ?? 1) && sec <= OOS_HOLD_MAX_S
+
   const validReaderOn = (ms: number): boolean => isValidInteger(ms) && ms >= T_READER_MIN_MS && ms <= T_ON_MAX_MS
   const validReaderOff = (ms: number): boolean => isValidInteger(ms) && ms >= T_READER_MIN_MS && ms <= T_OFF_MAX_MS
 
@@ -243,6 +252,7 @@
       && validReaderOn(t_reader_on)
       && validReaderOff(t_reader_off)
       && validMeasurePeriod(measurePeriodSec.value)
+      && validOosHold(editableTimers.value.oos_hold_s)
       && crossConstraintOk.value
   }
 
@@ -351,6 +361,17 @@
                     placeholder="Seconds between measurement windows">
                   <p class="mt-1 text-sm text-ink-faint">1 – 3600 s. How often readings are drained into a measurement.</p>
                   <p v-show="!validMeasurePeriod(measurePeriodSec)" class="mt-1 text-sm text-crit">Must be between 1 and 3600 seconds.</p>
+                </div>
+
+                <!-- OOS alarm hold: minutes in the UI, seconds on the wire -->
+                <div>
+                  <label class="field-label !text-accent">Out-of-service alarm hold (min)</label>
+                  <input class="input !border-accent/40"
+                    type="number" min="1" max="1092" step="1"
+                    v-model.number="oosHoldMin"
+                    placeholder="Minutes">
+                  <p class="mt-1 text-sm text-ink-faint">How long an alarm stays active after the sensor that triggered it stops reporting. If every sensor of the alarm stops reporting, the alarm stays active until one comes back.</p>
+                  <p v-show="!validOosHold(editableTimers.oos_hold_s)" class="mt-1 text-sm text-crit">Must be at least the measure period and at most 1092 minutes.</p>
                 </div>
 
                 <!-- Constraint cruzada: measure_period >= t_on + t_off -->
