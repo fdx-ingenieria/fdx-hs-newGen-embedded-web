@@ -1,4 +1,4 @@
-import { IAntennaGroup, IInstallStatus, ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ITimers, ISensorData, IAlarm, IAlarmData, IAlarmField, IModbusTableEntry, IReaderConfig, SensorQuality } from '@/commons'
+import { IAntennaGroup, IInstallStatus, IRelayStatus, RelayKey, ILabelData, ISensor, ISensorConfig, LabelType, ISystem, ITimers, ISensorData, IAlarm, IAlarmData, IAlarmField, IModbusTableEntry, IReaderConfig, SensorQuality } from '@/commons'
 import { defineStore } from 'pinia'
 import type { PresetAlarm } from '@/commons/installPresets'
 import { Ref, computed, ref } from 'vue'
@@ -82,6 +82,13 @@ export const useGlobalStore = defineStore('global', () => {
   // Next measurement tick as a client epoch (s), from the `measure` SSE event; 0 until the first event.
   const measureNextAt: Ref<number> = ref(0)
   const measurePeriodS: Ref<number> = ref(0)
+  // Device clock minus client clock (s), estimated from the last tick; dates relay changes seen on page load.
+  let deviceSkewS = 0
+  const relays: Ref<Record<RelayKey, IRelayStatus>> = ref({
+    relay_1: { state: 'unknown', since: 0 },
+    relay_2: { state: 'unknown', since: 0 },
+    system: { state: 'unknown', since: 0 },
+  })
   const boardTemp: Ref<number | string> = ref('N/A')
   // Antennas the reader found on its last detection, straight from the reader
   // status in the SSE stream. -1 means "not known yet" (no status received, or a
@@ -169,6 +176,7 @@ export const useGlobalStore = defineStore('global', () => {
   const getInstallActive = computed(() => installActive.value)
   const getInstallRemainingS = computed(() => installRemainingS.value)
   const getMeasureNextAt = computed(() => measureNextAt.value)
+  const getRelays = computed(() => relays.value)
   const getConfiguredSensors = computed(() => availableSensors.value.filter(sensor => !!sensor.config.equipment))
   const getAvailableAlarms = computed(() => availableAlarms.value)
   const getConfiguredAlarms = computed(() => availableAlarms.value.filter(alarm => !!alarm.alarm_type))
@@ -231,6 +239,7 @@ export const useGlobalStore = defineStore('global', () => {
     eventSource.addEventListener('sensor_data', (event) => {
       const raw: Array<{ epc_id: string; name?: string; avg_temp: number; std_dev: number; avg_rssi: number; n_readings: number; quality: number; timestamp: number }> = JSON.parse(event.data)
       const newestDeviceTs = raw.reduce((m, s) => Math.max(m, s.timestamp), 0)
+      if (newestDeviceTs && measureNextAt.value) deviceSkewS = newestDeviceTs - (measureNextAt.value - measurePeriodS.value)
       const sensors: ISensorData[] = raw.map(s => {
         const quality = QUALITY_BY_INDEX[s.quality] ?? SensorQuality.OUT_OF_SERVICE
         const prevData = availableSensors.value.find(x => x.id === s.epc_id)?.data
@@ -296,6 +305,22 @@ export const useGlobalStore = defineStore('global', () => {
       const data: { active: boolean; remaining_s: number } = JSON.parse(event.data)
       installActive.value = data.active
       installRemainingS.value = data.remaining_s
+    })
+    eventSource.addEventListener('relays', (event) => {
+      const raw: Record<RelayKey, { state: IRelayStatus['state']; changed_at: number }> = JSON.parse(event.data)
+      const clientNow = Math.floor(Date.now() / 1000)
+      const keys: RelayKey[] = ['relay_1', 'relay_2', 'system']
+      for (const key of keys) {
+        const r = raw[key]
+        if (!r) continue
+        const prev = relays.value[key]
+        if (r.state === prev.state && (prev.since || r.state === 'unknown')) continue
+        // A change seen live is dated by the client clock; on first sight, shift the device timestamp by the skew.
+        const since = r.state === 'unknown' || !r.changed_at ? 0
+          : prev.state !== 'unknown' ? clientNow
+          : Math.min(clientNow, Math.round(r.changed_at - deviceSkewS))
+        relays.value[key] = { state: r.state, since }
+      }
     })
     eventSource.addEventListener('reader_temp', (event) => {
       const data = JSON.parse(event.data)
@@ -1022,6 +1047,7 @@ export const useGlobalStore = defineStore('global', () => {
     getInstallActive,
     getInstallRemainingS,
     getMeasureNextAt,
+    getRelays,
     startInstallMode,
     stopInstallMode,
     resetInstallStats,

@@ -111,6 +111,13 @@ export interface IAntennaGroup {
   votes: Array<{ group: string; count: number }>;
 }
 
+// Output relay state; `since` is a client epoch (s), 0 while the state is unknown.
+export type RelayKey = 'relay_1' | 'relay_2' | 'system'
+export interface IRelayStatus {
+  state: 'on' | 'off' | 'unknown';
+  since: number;
+}
+
 // Installation mode: per-tag read stats since the last start or reset.
 export interface IInstallTag {
   epc_id: string;
