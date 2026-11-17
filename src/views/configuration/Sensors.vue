@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ISensor } from '@/commons';
-  import { RefreshIcon, ListIcon, SearchIcon, StopIcon, LoadingIcon, ChevronUpIcon, RemoveIcon, WrenchIcon } from '@/components/icons';
+  import { RefreshIcon, ListIcon, SearchIcon, StopIcon, LoadingIcon, ChevronUpIcon, RemoveIcon } from '@/components/icons';
   import SensorTable from '@/components/sensors/SensorTable.vue';
   import SensorEditForm from '@/components/sensors/SensorEditForm.vue';
   import QuickSetup from '@/components/sensors/QuickSetup.vue';
@@ -8,8 +8,13 @@
   import { useGlobalStore } from '@/stores/global'
   import { storeToRefs } from 'pinia';
   import { onMounted, Ref, ref, onUnmounted, computed } from 'vue'
+  import { useRouter } from 'vue-router'
+  import { vLongPress } from '@/composables/longPress'
 
   const globalStore = useGlobalStore()
+  const router = useRouter()
+  // Installation is hidden from customers: Ctrl+Shift+double click (desktop) or long press (touch) on the title.
+  const openInstallation = () => router.push({ name: 'Installation' })
   const { getAvailableSensors } = storeToRefs(globalStore)
   const showRightSideBar = ref(false)
   const loadingData = ref(true)
@@ -177,7 +182,8 @@
       <div class="card overflow-hidden mt-8">
         <!-- Phones: title row, then the main action full width, then the secondary ones. -->
         <div class="panel-head flex-wrap gap-y-2">
-          <h3 class="flex min-w-0 flex-1 items-baseline gap-2">
+          <h3 class="flex min-w-0 flex-1 select-none items-baseline gap-2 [-webkit-touch-callout:none]"
+            v-on:dblclick.shift.ctrl="openInstallation" v-long-press="openInstallation">
             Unconfigured sensors
             <span class="font-mono text-sm font-normal text-ink-faint">{{ unconfiguredSensors.length }}</span>
           </h3>
@@ -197,14 +203,10 @@
               <LoadingIcon v-if="startingDiscoveryMode" class="h-4 w-4 animate-spin fill-transparent" />
               <SearchIcon v-else class="h-4" /> Discovery
             </button>
-            <button type="button" class="btn-ghost !px-3 !py-1.5 [@media(pointer:coarse)]:!py-2.5"
+            <button type="button" class="btn-ghost col-span-2 !px-3 !py-1.5 [@media(pointer:coarse)]:!py-2.5"
               title="Place several tags at once on a location x position grid" @click="showQuickSetup = true">
               <ListIcon class="h-4" /> Quick setup
             </button>
-            <router-link :to="{ name: 'Installation' }" class="btn-ghost !px-3 !py-1.5 [@media(pointer:coarse)]:!py-2.5"
-              title="Check how reliably every tag is read with the production timing, and place tags while you test">
-              <WrenchIcon class="h-4" /> Installation
-            </router-link>
             <button v-if="unconfiguredSensors.length" type="button" class="btn-ghost col-span-2 !px-3 !py-1.5 [@media(pointer:coarse)]:!py-2.5"
               :disabled="loadingData || startingDiscoveryMode" @click="clearUnconfiguredSensors()">
               <LoadingIcon v-if="loadingData" class="h-4 w-4 animate-spin fill-transparent" />
