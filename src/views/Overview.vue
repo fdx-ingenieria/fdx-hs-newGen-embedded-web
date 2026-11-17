@@ -10,9 +10,12 @@
     StopIcon,
     ThermometerHighIcon,
     ThermometerLowIcon,
-    BellRingIcon
+    BellRingIcon,
+    ViewGridIcon,
+    ViewListIcon,
   } from '@/components/icons';
   import SensorTable from '@/components/sensors/SensorTable.vue';
+  import SensorMap from '@/components/sensors/SensorMap.vue';
   import { useGlobalStore } from '@/stores/global';
   import { storeToRefs } from 'pinia';
   import { computed, onMounted, onUnmounted, ref } from 'vue'
@@ -30,6 +33,21 @@
   // Alarms that can trigger: a function and at least one location (empty slots don't count).
   const alarmsInUse = computed(() => getConfiguredAlarms.value.filter(a => a.fields.length).length)
   const activeTab = ref('sensors')
+
+  // List or map of the sensors, remembered per browser.
+  const VIEW_KEY = 'overview-sensor-view'
+  const readView = (): 'list' | 'map' => {
+    try { return localStorage.getItem(VIEW_KEY) === 'map' ? 'map' : 'list' } catch { return 'list' }
+  }
+  const sensorView = ref<'list' | 'map'>(readView())
+  const setSensorView = (v: 'list' | 'map') => {
+    sensorView.value = v
+    try { localStorage.setItem(VIEW_KEY, v) } catch { /* ignore */ }
+  }
+  const VIEWS = [
+    { id: 'list' as const, label: 'List', icon: ViewListIcon },
+    { id: 'map' as const, label: 'Map', icon: ViewGridIcon },
+  ]
   const togglingFastDetection = ref(false)
 
   const startFastDetection = () => {
@@ -268,7 +286,7 @@
     </div>
 
     <div class="card mb-4 overflow-hidden">
-      <div class="border-b border-line text-sm font-semibold text-ink-faint">
+      <div class="flex items-center justify-between gap-2 border-b border-line pr-3 text-sm font-semibold text-ink-faint">
         <ul class="flex flex-wrap px-2 -mb-px" role="tablist">
           <li class="mr-2">
             <button type="button" role="tab" :aria-selected="activeTab === 'sensors'"
@@ -283,9 +301,20 @@
               @click="activeTab = 'alarms'">Alarms</button>
           </li>
         </ul>
+        <div v-if="activeTab === 'sensors'" class="flex gap-0.5 rounded-lg border border-line bg-panel-soft p-0.5" role="group" aria-label="Sensor view">
+          <button v-for="v in VIEWS" :key="v.id" type="button" :aria-pressed="sensorView === v.id" :title="`${v.label} view`"
+            class="flex h-8 w-8 items-center justify-center rounded-md [@media(pointer:coarse)]:h-10 [@media(pointer:coarse)]:w-10"
+            :class="sensorView === v.id ? 'bg-panel text-ink shadow-sm ring-1 ring-line' : 'text-ink-faint hover:text-ink'"
+            @click="setSensorView(v.id)">
+            <component :is="v.icon" class="h-5 w-5" />
+            <span class="sr-only">{{ v.label }} view</span>
+          </button>
+        </div>
       </div>
       <AlarmsTable v-show="activeTab === 'alarms'" :availableAlarms="getConfiguredAlarms" :readonly="true" :max="20" />
-      <SensorTable v-show="activeTab === 'sensors'" :availableSensors="getConfiguredSensors" :readonly="true" :showlabels="true" :max="50"
+      <SensorMap v-if="sensorView === 'map'" v-show="activeTab === 'sensors'" :sensors="getConfiguredSensors"
+        empty-text="No sensors configured yet. Set them up in Configuration, Sensors." />
+      <SensorTable v-else v-show="activeTab === 'sensors'" :availableSensors="getConfiguredSensors" :readonly="true" :showlabels="true" :max="50"
         empty-text="No sensors configured yet. Set them up in Configuration, Sensors." />
     </div>
   </div>
