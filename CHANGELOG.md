@@ -1,3 +1,15 @@
+## [1.2.0] - 2026-11-17
+
+### Features
+
+- Out-of-service alarm hold setting in system timers
+- Measure period and next mesaure endpoints integration
+- Relay states from the relays SSE event
+- *(Overview)* Relay panel with contact state and system fault reason
+- Grid and list view icons
+- *(Overview)* Sensor map view with a list/map toggle
+- *(Sensors)* Hide Installation behind a shortcut on the Unconfigured sensors title
+- Open the logs view with Ctrl+Shift+double click on the sidebar versions
 ## [1.1.2] - 2026-11-10
 
 ### Features
