@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { ISensorData } from '@/commons';
   import AlarmsTable from '@/components/alarms/AlarmsTable.vue';
+  import RelayPanel from '@/components/relays/RelayPanel.vue';
   import {
     AlarmIcon,
     LoadingIcon,
@@ -201,6 +202,8 @@
         </div>
       </div>
     </div>
+
+    <RelayPanel />
 
     <!-- Switchgear (Auto) only: which EPC group is currently locked per antenna.
          Irrelevant for normal installations, so it stays hidden otherwise. -->
