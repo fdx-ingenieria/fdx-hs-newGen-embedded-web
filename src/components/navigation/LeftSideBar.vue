@@ -73,8 +73,8 @@
       </ul>
     </div>
 
-    <!-- Long press (touch only) opens the hidden logs view, the touch twin of Ctrl+Shift+L. -->
-    <div v-long-press="() => router.push('/admin/logs')"
+    <!-- Hidden logs view: Ctrl+Shift+double click (desktop) or long press (touch) on the versions. -->
+    <div v-on:dblclick.shift.ctrl="router.push('/admin/logs')" v-long-press="() => router.push('/admin/logs')"
       class="absolute bottom-0 left-0 z-20 w-full select-none border-t border-line bg-panel px-4 py-3 font-mono text-xs text-ink-faint [-webkit-touch-callout:none] lg:block">
       <small class="block">FW: {{ globalStore.getFirmwareVersion || 'N/A' }}</small>
       <small class="block">WA: v{{ version }}</small>

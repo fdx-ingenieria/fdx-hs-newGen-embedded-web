@@ -73,8 +73,8 @@ const routes: Array<RouteRecordRaw > = [
     meta: {}
   },
   {
-    // Hidden admin view: no sidebar entry, reached via the Ctrl+Shift+L shortcut
-    // (see App.vue) or by URL.
+    // Hidden admin view: no sidebar entry, reached via the shortcut on the sidebar versions
+    // (see LeftSideBar.vue) or by URL.
     path: "/admin/logs",
     name: "LogsAdmin",
     component: LogsAdmin,

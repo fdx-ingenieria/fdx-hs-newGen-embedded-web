@@ -5,11 +5,10 @@
   import ToastNotifications from './components/ToastNotifications.vue';
   import { AlertIcon } from './components/icons';
   import { computed, onMounted, onBeforeUnmount } from 'vue';
-  import { useRoute, useRouter } from 'vue-router';
+  import { useRoute } from 'vue-router';
   import { useGlobalStore } from './stores/global';
 
   const globalStore = useGlobalStore()
-  const router = useRouter()
   const route = useRoute()
 
   // The Installation view shows its own status; every other view gets the banner.
@@ -18,22 +17,12 @@
     try { await globalStore.stopInstallMode() } catch { /* apiFetch already showed the error */ }
   }
 
-  // Hidden admin logs view: reachable only via Ctrl+Shift+L (no sidebar entry).
-  function onKeydown(e: KeyboardEvent): void {
-    if (e.ctrlKey && e.shiftKey && (e.key === 'L' || e.key === 'l')) {
-      e.preventDefault()
-      router.push('/admin/logs')
-    }
-  }
-
   onMounted(() => {
     globalStore.startMonitoring()
-    window.addEventListener('keydown', onKeydown)
   })
 
   onBeforeUnmount(() => {
     globalStore.stopMonitoring()
-    window.removeEventListener('keydown', onKeydown)
   })
 </script>
 
