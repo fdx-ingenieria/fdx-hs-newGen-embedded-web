@@ -82,7 +82,7 @@ pestaña. Su navegador recuerda la última que utilizó.
 | **Equipment**, **Location**, **Position** | Dónde está instalado el sensor (ver [Labels](labels.md)). |
 | **Temp** | Temperatura promedio de la última ventana de medición y su desviación estándar. |
 | **Quality** | Calidad de lectura (ver [Referencia](../99-reference.md#read-quality)) y nivel de señal en dBm. |
-| **Updated** | Cantidad de lecturas en la última ventana y segundos desde la última actualización. |
+| **Updated** | Cantidad de lecturas en la última ventana y segundos desde la última temperatura válida. |
 
 - Las filas de los sensores en alarma se resaltan en rojo.
 - Escriba en **Search** para filtrar por cualquier texto visible (nombre, ID, etiquetas).
@@ -93,7 +93,7 @@ pestaña. Su navegador recuerda la última que utilizó.
 El mapa dibuja un bloque por equipo, con las ubicaciones como filas y las posiciones como
 columnas, de modo que la disposición coincide con el equipo físico. Cada celda muestra el nombre
 del sensor, la temperatura, la calidad, la cantidad de lecturas, la antigüedad de la última
-lectura y su slot Modbus. Junto a cada ubicación, **Δ N °C** es la diferencia entre su sensor más
+temperatura válida y su slot Modbus. Junto a cada ubicación, **Δ N °C** es la diferencia entre su sensor más
 caliente y el más frío, una forma rápida de detectar un punto más caliente que los demás.
 
 Las celdas marcadas como **Empty** no tienen sensor. Un bloque con una alarma activa muestra una

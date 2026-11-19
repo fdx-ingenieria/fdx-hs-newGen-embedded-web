@@ -80,7 +80,7 @@ remembers the last one you used.
 | **Equipment**, **Location**, **Position** | Where the sensor is installed (see [Labels](labels.md)). |
 | **Temp** | Average temperature of the last measurement window and its standard deviation. |
 | **Quality** | Read quality (see [Reference](../99-reference.md#read-quality)) and the signal level in dBm. |
-| **Updated** | Number of readings in the last window and seconds since the last update. |
+| **Updated** | Number of readings in the last window and seconds since the last valid temperature. |
 
 - Rows of sensors in alarm are highlighted in red.
 - Type in **Search** to filter by any visible text (name, ID, labels).
@@ -90,7 +90,7 @@ remembers the last one you used.
 
 The map draws one block per equipment, with locations as rows and positions as columns, so the
 layout matches the physical equipment. Each cell shows the sensor name, temperature, quality,
-number of readings, age of the last reading and its Modbus slot. Next to each location,
+number of readings, age of the last valid temperature and its Modbus slot. Next to each location,
 **Δ N °C** is the difference between its hottest and coolest sensor, a quick way to spot a
 point running hotter than the others.
 

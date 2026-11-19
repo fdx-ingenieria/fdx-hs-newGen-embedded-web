@@ -237,7 +237,7 @@ export const useGlobalStore = defineStore('global', () => {
       }
     }
     eventSource.addEventListener('sensor_data', (event) => {
-      const raw: Array<{ epc_id: string; name?: string; avg_temp: number; std_dev: number; avg_rssi: number; n_readings: number; quality: number; timestamp: number }> = JSON.parse(event.data)
+      const raw: Array<{ epc_id: string; name?: string; avg_temp: number; std_dev: number; avg_rssi: number; n_readings: number; quality: number; temp_valid: boolean; timestamp: number }> = JSON.parse(event.data)
       const newestDeviceTs = raw.reduce((m, s) => Math.max(m, s.timestamp), 0)
       if (newestDeviceTs && measureNextAt.value) deviceSkewS = newestDeviceTs - (measureNextAt.value - measurePeriodS.value)
       const sensors: ISensorData[] = raw.map(s => {
@@ -246,9 +246,9 @@ export const useGlobalStore = defineStore('global', () => {
         const n_readings = quality === SensorQuality.OUT_OF_SERVICE
           ? (prevData?.n_readings ?? s.n_readings)
           : s.n_readings
-        // A new device timestamp means a new reading; age is anchored to the client clock, since the device clock may be skewed.
+        // Every entry carries its cycle time, so a new reading needs a valid temperature too; age is anchored to the client clock, since the device clock may be skewed.
         const firstSight = !lastDeviceTimestamp.has(s.epc_id)
-        const isNewReading = s.timestamp > 0 && s.timestamp !== lastDeviceTimestamp.get(s.epc_id)
+        const isNewReading = s.temp_valid && s.timestamp !== lastDeviceTimestamp.get(s.epc_id)
         if (isNewReading) lastDeviceTimestamp.set(s.epc_id, s.timestamp)
         const clientNow = Math.floor(Date.now() / 1000)
         // After a page load, date the reading from the last tick (device clock differences only) instead of "now".
