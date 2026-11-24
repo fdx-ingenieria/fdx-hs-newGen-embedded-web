@@ -34,7 +34,7 @@ controls does not change anything on its own.
 
 | View | Where to apply the gesture | What it reveals |
 |------|---------------------------|-----------------|
-| System | The **System** card (computer) or its title (touch) | [Serial, inventory timers, service restart, antenna detection, operating mode](system.md) |
+| System | The **System** card (computer) or its title (touch) | [Serial, inventory timers, service restart, operating mode](system.md) |
 | Labels | The description text at the top | [Installation presets](labels.md) |
 | Sensors | The **Unconfigured sensors** title | Opens the [Installation](installation.md) tool |
 | Alarms | The **Alarms** title | [Installation presets](alarms.md) |
@@ -45,7 +45,7 @@ controls does not change anything on its own.
 
 On top of the steps of the User Manual, an installer usually:
 
-1. Sets the **Serial** of the unit and checks the antennas with **Detect antennas** ([System](system.md)).
+1. Sets the **Serial** of the unit and checks the antennas with **Detect antennas** ([RFID Config](../components/rfid-config.md#antenna-detection)).
 2. Selects **Manual** or **Auto** operating mode ([System](system.md#installation-mode-manual-auto)).
 3. Loads the label and alarm presets of the installation, when there is one ([Labels](labels.md), [Alarms](alarms.md)).
 4. Checks every sensor position with the [Installation](installation.md) tool.

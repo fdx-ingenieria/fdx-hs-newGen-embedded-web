@@ -42,18 +42,9 @@ En la parte inferior de la tarjeta:
 
 Con una contraseña incorrecta la página muestra **Wrong password** y no se modifica nada.
 
-## Detección de antenas {#antenna-detection}
-
-![Tarjetas de detección de antenas, modo de funcionamiento y Modbus en modo administrador](../../images/system-admin-cards.png)
-
-Explora el lector RFID en busca de antenas conectadas. No requiere contraseña.
-
-1. Presione **Detect antennas**.
-2. El resultado lista cada puerto con una antena (**P1**, **P2**, ...). **No antennas detected**
-   significa que el lector RFID respondió pero no encontró ninguna: verifique los cables y vuelva
-   a explorar.
-
 ## Modo de instalación (Manual / Auto) {#installation-mode-manual-auto}
+
+![Tarjetas de modo de funcionamiento y Modbus en modo administrador](../../images/system-admin-cards.png)
 
 Selecciona el modo de funcionamiento de la unidad. A pesar de su nombre, esta tarjeta no es la
 [herramienta Installation](installation.md).

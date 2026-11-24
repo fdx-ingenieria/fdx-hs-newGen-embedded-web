@@ -35,7 +35,7 @@ los controles no modifica nada por sí mismo.
 
 | Vista | Dónde aplicar el gesto | Qué muestra |
 |------|---------------------------|-----------------|
-| System | La tarjeta **System** (computadora) o su título (táctil) | [Número de serie, tiempos de inventario, reinicio del servicio, detección de antenas, modo de funcionamiento](system.md) |
+| System | La tarjeta **System** (computadora) o su título (táctil) | [Número de serie, tiempos de inventario, reinicio del servicio, modo de funcionamiento](system.md) |
 | Labels | El texto descriptivo de la parte superior | [Presets de instalación](labels.md) |
 | Sensors | El título **Unconfigured sensors** | Abre la [herramienta Installation](installation.md) |
 | Alarms | El título **Alarms** | [Presets de instalación](alarms.md) |
@@ -46,7 +46,7 @@ los controles no modifica nada por sí mismo.
 
 Además de los pasos del Manual de usuario, un instalador habitualmente:
 
-1. Configura el **Serial** de la unidad y verifica las antenas con **Detect antennas** ([System](system.md)).
+1. Configura el **Serial** de la unidad y verifica las antenas con **Detect antennas** ([RFID Config](../components/rfid-config.md#antenna-detection)).
 2. Selecciona el modo de funcionamiento **Manual** o **Auto** ([System](system.md#installation-mode-manual-auto)).
 3. Carga los presets de etiquetas y de alarmas de la instalación, si existen ([Labels](labels.md), [Alarms](alarms.md)).
 4. Verifica la posición de cada sensor con la [herramienta Installation](installation.md).

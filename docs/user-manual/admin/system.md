@@ -41,17 +41,9 @@ At the bottom of the card:
 
 With a wrong password the page shows **Wrong password** and nothing is changed.
 
-## Antenna detection
-
-![Antenna detection, operating mode and Modbus cards in admin mode](../images/system-admin-cards.png)
-
-Scans the reader for connected antennas. No password is needed.
-
-1. Press **Detect antennas**.
-2. The result lists each port with an antenna (**P1**, **P2**, ...). **No antennas detected**
-   means the reader answered but found none: check the cables and scan again.
-
 ## Installation mode (Manual / Auto)
+
+![Operating mode and Modbus cards in admin mode](../images/system-admin-cards.png)
 
 Selects the operating mode of the unit. Despite its name, this card is not the
 [Installation](installation.md) tool.
