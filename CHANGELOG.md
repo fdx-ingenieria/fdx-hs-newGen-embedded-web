@@ -1,3 +1,16 @@
+## [1.3.0] - 2026-11-24
+
+### Features
+
+- *(ReaderConfig)* Antenna detection on top, no shortcut needed
+
+### Bug Fixes
+
+- Invalid temperature measures uses is_valid instead of timestamp 0
+
+### Documentation
+
+- Add web application user and service manuals
 ## [1.2.0] - 2026-11-17
 
 ### Features
