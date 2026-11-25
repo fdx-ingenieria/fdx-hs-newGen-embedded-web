@@ -1,4 +1,4 @@
-// Field installation presets (EDENOR). Label names are in Spanish on purpose: the app
+// Field installation presets. Label names are in Spanish on purpose: the app
 // defaults stay in English, these only apply when an installer picks them.
 import type { ILabelData } from './interfaces'
 
@@ -25,7 +25,7 @@ const POSITIONS = ['R', 'S', 'T']
 export const PRESETS: PresetDef[] = [
   {
     key: 'bancos',
-    title: 'EDENOR, capacitor banks',
+    title: 'Capacitor banks',
     summary: 'One HS per capacitor bank, 9 sensors per bank. Runs in Manual mode.',
     labels: {
       equipment: ['Banco 1', 'Banco 2', 'Banco 3', 'Banco 4'],
@@ -35,7 +35,7 @@ export const PRESETS: PresetDef[] = [
   },
   {
     key: 'celdas',
-    title: 'EDENOR, switchgear cells',
+    title: 'Switchgear cells',
     summary: 'One HS per switchgear, one transformer per antenna. Runs in Auto (switchgear) mode.',
     labels: {
       equipment: ['Transformador A', 'Transformador B', 'Transformador C'],
